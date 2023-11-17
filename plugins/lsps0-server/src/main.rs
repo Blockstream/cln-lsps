@@ -31,6 +31,7 @@ impl PluginState {
 #[derive(Debug)]
 enum PluginError {
     Error(anyhow::Error),
+    Break,
     Continue,
 }
 
@@ -90,7 +91,7 @@ impl CustomMsgResponder {
         Ok(())
     }
 
-    async fn respond_and_continue_on_err<I, E, F>(
+    async fn respond_and_break_on_err<I, E, F>(
         &mut self,
         result: Result<I, E>,
         id: JsonRpcId,
@@ -105,7 +106,7 @@ impl CustomMsgResponder {
                 let error_data = f(e);
                 let response = error_data.into_response::<()>(id);
                 self.send_custom_msg(response).await?;
-                return Err(PluginError::Continue);
+                return Err(PluginError::Break);
             }
         }
     }
@@ -144,7 +145,7 @@ async fn handle_custom_msg_inner(
     log::info!("Parsing custom msg");
     let json_msg: Result<serde_json::Value, _> = serde_json::from_slice(raw_message.msg());
     let json_msg = custom_msg_sender
-        .respond_and_continue_on_err(json_msg, JsonRpcId::None, |_| {
+        .respond_and_break_on_err(json_msg, JsonRpcId::None, |_| {
             ErrorData::parse_error("Failed to parse json".to_string())
         })
         .await?;
@@ -166,7 +167,7 @@ async fn handle_custom_msg_inner(
     let json_rpc_request = serde_json::from_value::<JsonRpcRequest<serde_json::Value>>(json_msg);
     log::warn!("This makes things go wrong {:?}", json_rpc_request);
     let json_rpc_request = custom_msg_sender
-        .respond_and_continue_on_err(json_rpc_request, id.clone(), |e| {
+        .respond_and_break_on_err(json_rpc_request, id.clone(), |e| {
             ErrorData::invalid_request(format!("Invalid json rpc request. {}", e))
         })
         .await?;
@@ -176,7 +177,7 @@ async fn handle_custom_msg_inner(
     log::info!("Checking the method");
     let method = JsonRpcMethodEnum::from_method_name(&json_rpc_request.method);
     let method = custom_msg_sender
-        .respond_and_continue_on_err(method, id.clone(), |e| {
+        .respond_and_break_on_err(method, id.clone(), |e| {
             ErrorData::unknown_method(format!("Unknown method '{}'", e))
         })
         .await?;
@@ -187,7 +188,7 @@ async fn handle_custom_msg_inner(
         JsonRpcMethodEnum::Lsps0ListProtocols(m) => {
             let request = m.into_typed_request(json_rpc_request);
             let request = custom_msg_sender
-                .respond_and_continue_on_err(request, id.clone(), |e| {
+                .respond_and_break_on_err(request, id.clone(), |e| {
                     ErrorData::invalid_params(format!("invalid params: '{}'", e))
                 })
                 .await?;
