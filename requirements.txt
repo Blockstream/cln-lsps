@@ -1,0 +1,6 @@
+pyln-testing
+gunicorn
+flask-restx
+Flask-Cors
+flask-socketio
+json5

@@ -1,0 +1,20 @@
+[package]
+name = "cln-lsp-client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [
+	"libs/lsp-primitives", 
+	"libs/cln-lsps0",
+	"plugins/lsps0-client",
+	"plugins/lsps0-server"
+	]
+
+[dependencies]
+lsps0-client = { path = "plugins/lsps0-client/" }
+lsps0-server = { path = "plugins/lsps0-server/" }
+lsp-primitives = {path = "libs/lsp-primitives"}
+cln-lsps0 = {path = "libs/cln-lsps0" }
