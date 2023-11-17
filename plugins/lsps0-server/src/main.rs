@@ -116,8 +116,6 @@ async fn handle_custom_msg_inner(
     plugin: Plugin<PluginState>,
     request: serde_json::Value,
 ) -> Result<(), PluginError> {
-    log::info!("Handle custom msg inner");
-
     // Opening the cln-rpc connection. We'll use this to send
     // custom messages
     let rpc_path = plugin.configuration().rpc_file;
@@ -130,6 +128,8 @@ async fn handle_custom_msg_inner(
     let raw_message = rpc_message.to_raw()?;
 
     // Ignore the custom message if it is unrelated to LSPS
+    // We use continue because other plug-ins might still be interested
+    // in the message
     if raw_message.bolt_8_msg_id() != LSPS_MESSAGE_ID {
         return Err(PluginError::Continue);
     }
@@ -142,7 +142,6 @@ async fn handle_custom_msg_inner(
     // We'll expect that all incoming messages are JSON-RPC Requests.
     // We parse it to `serde_json::Value`. We'll continue parsing as long as it is valid json
     // If invalid, we respond with a parse_error
-    log::info!("Parsing custom msg");
     let json_msg: Result<serde_json::Value, _> = serde_json::from_slice(raw_message.msg());
     let json_msg = custom_msg_sender
         .respond_and_break_on_err(json_msg, JsonRpcId::None, |_| {
@@ -151,7 +150,6 @@ async fn handle_custom_msg_inner(
         .await?;
 
     // Let's extract the message id from the msg
-    log::info!("Extracting msg id");
     let id: Option<&serde_json::Value> = json_msg.get("id");
     let id = match id {
         // TODO: Not nice in production
@@ -163,18 +161,15 @@ async fn handle_custom_msg_inner(
     // Let's go one step further.
     // We'll parse to `JsonRpcRequest<serde_json::Value>`.
     // This works as long as the JsonRpcRequest is a valid JsonRpcRequest
-    log::info!("Parsing JsonRpcRequest<serde_json::Value>");
     let json_rpc_request = serde_json::from_value::<JsonRpcRequest<serde_json::Value>>(json_msg);
-    log::warn!("This makes things go wrong {:?}", json_rpc_request);
     let json_rpc_request = custom_msg_sender
         .respond_and_break_on_err(json_rpc_request, id.clone(), |e| {
             ErrorData::invalid_request(format!("Invalid json rpc request. {}", e))
         })
         .await?;
 
-    // Let's check if we know the method in the JSON-rpc Request
+    // Let's check if we know the method in the JSON-rpc request.
     // We return a user to the error of the JsonRpcMethod isn't known
-    log::info!("Checking the method");
     let method = JsonRpcMethodEnum::from_method_name(&json_rpc_request.method);
     let method = custom_msg_sender
         .respond_and_break_on_err(method, id.clone(), |e| {
@@ -183,7 +178,6 @@ async fn handle_custom_msg_inner(
         .await?;
 
     // Parse the params and return invalid_params if it doesn't work
-    log::info!("Parsing in detail");
     match method {
         JsonRpcMethodEnum::Lsps0ListProtocols(m) => {
             let request = m.into_typed_request(json_rpc_request);
@@ -196,7 +190,6 @@ async fn handle_custom_msg_inner(
             // Send the response back to the client
             let response = list_protocols(request);
             custom_msg_sender.send_custom_msg(response).await?;
-            log::info!("Continue happily");
             return Err(PluginError::Continue);
         }
         _ => {
@@ -212,11 +205,10 @@ async fn handle_custom_msg(
     plugin: Plugin<PluginState>,
     request: serde_json::Value,
 ) -> Result<serde_json::Value> {
-    log::info!("Handling custom msg {:?}", request);
+    log::debug!("Handling custom msg {:?}", request);
 
     let result = handle_custom_msg_inner(plugin, request).await;
 
-    log::info!("{:?}", result);
     return match result {
         Ok(_) => Ok(json!({"result" : "continue"})),
         Err(PluginError::Continue) => Ok(json!({"result" : "continue"})),
@@ -228,7 +220,7 @@ async fn handle_custom_msg(
 fn list_protocols(
     request: JsonRpcRequest<NoParams>,
 ) -> JsonRpcResponse<ListprotocolsResponse, DefaultError> {
-    log::info!("ListProtocols");
+    log::debug!("ListProtocols");
     let response = ListprotocolsResponse::new(vec![0, 1]);
     JsonRpcResponse::success(request.id, response)
 }
