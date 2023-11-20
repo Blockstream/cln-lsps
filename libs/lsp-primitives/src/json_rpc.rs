@@ -393,7 +393,7 @@ impl<O, E> JsonRpcResponse<O, E> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DefaultError;
+pub struct DefaultError(serde_json::Value);
 
 pub trait MapErrorCode {
     fn get_code_str(code: i64) -> &'static str;
@@ -560,5 +560,20 @@ mod test {
         assert_eq!(serde_json::json!(id_i64), serde_json::json!(-12));
 
         assert_eq!(serde_json::json!(id_null), serde_json::json!(null))
+    }
+
+    #[test]
+    fn deserialize_default_error() {
+        let data = serde_json::json!({
+            "jsonrpc" : "2.0",
+            "id" : "abcdef",
+            "error" : {
+                "code" : 10,
+                "message" : "Something happened",
+                "data" : { "object" : "I am an unrecegonized object and should be either ignored or parsed" }
+            }
+        });
+
+        let _: JsonRpcResponseFailure<DefaultError> = serde_json::from_value(data).unwrap();
     }
 }

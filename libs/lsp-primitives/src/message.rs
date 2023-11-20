@@ -1,6 +1,8 @@
 use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
 pub use crate::lsps0::ListprotocolsResponse;
-pub use crate::lsps1::schema::{Lsps1InfoRequest, Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoResponse};
+pub use crate::lsps1::schema::{
+    Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
+};
 pub use crate::lsps2::schema::{
     Lsps2BuyError, Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoError, Lsps2GetInfoRequest,
     Lsps2GetInfoResponse, Lsps2GetVersionsResponse,
