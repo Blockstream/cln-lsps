@@ -56,7 +56,7 @@ pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
 
 // LSPS1: Buy Channels
 pub const LSPS1_GETINFO: Lsps1Info = Lsps1Info::new("lsps1.info");
-pub const LSPS1_GETORDER: Lsps1Order = Lsps1Order::new("lsps1.order");
+pub const LSPS1_GETORDER: Lsps1Order = Lsps1Order::new("lsps1.create_order");
 
 // LSPS2: JIT-channels
 pub const LSPS2_GET_VERSIONS: Lsps2GetVersions = Lsps2GetVersions::new("lsps2.get_versions");
@@ -117,7 +117,7 @@ impl JsonRpcMethodEnum {
         match value {
             "lsps0.list_protocols" => Ok(Self::Lsps0ListProtocols(LSPS0_LIST_PROTOCOLS)),
             "lsps1.info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
-            "lsps1.order" => Ok(Self::Lsps1Order(LSPS1_GETORDER)),
+            "lsps1.create_order" => Ok(Self::Lsps1Order(LSPS1_GETORDER)),
             "lsps2.get_versions" => Ok(Self::Lsp2GetVersions(LSPS2_GET_VERSIONS)),
             "lsps2.get_info" => Ok(Self::Lsps2GetInfo(LSPS2_GET_INFO)),
             "lsps2.buy" => Ok(Self::Lsps2Buy(LSPS2_BUY)),
