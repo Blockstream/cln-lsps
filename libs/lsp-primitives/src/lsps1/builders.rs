@@ -694,11 +694,11 @@ mod tests {
             .minimum_channel_confirmations(6)
             .supports_zero_channel_reserve(false)
             .max_channel_expiry_blocks(5)
-            .min_channel_balance_sat(SatAmount::new(10_000)) 
+            .min_channel_balance_sat(SatAmount::new(10_000))
             .max_channel_balance_sat(SatAmount::new(50_000))
             .min_initial_client_balance_sat(SatAmount::new(2)) // Spot the error
             .max_initial_client_balance_sat(SatAmount::new(1)) // Spot the error
-            .min_initial_lsp_balance_sat(SatAmount::new(2)) 
+            .min_initial_lsp_balance_sat(SatAmount::new(2))
             .max_initial_lsp_balance_sat(SatAmount::new(3))
             .build()
             .expect_err("Should fail because max_initial_client_balance_sat < min_initial_client_balance_sat");

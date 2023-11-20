@@ -85,15 +85,13 @@ pub struct SatAmount(u64);
 pub struct MsatAmount(u64);
 
 impl std::fmt::Display for SatAmount {
-
-    fn fmt(&self, fmt : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(fmt, "{} sat", self.0)
     }
 }
 
 impl std::fmt::Display for MsatAmount {
-
-    fn fmt(&self, fmt : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(fmt, "{} msat", self.0)
     }
 }
