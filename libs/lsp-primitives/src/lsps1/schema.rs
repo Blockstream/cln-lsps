@@ -1,8 +1,11 @@
+use crate::json_rpc::NoParams;
 use crate::lsps0::common_schemas::{IsoDatetime, SatAmount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub type OnchainFeeRate = u64;
+
+pub type Lsps1InfoRequest = NoParams;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Lsps1InfoResponse {

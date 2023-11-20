@@ -2,8 +2,21 @@ use anyhow::{anyhow, Result, Context};
 use uuid::Uuid;
 
 use crate::lsps0::schema::{SatAmount, IsoDatetime};
-use crate::lsps1::schema::{Lsps1Options, Lsps1InfoResponse, Lsps1GetOrderRequest, Lsps1GetOrderResponse, OrderState, OnchainPayment, PaymentState, OnchainFeeRate, Payment};
+use crate::lsps1::schema::{Lsps1Options, Lsps1InfoResponse, Lsps1GetOrderRequest, Lsps1GetOrderResponse, OrderState, OnchainPayment, PaymentState, OnchainFeeRate, Payment, Lsps1InfoRequest};
 
+#[derive(Default)]
+pub struct LspsInfoRequestBuilder;
+
+impl LspsInfoRequestBuilder {
+
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn build() -> Lsps1InfoRequest {
+        return Lsps1InfoRequest{}
+    }
+}
 
 
 #[derive(Default)]
