@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+pub use crate::lsps0::common_schemas::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ListprotocolsResponse {
