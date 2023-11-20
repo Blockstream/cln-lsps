@@ -139,7 +139,6 @@ impl Lsps1OptionsBuilder {
 
     pub fn build(self) -> Result<Lsps1Options> {
         let minimum_channel_confirmations = self.minimum_channel_confirmations.context("No value specified for 'minimum_channel_confirmations' in Lsps1OptionBuilder")?;
-        let minimum_onchain_payment_confirmations = self.minimum_onchain_payment_confirmations.context("No value specified for 'minimum_onchain_payment_confirmations' in Lsps1OptionsBuilder")?;
         let supports_zero_channel_reserve = self.supports_zero_channel_reserve.context("No value specified for 'supports_zero_channel_reserve' in Lsps1OptionsBuilder")?;
         let max_channel_expiry_blocks = self.max_channel_expiry_blocks.context("No value specified for 'max_channel_expiry_blocks' in Lsps1OptionsBuilder")?;
         let min_initial_lsp_balance_sat = self.min_initial_lsp_balance_sat.context("No value specified for 'min_initial_lsp_balance_sat' in Lsps1OptionsBuilder")?;
@@ -152,6 +151,7 @@ impl Lsps1OptionsBuilder {
 
         // Maybe NULL if the LSP doesn't support on chain payments
         let min_onchain_payment_size_sat = self.min_onchain_payment_size_sat;
+        let minimum_onchain_payment_confirmations = self.minimum_onchain_payment_confirmations;
 
         if ! (min_channel_balance_sat <= max_channel_balance_sat) {
             return Err(anyhow!("min_channel_balance_sat ({}) should be less than or equal to max_channel_balance_sat ({})", min_channel_balance_sat, max_channel_balance_sat));

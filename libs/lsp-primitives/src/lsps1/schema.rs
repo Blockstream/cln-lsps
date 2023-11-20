@@ -20,7 +20,7 @@ pub struct Lsps1InfoResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Lsps1Options {
     pub minimum_channel_confirmations: u8,
-    pub minimum_onchain_payment_confirmations: u8,
+    pub minimum_onchain_payment_confirmations: Option<u8>,
     pub supports_zero_channel_reserve: bool,
     pub min_onchain_payment_size_sat: Option<u64>,
     pub max_channel_expiry_blocks: u32,
