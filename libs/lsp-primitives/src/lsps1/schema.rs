@@ -13,7 +13,7 @@ pub struct Lsps1InfoResponse {
     pub website: Option<String>,
     pub options: Lsps1Options,
     // Prevents struct initialization. Use Lsps1InfoResponseBuilder instead
-    pub(crate)_private : ()
+    pub(crate) _private: (),
 }
 
 /// Options returned when calling lsps1.info
@@ -22,16 +22,16 @@ pub struct Lsps1Options {
     pub minimum_channel_confirmations: u8,
     pub minimum_onchain_payment_confirmations: Option<u8>,
     pub supports_zero_channel_reserve: bool,
-    pub min_onchain_payment_size_sat: Option<u64>,
+    pub min_onchain_payment_size_sat: Option<SatAmount>,
     pub max_channel_expiry_blocks: u32,
     pub min_initial_client_balance_sat: SatAmount,
     pub max_initial_client_balance_sat: SatAmount,
     pub min_initial_lsp_balance_sat: SatAmount,
-    pub max_initial_lsp_balance_sat : SatAmount,
+    pub max_initial_lsp_balance_sat: SatAmount,
     pub min_channel_balance_sat: SatAmount,
     pub max_channel_balance_sat: SatAmount,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
-    pub(crate)_private : ()
+    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,8 +46,7 @@ pub struct Lsps1GetOrderRequest {
     #[serde(rename = "announceChannel")]
     pub announce_channel: bool,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
-    pub(crate)_private : ()
-
+    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,7 +65,7 @@ pub struct Lsps1GetOrderResponse {
     pub order_state: OrderState,
     pub payment: Payment,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
-    pub(crate) _private : ()
+    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -97,7 +96,7 @@ pub struct OnchainPayment {
     pub sat: SatAmount,
     pub confirmed: bool,
     // Prevents struct initialization. Use OnchainPaymentBuilder instead
-    pub(crate) _private : ()
+    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -114,6 +113,5 @@ pub struct Payment {
     pub onchain_payment: Option<OnchainPayment>,
 
     // Prevents struct initialization. Use PaymentBuilder instead
-    pub(crate) _private : ()
+    pub(crate) _private: (),
 }
-
