@@ -4,6 +4,9 @@ use uuid::Uuid;
 use crate::lsps0::schema::{SatAmount, IsoDatetime};
 use crate::lsps1::schema::{Lsps1Options, Lsps1InfoResponse, Lsps1GetOrderRequest, Lsps1GetOrderResponse, OrderState, OnchainPayment, PaymentState, OnchainFeeRate, Payment};
 
+
+
+#[derive(Default)]
 pub struct Lsps1InfoResponseBuilder {
     supported_versions: Option<Vec<u16>>,
     website : Option<String>,
@@ -11,6 +14,10 @@ pub struct Lsps1InfoResponseBuilder {
 }
 
 impl Lsps1InfoResponseBuilder {
+
+    pub fn new() -> Self {
+        Self::default()
+    }
     
     pub fn supported_versions(mut self, supported_versions : Vec<u16>) -> Self {
         self.supported_versions = Some(supported_versions);
