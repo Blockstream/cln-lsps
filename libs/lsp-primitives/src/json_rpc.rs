@@ -301,6 +301,24 @@ pub enum JsonRpcResponse<O, E> {
     Ok(JsonRpcResponseSuccess<O>),
 }
 
+impl<E,O> JsonRpcResponse<E,O> {
+
+    pub fn jsonrpc(&self) -> &str {
+        match self {
+            JsonRpcResponse::Ok(j) => &j.jsonrpc,
+            JsonRpcResponse::Error(j) => &j.jsonrpc
+        }
+    }
+
+    pub fn id(&self) -> &JsonRpcId {
+        match self {
+            JsonRpcResponse::Ok(j) => &j.id,
+            JsonRpcResponse::Error(j) => &j.id
+        }
+    }
+
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorData<E> {
     pub code: i64,
