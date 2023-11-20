@@ -1,6 +1,6 @@
 use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
 pub use crate::lsps0::ListprotocolsResponse;
-pub use crate::lsps1::schema::{Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoResponse};
+pub use crate::lsps1::schema::{Lsps1InfoRequest, Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoResponse};
 pub use crate::lsps2::schema::{
     Lsps2BuyError, Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoError, Lsps2GetInfoRequest,
     Lsps2GetInfoResponse, Lsps2GetVersionsResponse,
@@ -30,7 +30,7 @@ use anyhow::{anyhow, Result};
 // 2. Add it to the from_method_name function
 // 3. Add it to the ref_erase function
 pub type Lsps0ListProtocols = JsonRpcMethod<NoParams, ListprotocolsResponse, DefaultError>;
-pub type Lsps1Info = JsonRpcMethod<NoParams, Lsps1InfoResponse, DefaultError>;
+pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
 pub type Lsps1Order = JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
 pub type Lsps2GetVersions = JsonRpcMethod<NoParams, Lsps2GetVersionsResponse, DefaultError>;
 pub type Lsps2GetInfo = JsonRpcMethod<Lsps2GetInfoRequest, Lsps2GetInfoResponse, Lsps2GetInfoError>;
