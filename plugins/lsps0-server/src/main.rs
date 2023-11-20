@@ -1,3 +1,5 @@
+mod options;
+
 use anyhow::{Context, Result};
 use log;
 use std::str::FromStr;
@@ -6,6 +8,7 @@ use cln_rpc::model::requests::SendcustommsgRequest;
 use cln_rpc::ClnRpc;
 
 use cln_plugin::{Builder, Plugin};
+use cln_plugin::options::ConfigOption;
 
 use lsp_primitives::json_rpc::{
     DefaultError, ErrorData, JsonRpcId, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse,
@@ -22,13 +25,16 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;
 
+
 #[derive(Clone)]
-struct PluginState;
+struct PluginState {
+}
 
 impl PluginState {
     fn new() -> Self {
-        Self
+        Self {}
     }
+
 }
 
 #[derive(Debug)]
@@ -53,6 +59,7 @@ async fn main() -> Result<()> {
 
     let configured_plugin =
         match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
+            .option(options::lsps1_info_website())
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?
@@ -197,7 +204,7 @@ async fn handle_custom_msg_inner(
             return Err(PluginError::Continue);
         }
         JsonRpcMethodEnum::Lsps1Info(m) => {
-            return lsps1_get_info(&mut custom_msg_sender, m, json_rpc_request).await;
+            return lsps1_get_info(plugin, &mut custom_msg_sender, m, json_rpc_request).await;
         }
         _ => {
             let response = ErrorData::unknown_method(format!("Unknown method '{}'", method.name()))
@@ -254,13 +261,14 @@ fn list_protocols(
 }
 
 async fn lsps1_get_info(
+    plugin : Plugin<PluginState>,
     custom_msg_sender: &mut CustomMsgResponder,
     method: Lsps1Info,
     request: JsonRpcRequest<serde_json::Value>,
 ) -> Result<(), PluginError> {
     log::debug!("lsps1_get_info");
     let request = parse_parameters(custom_msg_sender, method.clone(), request).await?;
-
+    
     let options = lsps1::builders::Lsps1OptionsBuilder::new()
         .min_channel_balance_sat(SatAmount::new(50_000))
         .max_channel_balance_sat(SatAmount::new(100_000))
@@ -272,13 +280,15 @@ async fn lsps1_get_info(
         .minimum_channel_confirmations(6)
         .build()?;
 
-    let info_resposne = lsps1::builders::Lsps1InfoResponseBuilder::new()
+    let info_response = lsps1::builders::Lsps1InfoResponseBuilder::new()
         .supported_versions(vec![1])
         .website(String::from("http://www.example.com"))
         .options(options)
         .build()?;
 
-    let response = method.create_ok_response(request, info_resposne);
+
+
+    let response = method.create_ok_response(request, info_response);
 
     custom_msg_sender.send_custom_msg(response).await?;
 
