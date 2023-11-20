@@ -79,10 +79,24 @@ impl<'de> Deserialize<'de> for IsoDatetime {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct SatAmount(u64);
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct MsatAmount(u64);
+
+impl std::fmt::Display for SatAmount {
+
+    fn fmt(&self, fmt : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        write!(fmt, "{} sat", self.0)
+    }
+}
+
+impl std::fmt::Display for MsatAmount {
+
+    fn fmt(&self, fmt : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        write!(fmt, "{} msat", self.0)
+    }
+}
 
 impl SatAmount {
     pub fn sat_value(&self) -> u64 {

@@ -6,23 +6,29 @@ pub type OnchainFeeRate = u64;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Lsps1InfoResponse {
-    supported_versions: Vec<u16>,
-    website: Option<String>,
-    options: Lsps1Options,
+    pub supported_versions: Vec<u16>,
+    pub website: Option<String>,
+    pub options: Lsps1Options,
+    // Prevents struct initialization. Use Lsps1InfoResponseBuilder instead
+    pub(crate)_private : ()
 }
 
+/// Options returned when calling lsps1.info
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Lsps1Options {
-    minimum_channel_confirmations: Option<u8>,
-    minimum_onchain_payment_confirmations: Option<u8>,
-    supports_zero_channel_reserve: bool,
-    min_onchain_payment_size_sat: Option<u64>,
-    max_channel_expiry_blocks: Option<u32>,
-    min_initial_client_balance_sat: Option<u64>,
-    min_initial_lsp_balance_sat: Option<u64>,
-    max_initial_client_balance_sat: Option<u64>,
-    min_channel_balance_sat: Option<u64>,
-    max_channel_balance_sat: Option<u64>,
+    pub minimum_channel_confirmations: u8,
+    pub minimum_onchain_payment_confirmations: u8,
+    pub supports_zero_channel_reserve: bool,
+    pub min_onchain_payment_size_sat: Option<u64>,
+    pub max_channel_expiry_blocks: u32,
+    pub min_initial_client_balance_sat: SatAmount,
+    pub max_initial_client_balance_sat: SatAmount,
+    pub min_initial_lsp_balance_sat: SatAmount,
+    pub max_initial_lsp_balance_sat : SatAmount,
+    pub min_channel_balance_sat: SatAmount,
+    pub max_channel_balance_sat: SatAmount,
+    // Prevents struct initialization. Use Lsps1OptionsBuilder instead
+    pub(crate)_private : ()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -35,28 +41,33 @@ pub struct Lsps1GetOrderRequest {
     pub token: Option<String>,
     pub refund_onchain_address: Option<String>,
     #[serde(rename = "announceChannel")]
-    pub announce_channel: String,
+    pub announce_channel: bool,
+    // Prevents struct initialization. Use Lsps1OptionsBuilder instead
+    pub(crate)_private : ()
+
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Lsps1GetOrderResponse {
-    uuid: Uuid,
-    api_version: u16,
-    lsp_balance_sat: SatAmount,
-    client_balance_sat: SatAmount,
-    confirms_within_blocks: u8,
-    channel_expiry_blocks: u8,
-    token: String,
+    pub order_id: Uuid,
+    pub api_version: u16,
+    pub lsp_balance_sat: SatAmount,
+    pub client_balance_sat: SatAmount,
+    pub confirms_within_blocks: u8,
+    pub channel_expiry_blocks: u8,
+    pub token: String,
     #[serde(rename = "announceChannel")]
-    announce_channel: bool,
-    created_at: IsoDatetime,
-    expires_at: IsoDatetime,
-    order_state: OrderState,
-    payment: Payment,
+    pub announce_channel: bool,
+    pub created_at: IsoDatetime,
+    pub expires_at: IsoDatetime,
+    pub order_state: OrderState,
+    pub payment: Payment,
+    // Prevents struct initialization. Use Lsps1OptionsBuilder instead
+    pub(crate) _private : ()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-enum OrderState {
+pub enum OrderState {
     #[serde(rename = "CREATED")]
     Created,
     #[serde(rename = "COMPLETED")]
@@ -66,7 +77,7 @@ enum OrderState {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-enum PaymentState {
+pub enum PaymentState {
     #[serde(rename = "EXPECT_PAYMENT")]
     ExpectPayment,
     #[serde(rename = "HOLD")]
@@ -78,22 +89,28 @@ enum PaymentState {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct OnchainPayment {
-    outpoint: String,
-    sat: SatAmount,
-    confirmed: bool,
+pub struct OnchainPayment {
+    pub outpoint: String,
+    pub sat: SatAmount,
+    pub confirmed: bool,
+    // Prevents struct initialization. Use OnchainPaymentBuilder instead
+    pub(crate) _private : ()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Payment {
-    state: PaymentState,
-    fee_total_sat: SatAmount,
-    order_total_sat: SatAmount,
+pub struct Payment {
+    pub state: PaymentState,
+    pub fee_total_sat: SatAmount,
+    pub order_total_sat: SatAmount,
 
-    bolt11_invoice: String,
-    onchain_address: String,
-    required_onchain_block_confirmations: u8,
+    pub bolt11_invoice: String,
+    pub onchain_address: Option<String>,
+    pub required_onchain_block_confirmations: Option<u8>,
 
-    minimum_fee_for_0conf: OnchainFeeRate,
-    on_chain_payments: Vec<OnchainPayment>,
+    pub minimum_fee_for_0conf: Option<OnchainFeeRate>,
+    pub onchain_payment: Option<OnchainPayment>,
+
+    // Prevents struct initialization. Use PaymentBuilder instead
+    pub(crate) _private : ()
 }
+
