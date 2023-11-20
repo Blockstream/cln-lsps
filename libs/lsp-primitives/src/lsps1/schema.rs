@@ -7,7 +7,7 @@ pub type OnchainFeeRate = u64;
 
 pub type Lsps1InfoRequest = NoParams;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1InfoResponse {
     pub supported_versions: Vec<u16>,
     pub website: Option<String>,
@@ -17,7 +17,7 @@ pub struct Lsps1InfoResponse {
 }
 
 /// Options returned when calling lsps1.info
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1Options {
     pub minimum_channel_confirmations: u8,
     pub minimum_onchain_payment_confirmations: Option<u8>,
@@ -34,7 +34,7 @@ pub struct Lsps1Options {
     pub(crate) _private: (),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1GetOrderRequest {
     pub api_version: u16,
     pub lsp_balance_sat: SatAmount,
@@ -49,7 +49,7 @@ pub struct Lsps1GetOrderRequest {
     pub(crate) _private: (),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1GetOrderResponse {
     pub order_id: Uuid,
     pub api_version: u16,
@@ -68,7 +68,7 @@ pub struct Lsps1GetOrderResponse {
     pub(crate) _private: (),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum OrderState {
     #[serde(rename = "CREATED")]
     Created,
@@ -78,7 +78,7 @@ pub enum OrderState {
     Failed,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PaymentState {
     #[serde(rename = "EXPECT_PAYMENT")]
     ExpectPayment,
@@ -90,7 +90,7 @@ pub enum PaymentState {
     Refunded,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OnchainPayment {
     pub outpoint: String,
     pub sat: SatAmount,
@@ -99,7 +99,7 @@ pub struct OnchainPayment {
     pub(crate) _private: (),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Payment {
     pub state: PaymentState,
     pub fee_total_sat: SatAmount,

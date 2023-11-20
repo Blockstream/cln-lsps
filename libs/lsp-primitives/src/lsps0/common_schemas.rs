@@ -26,7 +26,7 @@ use time::{OffsetDateTime, PrimitiveDateTime};
 // achieved if the LSPS2 sends a fully compliant timestamp.
 //
 // I have decided to fail early if another timestamp is received
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct IsoDatetime {
     pub datetime: PrimitiveDateTime,
 }

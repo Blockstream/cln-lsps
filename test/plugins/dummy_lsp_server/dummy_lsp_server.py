@@ -27,7 +27,6 @@ def log_custom_msg(**kwargs):
 
     return { "result" : "continue" }
 
-
 if __name__ == "__main__":
     plugin.add_hook("custommsg", log_custom_msg)
     plugin.run()

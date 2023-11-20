@@ -72,7 +72,7 @@ pub fn generate_random_rpc_id() -> JsonRpcId {
 /// are used. However, it is possible to define additional
 /// error-codes for a method.
 ///
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct JsonRpcMethod<I, O, E>
 where
     E: MapErrorCode,
@@ -113,7 +113,11 @@ where
         }
     }
 
-    pub fn create_ok_response(request: JsonRpcRequest<I>, result: O) -> JsonRpcResponse<O, E> {
+    pub fn create_ok_response(
+        &self,
+        request: JsonRpcRequest<I>,
+        result: O,
+    ) -> JsonRpcResponse<O, E> {
         JsonRpcResponse::Ok(JsonRpcResponseSuccess {
             jsonrpc: String::from("2.0"),
             id: request.id.clone(),
@@ -392,7 +396,7 @@ impl<O, E> JsonRpcResponse<O, E> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DefaultError(serde_json::Value);
 
 pub trait MapErrorCode {

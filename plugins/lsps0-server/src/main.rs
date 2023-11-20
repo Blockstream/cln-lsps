@@ -8,14 +8,17 @@ use cln_rpc::ClnRpc;
 use cln_plugin::{Builder, Plugin};
 
 use lsp_primitives::json_rpc::{
-    DefaultError, ErrorData, JsonRpcId, JsonRpcRequest, JsonRpcResponse, NoParams,
+    DefaultError, ErrorData, JsonRpcId, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse,
+    MapErrorCode, NoParams,
 };
-use lsp_primitives::lsps0::schema::ListprotocolsResponse;
-use lsp_primitives::message::JsonRpcMethodEnum;
+use lsp_primitives::lsps0::schema::{ListprotocolsResponse, SatAmount};
+use lsp_primitives::lsps1;
+use lsp_primitives::message::{JsonRpcMethodEnum, Lsps1Info};
 
 use cln_lsps0::client::{PubKey, LSPS_MESSAGE_ID};
 use cln_lsps0::custom_msg_hook::{RawCustomMsgMessage, RpcCustomMsgMessage};
 
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;
 
@@ -126,6 +129,7 @@ async fn handle_custom_msg_inner(
     let rpc_message = serde_json::from_value::<RpcCustomMsgMessage>(request)
         .with_context(|| "Failed to parse custom msg hook")?;
     let raw_message = rpc_message.to_raw()?;
+    let peer_id = raw_message.peer_id();
 
     // Ignore the custom message if it is unrelated to LSPS
     // We use continue because other plug-ins might still be interested
@@ -134,7 +138,7 @@ async fn handle_custom_msg_inner(
         return Err(PluginError::Continue);
     }
 
-    let mut custom_msg_sender = CustomMsgResponder::new(cln_rpc, raw_message.peer_id().clone());
+    let mut custom_msg_sender = CustomMsgResponder::new(cln_rpc, peer_id.clone());
 
     // In a production implementation we probably want to exclude to
     // overly long mesages here as well
@@ -188,9 +192,12 @@ async fn handle_custom_msg_inner(
                 .await?;
 
             // Send the response back to the client
-            let response = list_protocols(request);
+            let response = list_protocols(peer_id.clone(), request);
             custom_msg_sender.send_custom_msg(response).await?;
             return Err(PluginError::Continue);
+        }
+        JsonRpcMethodEnum::Lsps1Info(m) => {
+            return lsps1_get_info(&mut custom_msg_sender, m, json_rpc_request).await;
         }
         _ => {
             let response = ErrorData::unknown_method(format!("Unknown method '{}'", method.name()))
@@ -217,10 +224,63 @@ async fn handle_custom_msg(
     };
 }
 
+async fn parse_parameters<I, O, E>(
+    custom_msg_sender: &mut CustomMsgResponder,
+    method: JsonRpcMethod<I, O, E>,
+    request: JsonRpcRequest<serde_json::Value>,
+) -> Result<JsonRpcRequest<I>, PluginError>
+where
+    I: DeserializeOwned,
+    E: MapErrorCode,
+{
+    let id = request.id.clone();
+    let request = method.into_typed_request(request);
+    let request = custom_msg_sender
+        .respond_and_break_on_err(request, id, |e| {
+            ErrorData::invalid_params(format!("invalid params: '{}'", e))
+        })
+        .await?;
+
+    Ok(request)
+}
+
 fn list_protocols(
+    peer_id: PubKey,
     request: JsonRpcRequest<NoParams>,
 ) -> JsonRpcResponse<ListprotocolsResponse, DefaultError> {
     log::debug!("ListProtocols");
     let response = ListprotocolsResponse::new(vec![0, 1]);
     JsonRpcResponse::success(request.id, response)
+}
+
+async fn lsps1_get_info(
+    custom_msg_sender: &mut CustomMsgResponder,
+    method: Lsps1Info,
+    request: JsonRpcRequest<serde_json::Value>,
+) -> Result<(), PluginError> {
+    log::debug!("lsps1_get_info");
+    let request = parse_parameters(custom_msg_sender, method.clone(), request).await?;
+
+    let options = lsps1::builders::Lsps1OptionsBuilder::new()
+        .min_channel_balance_sat(SatAmount::new(50_000))
+        .max_channel_balance_sat(SatAmount::new(100_000))
+        .min_initial_client_balance_sat(SatAmount::new(0))
+        .max_initial_client_balance_sat(SatAmount::new(0))
+        .min_initial_lsp_balance_sat(SatAmount::new(0))
+        .max_initial_lsp_balance_sat(SatAmount::new(100_000))
+        .max_channel_expiry_blocks(6)
+        .minimum_channel_confirmations(6)
+        .build()?;
+
+    let info_resposne = lsps1::builders::Lsps1InfoResponseBuilder::new()
+        .supported_versions(vec![1])
+        .website(String::from("http://www.example.com"))
+        .options(options)
+        .build()?;
+
+    let response = method.create_ok_response(request, info_resposne);
+
+    custom_msg_sender.send_custom_msg(response).await?;
+
+    return Err(PluginError::Continue);
 }
