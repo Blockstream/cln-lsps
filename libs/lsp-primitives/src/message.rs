@@ -1,9 +1,9 @@
 use crate::json_rpc::{
-    DefaultError, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse, MapErrorCode, NoParams,
+    DefaultError, JsonRpcMethod, NoParams,
 };
-use crate::lsps0::ListprotocolsResponse;
-use crate::lsps1::schema::{Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoResponse};
-use crate::lsps2::schema::{
+pub use crate::lsps0::ListprotocolsResponse;
+pub use crate::lsps1::schema::{Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoResponse};
+pub use crate::lsps2::schema::{
     Lsps2BuyError, Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoError, Lsps2GetInfoRequest,
     Lsps2GetInfoResponse, Lsps2GetVersionsResponse,
 };
@@ -37,19 +37,6 @@ pub type Lsps1Order = JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponse,
 pub type Lsps2GetVersions = JsonRpcMethod<NoParams, Lsps2GetVersionsResponse, DefaultError>;
 pub type Lsps2GetInfo = JsonRpcMethod<Lsps2GetInfoRequest, Lsps2GetInfoResponse, Lsps2GetInfoError>;
 pub type Lsps2Buy = JsonRpcMethod<Lsps2BuyRequest, Lsps2BuyResponse, Lsps2BuyError>;
-
-pub trait JRMT {
-    type Request;
-    type Response;
-}
-
-impl<I, O, E> JRMT for JsonRpcMethod<I, O, E>
-where
-    E: MapErrorCode,
-{
-    type Request = JsonRpcRequest<I>;
-    type Response = JsonRpcResponse<O, E>;
-}
 
 pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
     Lsps0ListProtocols::new("lsps0.list_protocols");
