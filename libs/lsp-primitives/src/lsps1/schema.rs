@@ -35,7 +35,7 @@ pub struct Lsps1Options {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Lsps1GetOrderRequest {
+pub struct Lsps1CreateOrderRequest {
     pub api_version: u16,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
@@ -50,7 +50,7 @@ pub struct Lsps1GetOrderRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Lsps1GetOrderResponse {
+pub struct Lsps1CreateOrderResponse {
     pub order_id: Uuid,
     pub api_version: u16,
     pub lsp_balance_sat: SatAmount,

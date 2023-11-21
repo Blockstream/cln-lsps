@@ -2,8 +2,12 @@ use std::io::{Cursor, Write};
 
 use anyhow::{anyhow, Context, Result};
 use lsp_primitives::json_rpc::{
-    generate_random_rpc_id, JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode,
+    generate_random_rpc_id, JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode, NoParams
 };
+
+use lsp_primitives::message;
+use lsp_primitives::lsps0;
+use lsp_primitives::lsps1;
 
 use async_trait::async_trait;
 use serde::de::{Deserializer, Visitor};
@@ -164,7 +168,34 @@ pub trait LspClient {
         let rpc_id = generate_random_rpc_id();
         self.request_with_id(peer_id, method, param, rpc_id).await
     }
+
+    async fn lsps0_list_protocols(&mut self, peer_id : &PubKey) -> Result<lsps0::schema::ListprotocolsResponse> {
+        let response = self.request(peer_id, message::LSPS0_LIST_PROTOCOLS, NoParams).await?;
+        match response {
+            JsonRpcResponse::Error(err) => Err(anyhow!("{} : {}", err.error.code, err.error.message)),
+            JsonRpcResponse::Ok(ok) => Ok(ok.result)
+        }
+    }
+
+    async fn lsps1_get_info(&mut self, peer_id : &PubKey) -> Result<lsps1::schema::Lsps1InfoResponse> {
+        let response = self.request(peer_id, message::LSPS1_GETINFO, NoParams).await?;
+        match response {
+            JsonRpcResponse::Error(err) => Err(anyhow!("{} : {}" , err.error.code, err.error.message)),
+            JsonRpcResponse::Ok(ok) => Ok(ok.result)
+        }
+    }
+
+    async fn lsps1_create_order(&mut self, peer_id : &PubKey, order_request : lsps1::schema::Lsps1CreateOrderRequest) -> Result<lsps1::schema::Lsps1CreateOrderResponse> {
+        let response = self.request(peer_id, message::LSPS1_CREATE_ORDER, order_request).await?;
+
+        // TODO: We probably want to store this order in the data-store
+        match response {
+            JsonRpcResponse::Error(err) => Err(anyhow!("{} :  {}", err.error.code, err.error.message)),
+            JsonRpcResponse::Ok(ok) => Ok(ok.result)
+        }
+    }
 }
+
 
 pub fn rpc_request_to_data<I, O, E>(
     json_rpc_id: &JsonRpcId,
@@ -188,3 +219,4 @@ where
     let request_hex = hex::encode(cursor.into_inner());
     Ok(request_hex)
 }
+

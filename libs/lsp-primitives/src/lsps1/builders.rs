@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::lsps0::schema::{IsoDatetime, SatAmount};
 use crate::lsps1::schema::{
-    Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse, Lsps1Options,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse, Lsps1Options,
     OnchainFeeRate, OnchainPayment, OrderState, Payment, PaymentState,
 };
 
@@ -219,7 +219,7 @@ impl Lsps1OptionsBuilder {
 }
 
 #[derive(Default)]
-pub struct Lsps1GetOrderRequestBuilder {
+pub struct Lsps1CreateOrderRequestBuilder {
     api_version: Option<u16>,
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
@@ -230,7 +230,7 @@ pub struct Lsps1GetOrderRequestBuilder {
     announce_channel: Option<bool>,
 }
 
-impl Lsps1GetOrderRequestBuilder {
+impl Lsps1CreateOrderRequestBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -260,13 +260,13 @@ impl Lsps1GetOrderRequestBuilder {
         self
     }
 
-    pub fn token(mut self, token: String) -> Self {
-        self.token = Some(token);
+    pub fn token(mut self, token: Option<String>) -> Self {
+        self.token = token;
         self
     }
 
-    pub fn refund_onchain_address(mut self, refund_onchain_address: String) -> Self {
-        self.refund_onchain_address = Some(refund_onchain_address);
+    pub fn refund_onchain_address(mut self, refund_onchain_address: Option<String>) -> Self {
+        self.refund_onchain_address = refund_onchain_address;
         self
     }
 
@@ -275,32 +275,32 @@ impl Lsps1GetOrderRequestBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Lsps1GetOrderRequest> {
+    pub fn build(self) -> Result<Lsps1CreateOrderRequest> {
         // Required fields
         let api_version = self
             .api_version
-            .context("Missing field 'api_version' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'api_version' in Lsps1CreateOrderRequestBuilder")?;
         let lsp_balance_sat = self
             .lsp_balance_sat
-            .context("Missing field 'lsp_balance_sat' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'lsp_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
         let client_balance_sat = self
             .client_balance_sat
-            .context("Missing field 'client_balance_sat' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'client_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
         let confirms_within_blocks = self
             .confirms_within_blocks
-            .context("Missing field 'confirms_within_blocks' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'confirms_within_blocks' in Lsps1CreateOrderRequestBuilder")?;
         let channel_expiry_blocks = self
             .channel_expiry_blocks
-            .context("Missing field 'channel_expirty_blocks' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'channel_expirty_blocks' in Lsps1CreateOrderRequestBuilder")?;
         let announce_channel = self
             .announce_channel
-            .context("Missing field 'announce_channel' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'announce_channel' in Lsps1CreateOrderRequestBuilder")?;
 
         // Non-required fields
         let token = self.token;
         let refund_onchain_address = self.refund_onchain_address;
 
-        let request = Lsps1GetOrderRequest {
+        let request = Lsps1CreateOrderRequest {
             api_version,
             lsp_balance_sat,
             client_balance_sat,
@@ -317,7 +317,7 @@ impl Lsps1GetOrderRequestBuilder {
 }
 
 #[derive(Default)]
-pub struct Lsps1GetOrderResponseBuilder {
+pub struct Lsps1CreateOrderResponseBuilder {
     uuid: Option<Uuid>,
     api_version: Option<u16>,
     lsp_balance_sat: Option<SatAmount>,
@@ -332,7 +332,8 @@ pub struct Lsps1GetOrderResponseBuilder {
     payment: Option<Payment>,
 }
 
-impl Lsps1GetOrderResponseBuilder {
+impl Lsps1CreateOrderResponseBuilder {
+
     pub fn new() -> Self {
         Self::default()
     }
@@ -386,46 +387,46 @@ impl Lsps1GetOrderResponseBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Lsps1GetOrderResponse> {
+    pub fn build(self) -> Result<Lsps1CreateOrderResponse> {
         //required variables
         let order_id = self
             .uuid
-            .context("Missing field 'order_id' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'order_id' in Lsps1CreateOrderRequestBuilder")?;
         let api_version = self
             .api_version
-            .context("Missing field 'api_version' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'api_version' in Lsps1CreateOrderRequestBuilder")?;
         let lsp_balance_sat = self
             .lsp_balance_sat
-            .context("Missing field 'lsp_balance_sat' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'lsp_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
         let client_balance_sat = self
             .client_balance_sat
-            .context("Missing field 'client_balance_sat' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'client_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
         let confirms_within_blocks = self
             .confirms_within_blocks
-            .context("Missing field 'confirms_within_blocks' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'confirms_within_blocks' in Lsps1CreateOrderRequestBuilder")?;
         let channel_expiry_blocks = self
             .channel_expiry_blocks
-            .context("Missing field 'channel_expiry_blocks' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'channel_expiry_blocks' in Lsps1CreateOrderRequestBuilder")?;
         let token = self
             .token
-            .context("Missing field 'token' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'token' in Lsps1CreateOrderRequestBuilder")?;
         let announce_channel = self
             .announce_channel
-            .context("Missing field 'announce_channel' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'announce_channel' in Lsps1CreateOrderRequestBuilder")?;
         let created_at = self
             .created_at
-            .context("Missing field 'created_at' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'created_at' in Lsps1CreateOrderRequestBuilder")?;
         let order_state = self
             .order_state
-            .context("Missing field 'order_state' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'order_state' in Lsps1CreateOrderRequestBuilder")?;
         let expires_at = self
             .expires_at
-            .context("Missing field 'expires_at' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'expires_at' in Lsps1CreateOrderRequestBuilder")?;
         let payment = self
             .payment
-            .context("Missing field 'payment' in Lsps1GetOrderRequestBuilder")?;
+            .context("Missing field 'payment' in Lsps1CreateOrderRequestBuilder")?;
 
-        let request = Lsps1GetOrderResponse {
+        let request = Lsps1CreateOrderResponse {
             order_id,
             api_version,
             lsp_balance_sat,

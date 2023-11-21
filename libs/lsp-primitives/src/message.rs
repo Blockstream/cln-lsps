@@ -1,7 +1,7 @@
 use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
 pub use crate::lsps0::ListprotocolsResponse;
 pub use crate::lsps1::schema::{
-    Lsps1GetOrderRequest, Lsps1GetOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
 };
 pub use crate::lsps2::schema::{
     Lsps2BuyError, Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoError, Lsps2GetInfoRequest,
@@ -33,7 +33,7 @@ use anyhow::{anyhow, Result};
 // 3. Add it to the ref_erase function
 pub type Lsps0ListProtocols = JsonRpcMethod<NoParams, ListprotocolsResponse, DefaultError>;
 pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
-pub type Lsps1Order = JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
+pub type Lsps1CreateOrder = JsonRpcMethod<Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
 pub type Lsps2GetVersions = JsonRpcMethod<NoParams, Lsps2GetVersionsResponse, DefaultError>;
 pub type Lsps2GetInfo = JsonRpcMethod<Lsps2GetInfoRequest, Lsps2GetInfoResponse, Lsps2GetInfoError>;
 pub type Lsps2Buy = JsonRpcMethod<Lsps2BuyRequest, Lsps2BuyResponse, Lsps2BuyError>;
@@ -43,7 +43,7 @@ pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
 
 // LSPS1: Buy Channels
 pub const LSPS1_GETINFO: Lsps1Info = Lsps1Info::new("lsps1.info");
-pub const LSPS1_GETORDER: Lsps1Order = Lsps1Order::new("lsps1.create_order");
+pub const LSPS1_CREATE_ORDER: Lsps1CreateOrder = Lsps1CreateOrder::new("lsps1.create_order");
 
 // LSPS2: JIT-channels
 pub const LSPS2_GET_VERSIONS: Lsps2GetVersions = Lsps2GetVersions::new("lsps2.get_versions");
@@ -53,7 +53,7 @@ pub const LSPS2_BUY: Lsps2Buy = Lsps2Buy::new("lsps2.buy");
 pub enum JsonRpcMethodEnum {
     Lsps0ListProtocols(Lsps0ListProtocols),
     Lsps1Info(Lsps1Info),
-    Lsps1Order(Lsps1Order),
+    Lsps1Order(Lsps1CreateOrder),
     Lsp2GetVersions(Lsps2GetVersions),
     Lsps2GetInfo(Lsps2GetInfo),
     Lsps2Buy(Lsps2Buy),
@@ -104,7 +104,7 @@ impl JsonRpcMethodEnum {
         match value {
             "lsps0.list_protocols" => Ok(Self::Lsps0ListProtocols(LSPS0_LIST_PROTOCOLS)),
             "lsps1.info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
-            "lsps1.create_order" => Ok(Self::Lsps1Order(LSPS1_GETORDER)),
+            "lsps1.create_order" => Ok(Self::Lsps1Order(LSPS1_CREATE_ORDER)),
             "lsps2.get_versions" => Ok(Self::Lsp2GetVersions(LSPS2_GET_VERSIONS)),
             "lsps2.get_info" => Ok(Self::Lsps2GetInfo(LSPS2_GET_INFO)),
             "lsps2.buy" => Ok(Self::Lsps2Buy(LSPS2_BUY)),
