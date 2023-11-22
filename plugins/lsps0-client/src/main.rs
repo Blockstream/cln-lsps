@@ -1,3 +1,5 @@
+mod plugin_rpc;
+
 use anyhow::{anyhow, Context, Result};
 use cln_plugin::{Builder, Error, Plugin};
 use cln_rpc::ClnRpc;
@@ -7,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use lsp_primitives::json_rpc::{JsonRpcId, JsonRpcResponse, NoParams};
+use lsp_primitives::lsps1;
+use lsp_primitives::message;
 use lsp_primitives::message::LSPS0_LIST_PROTOCOLS;
 
 use cln_lsps0::client::{LspClient, PubKey, RequestId, LSPS_MESSAGE_ID};
@@ -54,6 +58,8 @@ async fn main() -> Result<()> {
                 "List all protocols supported by an LSP-server",
                 list_protocols,
             )
+            .rpcmethod("lsps1-get-info", "Get info and pricing to purchase a channel from an LSP", lsps0_get_info)
+            .rpcmethod("lsps1-create-order", "Order a channel from an LSP", lsps1_create_order)
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?
@@ -131,7 +137,7 @@ async fn list_protocols(
     let mut client = create_lsp_client_from_plugin(plugin).await?;
 
     // Parse the users request
-    let request: ListProtocolsRpcRequest =
+    let request: plugin_rpc::ListProtocolsRequest =
         serde_json::from_value(request).with_context(|| "Failed to parse RPC-request")?;
     let pubkey: PubKey = PubKey::from_hex(&request.peer_id)?;
 
@@ -143,5 +149,63 @@ async fn list_protocols(
     match lsp_protocol_list {
         JsonRpcResponse::Ok(response) => Ok(json!(response.result)),
         JsonRpcResponse::Error(err) => Err(anyhow!("{:?}", err)),
+    }
+}
+
+async fn lsps0_get_info(
+    plugin: Plugin<PluginState>,
+    request: serde_json::Value,
+) -> Result<serde_json::Value, Error> {
+    // Create an LSP-client from the plugin-state
+    let mut client = create_lsp_client_from_plugin(plugin).await?;
+
+    let request: plugin_rpc::Lsps1GetInfoRequest = serde_json::from_value(request)?;
+    let pubkey = PubKey::from_hex(&request.peer_id)?;
+
+    // Make the request to the LSP-server and return the result
+    let response = client
+        .request(
+            &pubkey,
+            message::LSPS1_GETINFO,
+            lsps1::schema::Lsps1InfoRequest {},
+        )
+        .await?;
+
+    match response {
+        JsonRpcResponse::Ok(response) => Ok(json!(response.result)),
+        JsonRpcResponse::Error(err) => Err(anyhow!("{:?}", err)),
+    }
+}
+
+async fn lsps1_create_order(
+    plugin: Plugin<PluginState>,
+    request: serde_json::Value,
+) -> Result<serde_json::Value, Error> {
+    let mut client = create_lsp_client_from_plugin(plugin).await?;
+    let request: plugin_rpc::Lsps1CreateOrderRequest = serde_json::from_value(request)?;
+    let pubkey = PubKey::from_hex(&request.peer_id)?;
+
+    let create_order_request = lsps1::builders::Lsps1CreateOrderRequestBuilder::new()
+        .api_version(1)
+        .lsp_balance_sat(request.lsp_balance_sat)
+        .client_balance_sat(request.client_balance_sat)
+        .confirms_within_blocks(request.confirms_within_blocks)
+        .channel_expiry_blocks(request.channel_expiry_blocks)
+        .token(request.token)
+        .refund_onchain_address(request.refund_onchain_address)
+        .announce_channel(request.announce_channel)
+        .build()
+        .unwrap();
+
+    // Make the request to the LSP-server and return the result
+    let response = client
+        .request(&pubkey, message::LSPS1_CREATE_ORDER, create_order_request)
+        .await?;
+
+    match response {
+        JsonRpcResponse::Ok(ok) => return Ok(json!(ok.result)),
+        JsonRpcResponse::Error(err) => {
+            return Err(anyhow!("{} : {}", err.error.code, err.error.message))
+        }
     }
 }
