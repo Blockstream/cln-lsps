@@ -33,7 +33,8 @@ use anyhow::{anyhow, Result};
 // 3. Add it to the ref_erase function
 pub type Lsps0ListProtocols = JsonRpcMethod<NoParams, ListprotocolsResponse, DefaultError>;
 pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
-pub type Lsps1CreateOrder = JsonRpcMethod<Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
+pub type Lsps1CreateOrder =
+    JsonRpcMethod<Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
 pub type Lsps2GetVersions = JsonRpcMethod<NoParams, Lsps2GetVersionsResponse, DefaultError>;
 pub type Lsps2GetInfo = JsonRpcMethod<Lsps2GetInfoRequest, Lsps2GetInfoResponse, Lsps2GetInfoError>;
 pub type Lsps2Buy = JsonRpcMethod<Lsps2BuyRequest, Lsps2BuyResponse, Lsps2BuyError>;

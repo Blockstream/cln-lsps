@@ -6,11 +6,65 @@ use anyhow::{anyhow, Context};
 
 use serde::de::Error as SeError;
 use serde::ser::Error as DeError;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 
 use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::{OffsetDateTime, PrimitiveDateTime};
+
+use crate::libsecp256k1::{PublicKey as _PublicKey, PublicKeyFormat};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PublicKey(_PublicKey);
+
+impl From<_PublicKey> for PublicKey {
+    fn from(public_key: _PublicKey) -> Self {
+        Self(public_key)
+    }
+}
+
+impl Serialize for PublicKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = hex::encode(self.0.serialize_compressed());
+        serializer.serialize_str(&s)
+    }
+}
+
+impl<'de> Deserialize<'de> for PublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct PublicKeyVisitor;
+
+        impl Visitor<'_> for PublicKeyVisitor {
+            type Value = PublicKey;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(formatter, "A compressed public-key that is hex-encoded")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                let data =
+                    hex::decode(v).map_err(|_| serde::de::Error::custom("Expected valid hex"))?;
+                let pubkey = _PublicKey::parse_slice(&data, Some(PublicKeyFormat::Compressed))
+                    .map_err(|err| {
+                        serde::de::Error::custom(format!("Invalid public-key: {}", err))
+                    })?;
+                Ok(pubkey.into())
+            }
+        }
+
+        let visitor = PublicKeyVisitor;
+        deserializer.deserialize_str(visitor)
+    }
+}
 
 // Implements all the common schema's defined in LSPS0 common schema's
 
@@ -322,5 +376,29 @@ mod test {
         let scid = serde_json::from_str::<ShortChannelId>(scid_json).expect("scid can be parsed");
 
         assert_eq!(scid, ShortChannelId::from_str("11x12x13").unwrap());
+    }
+
+    use libsecp256k1::SecretKey;
+
+    #[test]
+    fn pubkey_is_serialized_as_hex() {
+        // Generate a public and private keypair
+        let mut rng = rand::thread_rng();
+        let secret_key = SecretKey::random(&mut rng);
+        let public_key = _PublicKey::from_secret_key(&secret_key);
+        let pub_key_hex = hex::encode(public_key.serialize_compressed());
+
+        // Convert the to our schema object
+        let public_key = PublicKey::from(public_key);
+
+        // Serialize the string to a json_value
+        let json_value = serde_json::json!(public_key);
+
+        // Compute the compressed hex-encoded string that represents the public key
+
+        assert_eq!(
+            pub_key_hex, json_value,
+            "The key should be serialized as a compressed hex"
+        );
     }
 }

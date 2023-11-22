@@ -3,8 +3,8 @@ use uuid::Uuid;
 
 use crate::lsps0::schema::{IsoDatetime, SatAmount};
 use crate::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse, Lsps1Options,
-    OnchainFeeRate, OnchainPayment, OrderState, Payment, PaymentState,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
+    Lsps1Options, OnchainFeeRate, OnchainPayment, OrderState, Payment, PaymentState,
 };
 
 #[derive(Default)]
@@ -333,7 +333,6 @@ pub struct Lsps1CreateOrderResponseBuilder {
 }
 
 impl Lsps1CreateOrderResponseBuilder {
-
     pub fn new() -> Self {
         Self::default()
     }
