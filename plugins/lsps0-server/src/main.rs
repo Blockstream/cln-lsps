@@ -2,39 +2,34 @@ mod options;
 
 use anyhow::{Context, Result};
 use log;
-use std::str::FromStr;
 
 use cln_rpc::model::requests::SendcustommsgRequest;
 use cln_rpc::ClnRpc;
 
 use cln_plugin::{Builder, Plugin};
-use cln_plugin::options::ConfigOption;
 
 use lsp_primitives::json_rpc::{
     DefaultError, ErrorData, JsonRpcId, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse,
     MapErrorCode, NoParams,
 };
-use lsp_primitives::lsps0::schema::{ListprotocolsResponse, SatAmount};
+use lsp_primitives::lsps0::schema::{ListprotocolsResponse, PublicKey, SatAmount};
 use lsp_primitives::lsps1;
 use lsp_primitives::message::{JsonRpcMethodEnum, Lsps1Info};
 
-use cln_lsps0::client::{PubKey, LSPS_MESSAGE_ID};
+use cln_lsps0::client::LSPS_MESSAGE_ID;
 use cln_lsps0::custom_msg_hook::{RawCustomMsgMessage, RpcCustomMsgMessage};
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;
 
-
 #[derive(Clone)]
-struct PluginState {
-}
+struct PluginState {}
 
 impl PluginState {
     fn new() -> Self {
         Self {}
     }
-
 }
 
 #[derive(Debug)]
@@ -75,11 +70,11 @@ async fn main() -> Result<()> {
 
 struct CustomMsgResponder {
     rpc: ClnRpc,
-    peer_id: PubKey,
+    peer_id: PublicKey,
 }
 
 impl CustomMsgResponder {
-    fn new(rpc: ClnRpc, peer_id: PubKey) -> Self {
+    fn new(rpc: ClnRpc, peer_id: PublicKey) -> Self {
         Self { rpc, peer_id }
     }
 
@@ -93,7 +88,9 @@ impl CustomMsgResponder {
         let rpc_msg = raw_msg.to_rpc()?;
 
         let send_custom_msg_request = SendcustommsgRequest {
-            node_id: cln_rpc::primitives::PublicKey::from_str(&rpc_msg.peer_id)?,
+            node_id: cln_rpc::primitives::PublicKey::from_slice(
+                &rpc_msg.peer_id.inner().serialize(),
+            )?,
             msg: rpc_msg.payload,
         };
 
@@ -220,6 +217,7 @@ async fn handle_custom_msg(
     request: serde_json::Value,
 ) -> Result<serde_json::Value> {
     log::debug!("Handling custom msg {:?}", request);
+    log::warn!("Received message");
 
     let result = handle_custom_msg_inner(plugin, request).await;
 
@@ -252,7 +250,7 @@ where
 }
 
 fn list_protocols(
-    peer_id: PubKey,
+    _peer_id: PublicKey,
     request: JsonRpcRequest<NoParams>,
 ) -> JsonRpcResponse<ListprotocolsResponse, DefaultError> {
     log::debug!("ListProtocols");
@@ -261,14 +259,14 @@ fn list_protocols(
 }
 
 async fn lsps1_get_info(
-    plugin : Plugin<PluginState>,
+    _plugin: Plugin<PluginState>,
     custom_msg_sender: &mut CustomMsgResponder,
     method: Lsps1Info,
     request: JsonRpcRequest<serde_json::Value>,
 ) -> Result<(), PluginError> {
     log::debug!("lsps1_get_info");
     let request = parse_parameters(custom_msg_sender, method.clone(), request).await?;
-    
+
     let options = lsps1::builders::Lsps1OptionsBuilder::new()
         .min_channel_balance_sat(SatAmount::new(50_000))
         .max_channel_balance_sat(SatAmount::new(100_000))
@@ -285,8 +283,6 @@ async fn lsps1_get_info(
         .website(String::from("http://www.example.com"))
         .options(options)
         .build()?;
-
-
 
     let response = method.create_ok_response(request, info_response);
 

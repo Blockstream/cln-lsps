@@ -76,18 +76,18 @@ def test_lsps0_list_protocols(node_factory : NodeFactory):
 
     # Starting the client and server
     logger.info("Launching Lightning nodes")
-    lsps_server = node_factory.get_node(options = {"plugin-dir" : plugin_dummy_server })
-    lsps_client = node_factory.get_node(options = {"plugin-dir" : plugin_lsps0_client })
+    lsps_server : LightningNode = node_factory.get_node(options = {"plugin-dir" : plugin_dummy_server })
+    lsps_client : LightningNode = node_factory.get_node(options = {"plugin-dir" : plugin_lsps0_client })
 
     # Ensure the lsp_client and lsp_server are connected
     lsps_client.connect(lsps_server)
-   
+
     # Extract the node_id's of the server and the client
     server_node_id = lsps_server.info["id"]
     client_node_id = lsps_client.info["id"]
     logger.info("LSPS-server with node_id=%s", server_node_id)
     logger.info("LSPS-client with node_id=%s", client_node_id)
-  
+
     logger.info("Client requests lsps0.list_protocols")
     result = lsps_client.rpc.lsps0_list_protocols(server_node_id)
     protocols = result["protocols"]

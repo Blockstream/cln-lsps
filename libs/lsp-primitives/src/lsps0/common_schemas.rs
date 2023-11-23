@@ -2,7 +2,7 @@ use core::str::FromStr;
 
 use std::fmt::{Display, Formatter};
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 
 use serde::de::Error as SeError;
 use serde::ser::Error as DeError;
@@ -12,10 +12,17 @@ use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
-use crate::libsecp256k1::{PublicKey as _PublicKey, PublicKeyFormat};
+use crate::secp256k1::PublicKey as _PublicKey;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PublicKey(_PublicKey);
+
+impl std::hash::Hash for PublicKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let x = self.inner().serialize();
+        x.hash(state);
+    }
+}
 
 impl From<_PublicKey> for PublicKey {
     fn from(public_key: _PublicKey) -> Self {
@@ -28,7 +35,7 @@ impl Serialize for PublicKey {
     where
         S: Serializer,
     {
-        let s = hex::encode(self.0.serialize_compressed());
+        let s = hex::encode(self.0.serialize());
         serializer.serialize_str(&s)
     }
 }
@@ -53,16 +60,33 @@ impl<'de> Deserialize<'de> for PublicKey {
             {
                 let data =
                     hex::decode(v).map_err(|_| serde::de::Error::custom("Expected valid hex"))?;
-                let pubkey = _PublicKey::parse_slice(&data, Some(PublicKeyFormat::Compressed))
-                    .map_err(|err| {
-                        serde::de::Error::custom(format!("Invalid public-key: {}", err))
-                    })?;
+                let pubkey = _PublicKey::from_slice(&data).map_err(|err| {
+                    serde::de::Error::custom(format!("Invalid public-key: {}", err))
+                })?;
                 Ok(pubkey.into())
             }
         }
 
         let visitor = PublicKeyVisitor;
         deserializer.deserialize_str(visitor)
+    }
+}
+
+impl PublicKey {
+    pub fn from_hex(hex: &str) -> Result<Self> {
+        let data = hex::decode(hex).context("Invalid hex")?;
+        let publickey =
+            _PublicKey::from_slice(&data).map_err(|m| anyhow!("Error parsing PublicKey: {}", m))?;
+        Ok(PublicKey(publickey))
+    }
+
+    pub fn to_hex(key: Self) -> String {
+        let data = key.0.serialize();
+        return hex::encode(data);
+    }
+
+    pub fn inner(self) -> _PublicKey {
+        self.0
     }
 }
 

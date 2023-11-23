@@ -1,17 +1,16 @@
-use crate::client::PubKey;
 use anyhow::{anyhow, Context, Result};
+use lsp_primitives::lsps0::common_schemas::PublicKey;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct RpcCustomMsgMessage {
-    pub peer_id: String,
+    pub peer_id: PublicKey,
     pub payload: String,
 }
 
 impl RpcCustomMsgMessage {
     pub fn to_raw(&self) -> Result<RawCustomMsgMessage> {
-        let peer_id =
-            PubKey::from_hex(&self.peer_id).with_context(|| "peer_id is not valid hex")?;
+        let peer_id = self.peer_id;
         let payload = hex::decode(&self.payload).with_context(|| "payload is not valid hex")?;
 
         RawCustomMsgMessage::new(peer_id, payload)
@@ -19,13 +18,13 @@ impl RpcCustomMsgMessage {
 }
 
 pub struct RawCustomMsgMessage {
-    peer_id: PubKey,
+    peer_id: PublicKey,
     // bolt-8 message id appended by the message content
     payload: Vec<u8>,
 }
 
 impl RawCustomMsgMessage {
-    fn new(peer_id: PubKey, payload: Vec<u8>) -> Result<Self> {
+    fn new(peer_id: PublicKey, payload: Vec<u8>) -> Result<Self> {
         if payload.len() < 2 {
             return Err(anyhow!(
                 "Payload in custommsg should be at least 2 bytes to allow for the BOLT_8_MSG_ID"
@@ -34,7 +33,7 @@ impl RawCustomMsgMessage {
         Ok(Self { peer_id, payload })
     }
 
-    pub fn create(peer_id: PubKey, bolt_8_msg_id: &[u8; 2], message: &[u8]) -> Result<Self> {
+    pub fn create(peer_id: PublicKey, bolt_8_msg_id: &[u8; 2], message: &[u8]) -> Result<Self> {
         // The payload is a vec<u8>
         // We'll first write the bolt_8_msg_id
         let mut payload = Vec::new();
@@ -48,7 +47,7 @@ impl RawCustomMsgMessage {
 
     pub fn to_rpc(&self) -> Result<RpcCustomMsgMessage> {
         let msg = RpcCustomMsgMessage {
-            peer_id: hex::encode(&self.peer_id),
+            peer_id: self.peer_id,
             payload: hex::encode(&self.payload),
         };
 
@@ -66,7 +65,7 @@ impl RawCustomMsgMessage {
         result
     }
 
-    pub fn peer_id(&self) -> &PubKey {
+    pub fn peer_id(&self) -> &PublicKey {
         &self.peer_id
     }
 }

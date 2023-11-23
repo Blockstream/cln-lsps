@@ -1,6 +1,7 @@
-use crate::client::{rpc_request_to_data, LspClient, PubKey, RequestId};
+use crate::client::{rpc_request_to_data, LspClient, RequestId};
 use crate::transport::RequestResponseMatcher;
 use lsp_primitives::json_rpc::{JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode};
+use lsp_primitives::lsps0::common_schemas::PublicKey;
 use lsp_primitives::lsps0::util::{is_feature_bit_enabled, FeatureBitMap, LSP_SERVER_FEATURE_BIT};
 
 use async_trait::async_trait;
@@ -36,7 +37,7 @@ impl ClnRpcLspClient {
 impl LspClient for ClnRpcLspClient {
     async fn request_with_id<'a, I, O, E>(
         &mut self,
-        peer_id: &PubKey,
+        peer_id: &PublicKey,
         method: JsonRpcMethod<I, O, E>,
         params: I,
         json_rpc_id: JsonRpcId,
@@ -52,21 +53,27 @@ impl LspClient for ClnRpcLspClient {
         let request_data: String = rpc_request_to_data(&json_rpc_id, method, params).unwrap();
         let request_id = RequestId::new(peer_id.clone(), json_rpc_id);
 
+        log::debug!("JSON-rpc request '{}'", request_data);
+
         // Start listening for the response
         // We do this before sending it to avoid race-conditions
         let response_future = self.matcher.lock().unwrap().process_request(request_id);
 
         // Send the custom message
-        let pubkey = cln_rpc::primitives::PublicKey::from_slice(peer_id.as_ref()).unwrap();
+        let cln_rpc_pubkey =
+            cln_rpc::primitives::PublicKey::from_slice(&peer_id.inner().serialize())
+                .context("Unexpected failure in PublicKey")?;
         let request_data = SendcustommsgRequest {
-            node_id: pubkey,
+            node_id: cln_rpc_pubkey,
             msg: request_data,
         };
         let request = Request::SendCustomMsg(request_data);
+        log::debug!("SendCustomMessageRequest {:?}", request.clone());
         let result =
             self.rpc.call(request).await.with_context(|| {
                 "Failed to SendcustomMsg to peer. Are you connected to the peer?"
             })?;
+
         match result {
             Response::SendCustomMsg(status) => {
                 // TODO: 
@@ -78,7 +85,7 @@ impl LspClient for ClnRpcLspClient {
         }
 
         // Wait for the response
-        let timeout = std::time::Duration::from_secs(5);
+        let timeout = std::time::Duration::from_secs(10);
         let response_value: serde_json::Value = tokio::time::timeout(timeout, response_future)
             .await
             .with_context(|| "Time-out, waiting for peer to respond")?;
@@ -88,7 +95,7 @@ impl LspClient for ClnRpcLspClient {
             .with_context(|| "Failed to parse response from LSPS-server")
     }
 
-    async fn list_lsps(&mut self) -> Result<Vec<PubKey>> {
+    async fn list_lsps(&mut self) -> Result<Vec<PublicKey>> {
         let list_nodes_request = ListnodesRequest { id: None };
         let response = self
             .rpc
@@ -104,7 +111,7 @@ impl LspClient for ClnRpcLspClient {
                     let features = FeatureBitMap::from_str(&n.features.clone()?).ok()?;
 
                     if is_feature_bit_enabled(&features, LSP_SERVER_FEATURE_BIT) {
-                        return Some(PubKey::from_hex(&n.nodeid.to_string()));
+                        return Some(PublicKey::from_hex(&n.nodeid.to_string()));
                     } else {
                         return None;
                     }

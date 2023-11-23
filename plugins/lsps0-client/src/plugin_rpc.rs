@@ -7,27 +7,26 @@
 /// - core-Lightning RPC (scope of this file)
 /// - RPC between LSP-client and LSP-server (not the scope of this file)
 ///
-
 use serde::{Deserialize, Serialize};
 
 use lsp_primitives::lsps0::common_schemas::SatAmount;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ListProtocolsRequest {
     pub peer_id: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ListProtocolsResponse {
     pub protocols: Vec<u8>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Lsps1GetInfoRequest {
     pub peer_id: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Lsps1CreateOrderRequest {
     pub peer_id: String,
     pub lsp_balance_sat: SatAmount,

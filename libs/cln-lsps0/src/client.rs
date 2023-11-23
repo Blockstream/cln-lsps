@@ -2,106 +2,25 @@ use std::io::{Cursor, Write};
 
 use anyhow::{anyhow, Context, Result};
 use lsp_primitives::json_rpc::{
-    generate_random_rpc_id, JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode, NoParams
+    generate_random_rpc_id, JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode, NoParams,
 };
 
-use lsp_primitives::message;
 use lsp_primitives::lsps0;
+use lsp_primitives::lsps0::common_schemas::PublicKey;
 use lsp_primitives::lsps1;
+use lsp_primitives::message;
 
 use async_trait::async_trait;
-use serde::de::{Deserializer, Visitor};
-use serde::ser::Serializer;
-use serde::{Deserialize, Serialize};
 
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub struct RequestId {
-    peer_id: PubKey,
+    peer_id: PublicKey,
     msg_id: JsonRpcId,
 }
 
 impl RequestId {
-    pub fn new(peer_id: PubKey, msg_id: JsonRpcId) -> Self {
+    pub fn new(peer_id: PublicKey, msg_id: JsonRpcId) -> Self {
         Self { peer_id, msg_id }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct PubKey {
-    key: [u8; 33],
-}
-
-impl std::fmt::Display for PubKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let hex = hex::encode(self.key);
-        write!(f, "{}", hex)
-    }
-}
-
-impl AsRef<[u8]> for PubKey {
-    fn as_ref(&self) -> &[u8] {
-        &self.key
-    }
-}
-
-impl PubKey {
-    pub fn new(key: [u8; 33]) -> Self {
-        return Self { key };
-    }
-
-    pub fn from_hex(key: &str) -> Result<Self> {
-        let data = hex::decode(key)
-            .with_context(|| "Failed to parse PubKey. Expected a hex-representation")?;
-        Self::try_new(data)
-    }
-
-    pub fn try_new<T: AsRef<[u8]>>(key: T) -> Result<Self> {
-        let src: &[u8] = key.as_ref();
-        if !src.len() == 33 {
-            return Err(anyhow!("Expected a 33 byte ECDSA key"));
-        }
-
-        let mut dest: [u8; 33] = [0; 33];
-        dest.copy_from_slice(src);
-
-        Ok(Self { key: dest })
-    }
-
-    pub fn to_vec(&self) -> Vec<u8> {
-        self.key.to_vec()
-    }
-}
-
-impl Serialize for PubKey {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let str_value = self.to_string();
-        serializer.serialize_str(&str_value)
-    }
-}
-
-struct PubKeyVisitor;
-
-impl<'de> Visitor<'de> for PubKeyVisitor {
-    type Value = PubKey;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("A hex-encoded compressed public key of length 33 bytes")
-    }
-
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        PubKey::from_hex(value).map_err(|_| E::custom(format!("Failed to parse PubKey as hex")))
-    }
-}
-
-impl<'de> Deserialize<'de> for PubKey {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_string(PubKeyVisitor)
     }
 }
 
@@ -139,7 +58,7 @@ pub trait LspClient {
     /// We recommend using `request` over `request_with_id` because it the
     async fn request_with_id<'a, I, O, E>(
         &mut self,
-        peer_id: &PubKey,
+        peer_id: &PublicKey,
         method: JsonRpcMethod<I, O, E>,
         param: I,
         rpc_id: JsonRpcId,
@@ -150,12 +69,12 @@ pub trait LspClient {
         O: serde::de::DeserializeOwned + Send,
         E: serde::de::DeserializeOwned + Send;
 
-    async fn list_lsps(&mut self) -> Result<Vec<PubKey>>;
+    async fn list_lsps(&mut self) -> Result<Vec<PublicKey>>;
 
     /// Make a JSON-RPC 2.0 request to an LSP-server
     async fn request<'a, I, O, E>(
         &mut self,
-        peer_id: &PubKey,
+        peer_id: &PublicKey,
         method: JsonRpcMethod<I, O, E>,
         param: I,
     ) -> Result<JsonRpcResponse<O, E>>
@@ -169,33 +88,54 @@ pub trait LspClient {
         self.request_with_id(peer_id, method, param, rpc_id).await
     }
 
-    async fn lsps0_list_protocols(&mut self, peer_id : &PubKey) -> Result<lsps0::schema::ListprotocolsResponse> {
-        let response = self.request(peer_id, message::LSPS0_LIST_PROTOCOLS, NoParams).await?;
+    async fn lsps0_list_protocols(
+        &mut self,
+        peer_id: &PublicKey,
+    ) -> Result<lsps0::schema::ListprotocolsResponse> {
+        let response = self
+            .request(peer_id, message::LSPS0_LIST_PROTOCOLS, NoParams)
+            .await?;
         match response {
-            JsonRpcResponse::Error(err) => Err(anyhow!("{} : {}", err.error.code, err.error.message)),
-            JsonRpcResponse::Ok(ok) => Ok(ok.result)
+            JsonRpcResponse::Error(err) => {
+                Err(anyhow!("{} : {}", err.error.code, err.error.message))
+            }
+            JsonRpcResponse::Ok(ok) => Ok(ok.result),
         }
     }
 
-    async fn lsps1_get_info(&mut self, peer_id : &PubKey) -> Result<lsps1::schema::Lsps1InfoResponse> {
-        let response = self.request(peer_id, message::LSPS1_GETINFO, NoParams).await?;
+    async fn lsps1_get_info(
+        &mut self,
+        peer_id: &PublicKey,
+    ) -> Result<lsps1::schema::Lsps1InfoResponse> {
+        let response = self
+            .request(peer_id, message::LSPS1_GETINFO, NoParams)
+            .await?;
         match response {
-            JsonRpcResponse::Error(err) => Err(anyhow!("{} : {}" , err.error.code, err.error.message)),
-            JsonRpcResponse::Ok(ok) => Ok(ok.result)
+            JsonRpcResponse::Error(err) => {
+                Err(anyhow!("{} : {}", err.error.code, err.error.message))
+            }
+            JsonRpcResponse::Ok(ok) => Ok(ok.result),
         }
     }
 
-    async fn lsps1_create_order(&mut self, peer_id : &PubKey, order_request : lsps1::schema::Lsps1CreateOrderRequest) -> Result<lsps1::schema::Lsps1CreateOrderResponse> {
-        let response = self.request(peer_id, message::LSPS1_CREATE_ORDER, order_request).await?;
+    async fn lsps1_create_order(
+        &mut self,
+        peer_id: &PublicKey,
+        order_request: lsps1::schema::Lsps1CreateOrderRequest,
+    ) -> Result<lsps1::schema::Lsps1CreateOrderResponse> {
+        let response = self
+            .request(peer_id, message::LSPS1_CREATE_ORDER, order_request)
+            .await?;
 
         // TODO: We probably want to store this order in the data-store
         match response {
-            JsonRpcResponse::Error(err) => Err(anyhow!("{} :  {}", err.error.code, err.error.message)),
-            JsonRpcResponse::Ok(ok) => Ok(ok.result)
+            JsonRpcResponse::Error(err) => {
+                Err(anyhow!("{} :  {}", err.error.code, err.error.message))
+            }
+            JsonRpcResponse::Ok(ok) => Ok(ok.result),
         }
     }
 }
-
 
 pub fn rpc_request_to_data<I, O, E>(
     json_rpc_id: &JsonRpcId,
@@ -219,4 +159,3 @@ where
     let request_hex = hex::encode(cursor.into_inner());
     Ok(request_hex)
 }
-
