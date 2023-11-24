@@ -402,8 +402,8 @@ mod test {
         assert_eq!(scid, ShortChannelId::from_str("11x12x13").unwrap());
     }
 
-    use secp256k1::SecretKey;
     use secp256k1::Secp256k1;
+    use secp256k1::SecretKey;
 
     #[test]
     fn pubkey_is_serialized_as_hex() {
