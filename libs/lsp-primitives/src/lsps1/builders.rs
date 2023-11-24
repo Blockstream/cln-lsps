@@ -37,8 +37,8 @@ impl Lsps1InfoResponseBuilder {
         self
     }
 
-    pub fn website(mut self, website: String) -> Self {
-        self.website = Some(website);
+    pub fn website(mut self, website: Option<String>) -> Self {
+        self.website = website;
         self
     }
 

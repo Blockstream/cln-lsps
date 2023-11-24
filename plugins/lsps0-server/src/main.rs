@@ -1,3 +1,4 @@
+mod lsps1_utils;
 mod options;
 
 use anyhow::{Context, Result};
@@ -14,8 +15,7 @@ use lsp_primitives::json_rpc::{
 };
 
 use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
-use lsp_primitives::lsps0::schema::{ListprotocolsResponse, PublicKey, SatAmount};
-use lsp_primitives::lsps1;
+use lsp_primitives::lsps0::schema::{ListprotocolsResponse, PublicKey};
 use lsp_primitives::message::{JsonRpcMethodEnum, Lsps1Info};
 
 use cln_lsps0::client::LSPS_MESSAGE_ID;
@@ -57,6 +57,17 @@ async fn main() -> Result<()> {
     let configured_plugin =
         match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
             .option(options::lsps1_info_website())
+            .option(options::lsps1_minimum_channel_confirmations())
+            .option(options::lsps1_minimum_onchain_payment_confirmations())
+            .option(options::lsps1_supports_zero_channel_reserve())
+            .option(options::lsps1_max_channel_expiry_blocks())
+            .option(options::lsps1_min_onchain_payment_size_sat())
+            .option(options::lsps1_min_initial_client_balance_sat())
+            .option(options::lsps1_max_initial_client_balance_sat())
+            .option(options::lsps1_min_initial_lsp_balance_sat())
+            .option(options::lsps1_max_initial_lsp_balance_sat())
+            .option(options::lsps1_min_channel_balance_sat())
+            .option(options::lsps1_max_channel_balance_sat())
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?
@@ -262,7 +273,9 @@ fn list_protocols(
 
     match response {
         Ok(response) => JsonRpcResponse::success(request.id, response),
-        Err(_) => {
+        Err(err) => {
+            log::warn!("Error in handling lsps1.list_protocols call");
+            log::warn!("Error {:?}", err);
             let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
             JsonRpcResponse::error(request.id, error)
         }
@@ -270,34 +283,25 @@ fn list_protocols(
 }
 
 async fn lsps1_get_info(
-    _plugin: Plugin<PluginState>,
+    plugin: Plugin<PluginState>,
     custom_msg_sender: &mut CustomMsgResponder,
     method: Lsps1Info,
     request: JsonRpcRequest<serde_json::Value>,
 ) -> Result<(), PluginError> {
     log::debug!("lsps1_get_info");
     let request = parse_parameters(custom_msg_sender, method.clone(), request).await?;
+    let info_response = lsps1_utils::info_response(plugin.options());
 
-    let options = lsps1::builders::Lsps1OptionsBuilder::new()
-        .min_channel_balance_sat(SatAmount::new(50_000))
-        .max_channel_balance_sat(SatAmount::new(100_000))
-        .min_initial_client_balance_sat(SatAmount::new(0))
-        .max_initial_client_balance_sat(SatAmount::new(0))
-        .min_initial_lsp_balance_sat(SatAmount::new(0))
-        .max_initial_lsp_balance_sat(SatAmount::new(100_000))
-        .max_channel_expiry_blocks(6)
-        .minimum_channel_confirmations(6)
-        .build()?;
-
-    let info_response = lsps1::builders::Lsps1InfoResponseBuilder::new()
-        .supported_versions(vec![1])
-        .website(String::from("http://www.example.com"))
-        .options(options)
-        .build()?;
-
-    let response = method.create_ok_response(request, info_response);
+    let response = match info_response {
+        Ok(ok) => JsonRpcResponse::success(request.id, ok),
+        Err(err) => {
+            log::warn!("Error in handling lsps1.list_protocols call");
+            log::warn!("Error {:?}", err);
+            let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
+            JsonRpcResponse::error(request.id, error)
+        }
+    };
 
     custom_msg_sender.send_custom_msg(response).await?;
-
     return Err(PluginError::Continue);
 }

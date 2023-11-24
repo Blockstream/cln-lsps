@@ -1,14 +1,13 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 
 use crate::lsps0::schema::ListprotocolsResponse;
 
 #[derive(Debug, Default)]
 pub struct ListprotocolsResponseBuilder {
-    protocols : Option<Vec<u32>>,
+    protocols: Option<Vec<u32>>,
 }
 
 impl ListprotocolsResponseBuilder {
-
     pub fn new() -> Self {
         Self::default()
     }
@@ -20,15 +19,12 @@ impl ListprotocolsResponseBuilder {
 
     pub fn build(self) -> Result<ListprotocolsResponse> {
         let protocols = self.protocols.context("Missing field 'protocols'")?;
-        
+
         let result = ListprotocolsResponse {
             protocols,
-            _private : ()
+            _private: (),
         };
 
-        return Ok(result)
+        return Ok(result);
     }
-
 }
-
-

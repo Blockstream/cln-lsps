@@ -14,9 +14,10 @@ plugin = Plugin(
     dynamic=False,
 )
 
+
 def log_custom_msg(**kwargs):
     payload = kwargs.get("payload", "")
-    peer_id = kwargs.get("peer_id", "") 
+    peer_id = kwargs.get("peer_id", "")
 
     plugin.log(f"Received CustomMsg from peer={peer_id} and payload={payload}")
 
@@ -25,7 +26,8 @@ def log_custom_msg(**kwargs):
 
     plugin.log(f"BOLT8_MSG_ID={byte_arr[:2]} and payload={json_rpc}")
 
-    return { "result" : "continue" }
+    return {"result": "continue"}
+
 
 if __name__ == "__main__":
     plugin.add_hook("custommsg", log_custom_msg)
