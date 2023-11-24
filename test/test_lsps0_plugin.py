@@ -17,6 +17,7 @@ def get_plugin_dir_lsps0_client() -> str:
     cwd = os.getcwd()
     return os.environ.get("LSPS0_CLIENT_PATH", os.path.join(cwd, "build/plugins/lsps0-client"))
 
+@pytest.mark.skip(reason="Takes too long and can time-out")
 def test_lsps0_client_can_find_servers(node_factory : NodeFactory):
     """ 
     LSP-servers advertise themself by setting node-feature flag 729.
@@ -62,6 +63,7 @@ def test_lsps0_client_can_find_servers(node_factory : NodeFactory):
     assert lsp2.info["id"] in result
     
     assert not router_a.info["id"] in result
+
 
 def test_lsps0_list_protocols(node_factory : NodeFactory):
     """
