@@ -13,6 +13,7 @@ pub struct Lsps1InfoResponse {
     pub website: Option<String>,
     pub options: Lsps1Options,
     // Prevents struct initialization. Use Lsps1InfoResponseBuilder instead
+    #[serde(skip_serializing, default)]
     pub(crate) _private: (),
 }
 
@@ -31,6 +32,7 @@ pub struct Lsps1Options {
     pub min_channel_balance_sat: SatAmount,
     pub max_channel_balance_sat: SatAmount,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
+    #[serde(skip_serializing, default)]
     pub(crate) _private: (),
 }
 
@@ -46,6 +48,7 @@ pub struct Lsps1CreateOrderRequest {
     #[serde(rename = "announceChannel")]
     pub announce_channel: bool,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
+    #[serde(skip_serializing, default)]
     pub(crate) _private: (),
 }
 
@@ -65,6 +68,7 @@ pub struct Lsps1CreateOrderResponse {
     pub order_state: OrderState,
     pub payment: Payment,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
+    #[serde(skip_serializing, default)]
     pub(crate) _private: (),
 }
 
@@ -96,6 +100,7 @@ pub struct OnchainPayment {
     pub sat: SatAmount,
     pub confirmed: bool,
     // Prevents struct initialization. Use OnchainPaymentBuilder instead
+    #[serde(skip_serializing, default)]
     pub(crate) _private: (),
 }
 
@@ -113,5 +118,60 @@ pub struct Payment {
     pub onchain_payment: Option<OnchainPayment>,
 
     // Prevents struct initialization. Use PaymentBuilder instead
+    #[serde(skip_serializing, default)]
     pub(crate) _private: (),
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn deserialize_lsps1_options() {
+        // Example is copie pasted from the spec
+        let json_data = serde_json::json!(
+        {
+            "minimum_channel_confirmations": 0,
+            "minimum_onchain_payment_confirmations": 1,
+            "supports_zero_channel_reserve": true,
+            "min_onchain_payment_size_sat": null,
+            "max_channel_expiry_blocks": 20160,
+            "min_initial_client_balance_sat": "20000",
+            "max_initial_client_balance_sat": "100000000",
+            "min_initial_lsp_balance_sat": "0",
+            "max_initial_lsp_balance_sat": "100000000",
+            "min_channel_balance_sat": "50000",
+            "max_channel_balance_sat": "100000000"
+        }
+
+        );
+        serde_json::from_value::<Lsps1Options>(json_data).unwrap();
+    }
+
+    #[test]
+    fn deserialize_lsps1_info() {
+        // Example below is copied from the spec
+        let json_data = serde_json::json!(
+        {
+         "supported_versions": [1],
+         "website": "http://example.com/contact",
+         "options": {
+             "minimum_channel_confirmations": 0,
+             "minimum_onchain_payment_confirmations": 1,
+             "supports_zero_channel_reserve": true,
+             "min_onchain_payment_size_sat": null,
+             "max_channel_expiry_blocks": 20160,
+             "min_initial_client_balance_sat": "20000",
+             "max_initial_client_balance_sat": "100000000",
+             "min_initial_lsp_balance_sat": "0",
+             "max_initial_lsp_balance_sat": "100000000",
+             "min_channel_balance_sat": "50000",
+             "max_channel_balance_sat": "100000000"
+         }
+        }
+        );
+
+        serde_json::from_value::<Lsps1InfoResponse>(json_data).unwrap();
+    }
 }
