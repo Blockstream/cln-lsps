@@ -402,15 +402,18 @@ mod test {
         assert_eq!(scid, ShortChannelId::from_str("11x12x13").unwrap());
     }
 
-    use libsecp256k1::SecretKey;
+    use secp256k1::SecretKey;
+    use secp256k1::Secp256k1;
 
     #[test]
     fn pubkey_is_serialized_as_hex() {
         // Generate a public and private keypair
         let mut rng = rand::thread_rng();
-        let secret_key = SecretKey::random(&mut rng);
-        let public_key = _PublicKey::from_secret_key(&secret_key);
-        let pub_key_hex = hex::encode(public_key.serialize_compressed());
+        let s = Secp256k1::signing_only();
+        let secret_key = SecretKey::new(&mut rng);
+
+        let public_key = _PublicKey::from_secret_key(&s, &secret_key);
+        let pub_key_hex = hex::encode(public_key.serialize());
 
         // Convert the to our schema object
         let public_key = PublicKey::from(public_key);
