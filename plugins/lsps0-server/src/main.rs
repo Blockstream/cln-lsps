@@ -12,6 +12,8 @@ use lsp_primitives::json_rpc::{
     DefaultError, ErrorData, JsonRpcId, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse,
     MapErrorCode, NoParams,
 };
+
+use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
 use lsp_primitives::lsps0::schema::{ListprotocolsResponse, PublicKey, SatAmount};
 use lsp_primitives::lsps1;
 use lsp_primitives::message::{JsonRpcMethodEnum, Lsps1Info};
@@ -254,8 +256,17 @@ fn list_protocols(
     request: JsonRpcRequest<NoParams>,
 ) -> JsonRpcResponse<ListprotocolsResponse, DefaultError> {
     log::debug!("ListProtocols");
-    let response = ListprotocolsResponse::new(vec![0, 1]);
-    JsonRpcResponse::success(request.id, response)
+    let response = ListprotocolsResponseBuilder::new()
+        .protocols(vec![0, 1])
+        .build();
+
+    match response {
+        Ok(response) => JsonRpcResponse::success(request.id, response),
+        Err(_) => {
+            let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
+            JsonRpcResponse::error(request.id, error)
+        }
+    }
 }
 
 async fn lsps1_get_info(

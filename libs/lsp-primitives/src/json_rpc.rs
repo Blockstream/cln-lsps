@@ -382,6 +382,14 @@ impl ErrorData<DefaultError> {
             data: None,
         }
     }
+
+    pub fn internal_error(message : String) -> Self {
+        Self {
+            code: -32603,
+            message,
+            data: None
+        }
+    }
 }
 
 impl<O, E> JsonRpcResponse<O, E> {
@@ -393,6 +401,16 @@ impl<O, E> JsonRpcResponse<O, E> {
         };
 
         JsonRpcResponse::Ok(success)
+    }
+
+    pub fn error(id: JsonRpcId, error : ErrorData<E>) -> Self {
+        let error = JsonRpcResponseFailure {
+            id,
+            error : error,
+            jsonrpc : String::from("2.0")
+        };
+
+        JsonRpcResponse::Error(error)
     }
 }
 

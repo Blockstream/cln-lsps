@@ -7,7 +7,7 @@ use crate::lsps1::schema::{
     Lsps1Options, OnchainFeeRate, OnchainPayment, OrderState, Payment, PaymentState,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LspsInfoRequestBuilder;
 
 impl LspsInfoRequestBuilder {
@@ -20,7 +20,7 @@ impl LspsInfoRequestBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Lsps1InfoResponseBuilder {
     supported_versions: Option<Vec<u16>>,
     website: Option<String>,
@@ -70,7 +70,7 @@ impl Lsps1InfoResponseBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Lsps1OptionsBuilder {
     minimum_channel_confirmations: Option<u8>,
     minimum_onchain_payment_confirmations: Option<u8>,
@@ -218,7 +218,7 @@ impl Lsps1OptionsBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Lsps1CreateOrderRequestBuilder {
     api_version: Option<u16>,
     lsp_balance_sat: Option<SatAmount>,
@@ -316,7 +316,7 @@ impl Lsps1CreateOrderRequestBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Lsps1CreateOrderResponseBuilder {
     uuid: Option<Uuid>,
     api_version: Option<u16>,
@@ -445,7 +445,7 @@ impl Lsps1CreateOrderResponseBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct OnchainPaymentBuilder {
     outpoint: Option<String>,
     sat: Option<SatAmount>,
@@ -484,7 +484,7 @@ impl OnchainPaymentBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PaymentBuilder {
     state: Option<PaymentState>,
     fee_total_sat: Option<SatAmount>,
