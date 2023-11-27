@@ -57,50 +57,19 @@ pub fn lsps1_min_onchain_payment_size_sat() -> ConfigOption {
     )
 }
 
-pub fn lsps1_min_initial_client_balance_sat() -> ConfigOption {
+pub fn lsps1_min_capacity() -> ConfigOption {
     ConfigOption::new(
-        "lsps1_min_initial_client_balance_sat",
+        "lsps1_min_capacity",
         Value::OptString,
-        "Minimum number of satoshi that the client MUST request.",
+        "Minimum channel capacity",
     )
 }
 
-pub fn lsps1_max_initial_client_balance_sat() -> ConfigOption {
+pub fn lsps1_max_capacity() -> ConfigOption {
     ConfigOption::new(
-        "lsps1_max_initial_client_balance_sat",
+        "lsps1_max_capacity",
         Value::OptString,
-        "Maximum number of satoshi that the client MUST request.",
+        "Maximum channel capacity",
     )
 }
 
-pub fn lsps1_min_initial_lsp_balance_sat() -> ConfigOption {
-    ConfigOption::new(
-        "lsps1_min_initial_lsp_balance_sat",
-        Value::OptString,
-        "Minimum number of satoshi that the LSP will provide to the channel.",
-    )
-}
-
-pub fn lsps1_max_initial_lsp_balance_sat() -> ConfigOption {
-    ConfigOption::new(
-        "lsps1_max_initial_lsp_balance_sat",
-        Value::OptString,
-        "Maximum number of satoshi that the LSP will provide to the channel.",
-    )
-}
-
-pub fn lsps1_min_channel_balance_sat() -> ConfigOption {
-    ConfigOption::new(
-        "lsps1_min_channel_balance_sat",
-        Value::OptString,
-        "Minimum channel size",
-    )
-}
-
-pub fn lsps1_max_channel_balance_sat() -> ConfigOption {
-    ConfigOption::new(
-        "lsps1_max_channel_balance_sat",
-        Value::OptString,
-        "Maximum Channel size",
-    )
-}

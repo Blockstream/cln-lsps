@@ -13,12 +13,8 @@ pub fn info_response(config_options: Vec<ConfigOption>) -> Result<Lsps1InfoRespo
     let mut lsps1_supports_zero_channel_reserve = Option::<bool>::None;
     let mut lsps1_max_channel_expiry_blocks = Option::<u32>::None;
     let mut lsps1_min_onchain_payment_size_sat = Option::<SatAmount>::None;
-    let mut lsps1_min_initial_client_balance_sat = Option::<SatAmount>::None;
-    let mut lsps1_max_initial_client_balance_sat = Option::<SatAmount>::None;
-    let mut lsps1_min_initial_lsp_balance_sat = Option::<SatAmount>::None;
-    let mut lsps1_max_initial_lsp_balance_sat = Option::<SatAmount>::None;
-    let mut lsps1_min_channel_balance_sat = Option::<SatAmount>::None;
-    let mut lsps1_max_channel_balance_sat = Option::<SatAmount>::None;
+    let mut lsps1_min_capacity = Option::<SatAmount>::None;
+    let mut lsps1_max_capacity = Option::<SatAmount>::None;
 
     for opt in config_options {
         log::info!("{}={:?}", opt.name(), opt.value());
@@ -64,24 +60,12 @@ pub fn info_response(config_options: Vec<ConfigOption>) -> Result<Lsps1InfoRespo
                     log::info!("{}={:?}", opt.name(), opt.value());
                     lsps1_min_onchain_payment_size_sat = Some(parse_option_to_sat(&opt)?);
                 }
+            },
+            "lsps1_min_capacity" => {
+                lsps1_min_capacity = Some(parse_option_to_sat(&opt)?);
             }
-            "lsps1_min_initial_client_balance_sat" => {
-                lsps1_min_initial_client_balance_sat = Some(parse_option_to_sat(&opt)?);
-            }
-            "lsps1_max_initial_client_balance_sat" => {
-                lsps1_max_initial_client_balance_sat = Some(parse_option_to_sat(&opt)?);
-            }
-            "lsps1_min_initial_lsp_balance_sat" => {
-                lsps1_min_initial_lsp_balance_sat = Some(parse_option_to_sat(&opt)?);
-            }
-            "lsps1_max_initial_lsp_balance_sat" => {
-                lsps1_max_initial_lsp_balance_sat = Some(parse_option_to_sat(&opt)?);
-            }
-            "lsps1_min_channel_balance_sat" => {
-                lsps1_min_channel_balance_sat = Some(parse_option_to_sat(&opt)?);
-            }
-            "lsps1_max_channel_balance_sat" => {
-                lsps1_max_channel_balance_sat = Some(parse_option_to_sat(&opt)?);
+            "lsps1_max_capacity" => {
+                lsps1_max_capacity = Some(parse_option_to_sat(&opt)?);
             }
             _ => {
                 // The plugin defines additional config options
@@ -105,30 +89,24 @@ pub fn info_response(config_options: Vec<ConfigOption>) -> Result<Lsps1InfoRespo
         )
         .min_onchain_payment_size_sat(lsps1_min_onchain_payment_size_sat)
         .minimum_onchain_payment_confirmations(lsps1_minimum_onchain_payment_confirmations)
-        .min_initial_client_balance_sat(
-            lsps1_min_initial_client_balance_sat
-                .context("No config specified for `lsps1_min_initial_client_balance_sat`")?,
-        )
-        .max_initial_client_balance_sat(
-            lsps1_max_initial_client_balance_sat
-                .context("No config specified for `lsps1_max_initial_client_balance_sat`")?,
-        )
         .min_initial_lsp_balance_sat(
-            lsps1_min_initial_lsp_balance_sat
-                .context("No config specified for `lsps1_min_initial_lsp_balance_sat`")?,
+            lsps1_min_capacity.clone()
+                .context("No config specified for `lsps1_min_capacity`")?,
         )
         .max_initial_lsp_balance_sat(
-            lsps1_max_initial_lsp_balance_sat
-                .context("No config specified for `lsps1_max_initial_lsp_balance_sat`")?,
+            lsps1_max_capacity.clone()
+                .context("No config specified for `lsps1_max_capacity`")?,
         )
         .min_channel_balance_sat(
-            lsps1_min_channel_balance_sat
-                .context("No config specified for `lsps1_min_channel_balance_sat`")?,
+            lsps1_min_capacity.clone()
+                .context("No config specified for `lsps1_min_capacity`")?,
         )
         .max_channel_balance_sat(
-            lsps1_max_channel_balance_sat
-                .context("No config specified for `lsps1_max_channel_balance_sat`")?,
+            lsps1_max_capacity.clone()
+                .context("No config specified for `lsps1_max_capacity`")?,
         )
+        .min_initial_client_balance_sat(SatAmount::new(0))
+        .max_initial_client_balance_sat(SatAmount::new(0))
         .build()?;
 
     Lsps1InfoResponseBuilder::new()
