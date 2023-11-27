@@ -1,6 +1,10 @@
+/// Defines all RPC-methods
+///
+///
+///
 use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
+pub use crate::lsps0::common_schemas::{NetworkChecked, NetworkUnchecked};
 pub use crate::lsps0::schema::ListprotocolsResponse;
-pub use crate::lsps0::common_schemas::NetworkChecked;
 pub use crate::lsps1::schema::{
     Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
 };
@@ -33,13 +37,15 @@ use anyhow::{anyhow, Result};
 // 2. Add it to the from_method_name function
 // 3. Add it to the ref_erase function
 pub type Lsps0ListProtocols = JsonRpcMethod<NoParams, ListprotocolsResponse, DefaultError>;
-pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
-pub type Lsps1CreateOrder =
-    JsonRpcMethod<Lsps1CreateOrderRequest<NetworkChecked>, Lsps1CreateOrderResponse, DefaultError>;
-pub type Lsps2GetVersions = JsonRpcMethod<NoParams, Lsps2GetVersionsResponse, DefaultError>;
-pub type Lsps2GetInfo = JsonRpcMethod<Lsps2GetInfoRequest, Lsps2GetInfoResponse, Lsps2GetInfoError>;
-pub type Lsps2Buy = JsonRpcMethod<Lsps2BuyRequest, Lsps2BuyResponse, Lsps2BuyError>;
 
+pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
+pub type Lsps1CreateOrder = JsonRpcMethod<
+    Lsps1CreateOrderRequest<NetworkUnchecked>,
+    Lsps1CreateOrderResponse<NetworkChecked>,
+    DefaultError,
+>;
+
+// LSPS0: Transport layer
 pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
     Lsps0ListProtocols::new("lsps0.list_protocols");
 
@@ -47,18 +53,10 @@ pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
 pub const LSPS1_GETINFO: Lsps1Info = Lsps1Info::new("lsps1.info");
 pub const LSPS1_CREATE_ORDER: Lsps1CreateOrder = Lsps1CreateOrder::new("lsps1.create_order");
 
-// LSPS2: JIT-channels
-pub const LSPS2_GET_VERSIONS: Lsps2GetVersions = Lsps2GetVersions::new("lsps2.get_versions");
-pub const LSPS2_GET_INFO: Lsps2GetInfo = Lsps2GetInfo::new("lsps2.get_info");
-pub const LSPS2_BUY: Lsps2Buy = Lsps2Buy::new("lsps2.buy");
-
 pub enum JsonRpcMethodEnum {
     Lsps0ListProtocols(Lsps0ListProtocols),
     Lsps1Info(Lsps1Info),
     Lsps1Order(Lsps1CreateOrder),
-    Lsp2GetVersions(Lsps2GetVersions),
-    Lsps2GetInfo(Lsps2GetInfo),
-    Lsps2Buy(Lsps2Buy),
 }
 
 impl Serialize for JsonRpcMethodEnum {
@@ -107,9 +105,6 @@ impl JsonRpcMethodEnum {
             "lsps0.list_protocols" => Ok(Self::Lsps0ListProtocols(LSPS0_LIST_PROTOCOLS)),
             "lsps1.info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
             "lsps1.create_order" => Ok(Self::Lsps1Order(LSPS1_CREATE_ORDER)),
-            "lsps2.get_versions" => Ok(Self::Lsp2GetVersions(LSPS2_GET_VERSIONS)),
-            "lsps2.get_info" => Ok(Self::Lsps2GetInfo(LSPS2_GET_INFO)),
-            "lsps2.buy" => Ok(Self::Lsps2Buy(LSPS2_BUY)),
             default => Err(anyhow!("Unknown method '{}'", default)),
         }
     }
@@ -119,9 +114,6 @@ impl JsonRpcMethodEnum {
             Self::Lsps0ListProtocols(x) => x.name(),
             Self::Lsps1Info(x) => x.name(),
             Self::Lsps1Order(x) => x.name(),
-            Self::Lsp2GetVersions(x) => x.name(),
-            Self::Lsps2GetInfo(x) => x.name(),
-            Self::Lsps2Buy(x) => x.name(),
         }
     }
 }

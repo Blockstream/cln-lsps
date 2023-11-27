@@ -3,6 +3,9 @@ use core::str::FromStr;
 use std::fmt::{Display, Formatter};
 
 use anyhow::{anyhow, Context, Result};
+use bitcoin::address::Address;
+pub use bitcoin::address::{NetworkChecked, NetworkUnchecked, NetworkValidation};
+pub use bitcoin::network::Network;
 
 use serde::de::Error as SeError;
 use serde::ser::Error as DeError;
@@ -13,6 +16,43 @@ use time::macros::format_description;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
 use crate::secp256k1::PublicKey as _PublicKey;
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct OnchainAddress<V: NetworkValidation> {
+    #[serde(bound(
+        serialize = "Address<V> : Serialize",
+        deserialize = "Address<V> : Deserialize<'de>"
+    ))]
+    pub address: Address<V>,
+}
+
+pub trait NetworkCheckable {
+    type Checked;
+
+    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked>;
+}
+
+impl NetworkCheckable for OnchainAddress<NetworkUnchecked> {
+    type Checked = OnchainAddress<NetworkChecked>;
+
+    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked> {
+        Ok(OnchainAddress {
+            address: self.address.require_network(network)?,
+        })
+    }
+}
+
+impl NetworkCheckable for Option<OnchainAddress<NetworkUnchecked>> {
+    type Checked = Option<OnchainAddress<NetworkChecked>>;
+
+    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked> {
+        match self {
+            Some(x) => Ok(Some(x.require_network(network)?)),
+            None => Ok(None),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PublicKey(_PublicKey);
@@ -427,5 +467,43 @@ mod test {
             pub_key_hex, json_value,
             "The key should be serialized as a compressed hex"
         );
+    }
+
+    #[test]
+    fn deserialize_onchain_address() {
+        let regtest_address_json = "\"bcrt1qkm08480v79rzjp7tx2pjrly423ncv85k65nsmu\"";
+        let parsed =
+            serde_json::from_str::<OnchainAddress<NetworkUnchecked>>(regtest_address_json).unwrap();
+        parsed
+            .clone()
+            .require_network(Network::Regtest)
+            .expect("Is okay because it is a regtest address");
+        parsed
+            .clone()
+            .require_network(Network::Bitcoin)
+            .expect_err("Should fail because the address is not a mainnet address");
+
+        // We don't te test the NetworkChecked case here
+        // Deserializing into a NetworkChecked type
+
+        // This is a compiler error
+        //
+        // let parsed = serde_json::from_str::<OnchainAddress<NetworkChecked>>(regtest_address_json).unwrap();
+    }
+
+    #[test]
+    fn serialize_onchain_address() {
+        // Generate random key pair.
+        let address_unchecked: Address<NetworkUnchecked> =
+            "32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf".parse().unwrap();
+
+        // NetworkUnchecked cannot be serialized
+        let json_value = serde_json::to_value(address_unchecked.clone()).unwrap();
+        assert_eq!(json_value, "32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf");
+
+        // NetworkChecked can be serialized
+        let address_checked = address_unchecked.require_network(Network::Bitcoin).unwrap();
+        let json_value = serde_json::to_value(address_checked).unwrap();
+        assert_eq!(json_value, "32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf");
     }
 }

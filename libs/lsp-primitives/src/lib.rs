@@ -4,6 +4,7 @@ pub mod json_rpc_erased;
 pub mod lsps0;
 pub mod lsps1;
 pub mod lsps2;
-pub mod message;
+
+pub mod methods;
 
 pub use secp256k1;

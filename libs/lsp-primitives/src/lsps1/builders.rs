@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use uuid::Uuid;
 
-use crate::lsps0::schema::{IsoDatetime, SatAmount};
+use crate::lsps0::schema::{IsoDatetime, NetworkChecked, OnchainAddress, SatAmount};
 use crate::lsps1::schema::{
     Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
     Lsps1Options, OnchainFeeRate, OnchainPayment, OrderState, Payment, PaymentState,
@@ -226,7 +226,7 @@ pub struct Lsps1CreateOrderRequestBuilder {
     confirms_within_blocks: Option<u8>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
-    refund_onchain_address: Option<String>,
+    refund_onchain_address: Option<OnchainAddress<NetworkChecked>>,
     announce_channel: Option<bool>,
 }
 
@@ -265,7 +265,10 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn refund_onchain_address(mut self, refund_onchain_address: Option<String>) -> Self {
+    pub fn refund_onchain_address(
+        mut self,
+        refund_onchain_address: Option<OnchainAddress<NetworkChecked>>,
+    ) -> Self {
         self.refund_onchain_address = refund_onchain_address;
         self
     }
@@ -275,7 +278,7 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Lsps1CreateOrderRequest> {
+    pub fn build(self) -> Result<Lsps1CreateOrderRequest<NetworkChecked>> {
         // Required fields
         let api_version = self
             .api_version
@@ -329,7 +332,7 @@ pub struct Lsps1CreateOrderResponseBuilder {
     created_at: Option<IsoDatetime>,
     expires_at: Option<IsoDatetime>,
     order_state: Option<OrderState>,
-    payment: Option<Payment>,
+    payment: Option<Payment<NetworkChecked>>,
 }
 
 impl Lsps1CreateOrderResponseBuilder {
@@ -381,12 +384,12 @@ impl Lsps1CreateOrderResponseBuilder {
         self.order_state = Some(order_state);
         self
     }
-    pub fn payment(mut self, payment: Payment) -> Self {
+    pub fn payment(mut self, payment: Payment<NetworkChecked>) -> Self {
         self.payment = Some(payment);
         self
     }
 
-    pub fn build(self) -> Result<Lsps1CreateOrderResponse> {
+    pub fn build(self) -> Result<Lsps1CreateOrderResponse<NetworkChecked>> {
         //required variables
         let order_id = self
             .uuid
@@ -491,7 +494,7 @@ pub struct PaymentBuilder {
     order_total_sat: Option<SatAmount>,
 
     bolt11_invoice: Option<String>,
-    onchain_address: Option<String>,
+    onchain_address: Option<OnchainAddress<NetworkChecked>>,
     required_onchain_block_confirmations: Option<u8>,
 
     minimum_fee_for_0conf: Option<OnchainFeeRate>,
@@ -519,7 +522,7 @@ impl PaymentBuilder {
         self
     }
 
-    pub fn onchain_address(mut self, onchain_address: String) -> Self {
+    pub fn onchain_address(mut self, onchain_address: OnchainAddress<NetworkChecked>) -> Self {
         self.onchain_address = Some(onchain_address);
         self
     }
@@ -542,7 +545,7 @@ impl PaymentBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Payment> {
+    pub fn build(self) -> Result<Payment<NetworkChecked>> {
         // Required fields
         let state = self.state.context("Missing field 'state'")?;
         let fee_total_sat = self

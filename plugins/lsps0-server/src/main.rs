@@ -16,7 +16,7 @@ use lsp_primitives::json_rpc::{
 
 use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
 use lsp_primitives::lsps0::schema::{ListprotocolsResponse, PublicKey};
-use lsp_primitives::message::{JsonRpcMethodEnum, Lsps1Info};
+use lsp_primitives::methods::server::{JsonRpcMethodEnum, Lsps1Info};
 
 use cln_lsps0::client::LSPS_MESSAGE_ID;
 use cln_lsps0::custom_msg_hook::{RawCustomMsgMessage, RpcCustomMsgMessage};
