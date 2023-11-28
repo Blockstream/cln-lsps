@@ -280,6 +280,20 @@ impl<'de> Deserialize<'de> for MsatAmount {
     }
 }
 
+impl SatAmount {
+    pub fn checked_add(&self, other : &Self) -> Option<Self> {
+        let sat_value = self.0.checked_add(other.0)?;
+        Some(SatAmount::new(sat_value))
+    }
+}
+
+impl MsatAmount {
+    pub fn checked_add(&self, other : &Self) -> Option<Self> {
+        let sat_value = self.0.checked_add(other.0)?;
+        Some(MsatAmount::new(sat_value))
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ShortChannelId(u64);
 
