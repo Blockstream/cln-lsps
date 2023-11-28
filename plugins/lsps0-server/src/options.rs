@@ -72,4 +72,3 @@ pub fn lsps1_max_capacity() -> ConfigOption {
         "Maximum channel capacity",
     )
 }
-
