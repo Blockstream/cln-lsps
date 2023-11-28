@@ -56,7 +56,7 @@ pub const LSPS1_CREATE_ORDER: Lsps1CreateOrder = Lsps1CreateOrder::new("lsps1.cr
 pub enum JsonRpcMethodEnum {
     Lsps0ListProtocols(Lsps0ListProtocols),
     Lsps1Info(Lsps1Info),
-    Lsps1Order(Lsps1CreateOrder),
+    Lsps1CreateOrder(Lsps1CreateOrder),
 }
 
 impl Serialize for JsonRpcMethodEnum {
@@ -104,7 +104,7 @@ impl JsonRpcMethodEnum {
         match value {
             "lsps0.list_protocols" => Ok(Self::Lsps0ListProtocols(LSPS0_LIST_PROTOCOLS)),
             "lsps1.info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
-            "lsps1.create_order" => Ok(Self::Lsps1Order(LSPS1_CREATE_ORDER)),
+            "lsps1.create_order" => Ok(Self::Lsps1CreateOrder(LSPS1_CREATE_ORDER)),
             default => Err(anyhow!("Unknown method '{}'", default)),
         }
     }
@@ -113,7 +113,7 @@ impl JsonRpcMethodEnum {
         match self {
             Self::Lsps0ListProtocols(x) => x.name(),
             Self::Lsps1Info(x) => x.name(),
-            Self::Lsps1Order(x) => x.name(),
+            Self::Lsps1CreateOrder(x) => x.name(),
         }
     }
 }
