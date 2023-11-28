@@ -36,7 +36,7 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
                 format!("You've requested client_balance_sat={} but the LSP-server doesn't allow this value to exceed {}",
                         self.client_balance_sat, 
                         options.max_initial_client_balance_sat)))
-        }
+       }
 
         if self.lsp_balance_sat < options.min_initial_lsp_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
@@ -51,7 +51,7 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
                     "max_initial_lsp_balance_sat".to_string(),
                     format!("You've requested a channel with lsp_balance_sat={} but the LSP-server doesn't allow this value to exceed {}",
                             self.lsp_balance_sat,
-                            options.max_initial_lsp_balance_sat)))
+                            options.max_initial_lsp_balance_sat)));
         }
 
         // Compute the capacity of the channel and validate it
@@ -63,17 +63,18 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
                 return Err(Lsps1OptionMismatchError::new(
                         "max_channel_balance_sat".to_string(),
                         format!("Overflow when computing channel_capacity")
-                    ));}
+                    ));
+            }
         };
-
+        
         if capacity < options.min_channel_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
                     "min_channel_balance_sat".to_string(),
                     format!("You've requested a channel with capacity={} but the LSP-server requires at least {}", 
                             capacity,
                             options.min_channel_balance_sat
-                    )))
-        }
+                    )));
+        };
 
         if capacity > options.max_channel_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
@@ -146,7 +147,6 @@ mod tests {
             .min_initial_lsp_balance_sat(SatAmount::new(1_000))
             .max_initial_lsp_balance_sat(SatAmount::new(100_000))
             .build().unwrap();
-
         let order_1 = get_order_builder()
             .lsp_balance_sat(SatAmount::new(0))
             .build()
@@ -218,5 +218,4 @@ mod tests {
         assert_eq!(err1.property, "min_channel_balance_sat");
         assert_eq!(err2.property, "max_channel_balance_sat");
     }
-
 }
