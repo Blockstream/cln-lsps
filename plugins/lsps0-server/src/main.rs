@@ -1,11 +1,9 @@
+mod custom_msg;
 mod lsps1_utils;
 mod options;
 
 use anyhow::{Context, Result};
 use log;
-
-use cln_rpc::model::requests::SendcustommsgRequest;
-use cln_rpc::ClnRpc;
 
 use cln_plugin::{Builder, Plugin};
 
@@ -14,14 +12,16 @@ use lsp_primitives::json_rpc::{
 };
 
 use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
-use lsp_primitives::lsps0::schema::PublicKey;
+use lsp_primitives::methods::server as server_methods;
 use lsp_primitives::methods::server::JsonRpcMethodEnum;
 
 use cln_lsps0::client::LSPS_MESSAGE_ID;
-use cln_lsps0::custom_msg_hook::{RawCustomMsgMessage, RpcCustomMsgMessage};
+use cln_lsps0::custom_msg_hook::RpcCustomMsgMessage;
 
-use serde::Serialize;
 use serde_json::json;
+
+use crate::custom_msg::context::{CustomMsgContext, CustomMsgContextBuilder};
+use crate::custom_msg::util::send_response;
 
 #[derive(Clone)]
 struct PluginState {}
@@ -62,38 +62,6 @@ async fn main() -> Result<()> {
     return Ok(());
 }
 
-struct CustomMsgResponder {
-    rpc: ClnRpc,
-    peer_id: PublicKey,
-}
-
-impl CustomMsgResponder {
-    fn new(rpc: ClnRpc, peer_id: PublicKey) -> Self {
-        Self { rpc, peer_id }
-    }
-
-    async fn send_response<O, E>(&mut self, response: JsonRpcResponse<O, E>) -> Result<()>
-    where
-        O: Serialize,
-        E: Serialize,
-    {
-        let data: Vec<u8> = serde_json::to_vec(&response)?;
-        let bolt8_msg_id = LSPS_MESSAGE_ID;
-        let raw_msg = RawCustomMsgMessage::create(self.peer_id.clone(), &bolt8_msg_id, &data)?;
-        let rpc_msg = raw_msg.to_rpc()?;
-
-        let send_custom_msg_request = SendcustommsgRequest {
-            node_id: cln_rpc::primitives::PublicKey::from_slice(
-                &rpc_msg.peer_id.inner().serialize(),
-            )?,
-            msg: rpc_msg.payload,
-        };
-
-        let _result = self.rpc.call_typed(send_custom_msg_request).await?;
-        Ok(())
-    }
-}
-
 fn do_continue() -> Result<serde_json::Value> {
     Ok(json!({"result" : "continue"}))
 }
@@ -107,7 +75,7 @@ async fn handle_custom_msg(
     // Opening the cln-rpc connection. We'll use this to send
     // custom messages
     let rpc_path = plugin.configuration().rpc_file;
-    let cln_rpc = cln_rpc::ClnRpc::new(rpc_path).await?;
+    let mut cln_rpc = cln_rpc::ClnRpc::new(rpc_path).await?;
 
     // Parsing the customMsgHook
     // Struct of peer_id and payload
@@ -123,8 +91,6 @@ async fn handle_custom_msg(
         return do_continue();
     }
 
-    let mut custom_msg_sender = CustomMsgResponder::new(cln_rpc, peer_id.clone());
-
     // In a production implementation we probably want to exclude to
     // overly long mesages here as well
     // TODO: Check message length
@@ -139,7 +105,7 @@ async fn handle_custom_msg(
         Err(_) => {
             let error = ErrorData::parse_error(format!("Invalid JSON"));
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(JsonRpcId::None, error);
-            custom_msg_sender.send_response(rpc_response).await?;
+            send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
         }
     };
@@ -153,7 +119,7 @@ async fn handle_custom_msg(
         None => {
             let error = ErrorData::invalid_request(format!("Missing field `id`"));
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(JsonRpcId::None, error);
-            custom_msg_sender.send_response(rpc_response).await?;
+            send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
         }
     };
@@ -168,7 +134,7 @@ async fn handle_custom_msg(
             let error =
                 ErrorData::invalid_request(format!("Invalid JSON-RPC request. {}", parse_error));
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
-            custom_msg_sender.send_response(rpc_response).await?;
+            send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
         }
     };
@@ -182,93 +148,77 @@ async fn handle_custom_msg(
         Err(_) => {
             let error = ErrorData::unknown_method(format!("Method unknown '{}'", method_str));
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
-            custom_msg_sender.send_response(rpc_response).await?;
+            send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
         }
     };
 
     // Execute the handler for the specific method
-    // A handler has a `anyhow::Result<()>` return-type.
-    //
-    // If an error occurs we'll log it and continue.
-    let result: Result<()> = match method {
-        JsonRpcMethodEnum::Lsps0ListProtocols(_) => {
-            do_list_protocols(plugin, peer_id.clone(), json_rpc_request).await
-        }
-        JsonRpcMethodEnum::Lsps1Info(_) => {
-            do_lsps1_get_info(plugin, peer_id.clone(), json_rpc_request).await
-        }
+    // Each handler accepts a `CustomMsgContext` containing all relevant information
+    // Each handler returns a `Result<serde_json::Value>`. The handler should return
+    // {"result" : "continue" }
+    let mut context = CustomMsgContextBuilder::new()
+        .request(json_rpc_request)
+        .plugin(plugin)
+        .peer_id(peer_id.clone())
+        .cln_rpc(cln_rpc)
+        .build()?;
+
+    return match method {
+        JsonRpcMethodEnum::Lsps0ListProtocols(m) => do_list_protocols(m, context).await,
+        JsonRpcMethodEnum::Lsps1Info(m) => do_lsps1_get_info(m, context).await,
         _ => {
             let error = ErrorData::unknown_method(format!("Method unknown '{}'", method_str));
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
-            custom_msg_sender.send_response(rpc_response).await?;
+            send_response(&mut context.cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
         }
     };
-
-    match result {
-        Err(err) => log::warn!("Error in processing '{}'-request: {}", method_str, err),
-        Ok(_) => {}
-    }
-
-    return do_continue();
 }
 
 async fn do_list_protocols(
-    plugin: Plugin<PluginState>,
-    peer_id: PublicKey,
-    request: JsonRpcRequest<serde_json::Value>,
-) -> Result<()> {
+    _method: server_methods::Lsps0ListProtocols,
+    mut context: CustomMsgContext<PluginState>,
+) -> Result<serde_json::Value> {
     // Opening the cln-rpc connection. We'll use this to send
     // custom messages
-    let rpc_path = plugin.configuration().rpc_file;
-    let cln_rpc = cln_rpc::ClnRpc::new(rpc_path).await?;
-    let mut custom_msg_sender = CustomMsgResponder::new(cln_rpc, peer_id);
-
     // Create the response object
     let protocol_list = ListprotocolsResponseBuilder::new()
         .protocols(vec![0, 1])
         .build();
 
     let response = match protocol_list {
-        Ok(pl) => JsonRpcResponse::success(request.id, pl),
+        Ok(pl) => JsonRpcResponse::success(context.request.id, pl),
         Err(err) => {
             log::warn!("Error in handling lsps1.list_protocols call");
             log::warn!("Error {:?}", err);
             let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
-            JsonRpcResponse::error(request.id, error)
+            JsonRpcResponse::error(context.request.id, error)
         }
     };
 
-    custom_msg_sender.send_response(response).await?;
-    return Ok(());
+    send_response(&mut context.cln_rpc, context.peer_id, response).await?;
+    do_continue()
 }
 
 async fn do_lsps1_get_info(
-    plugin: Plugin<PluginState>,
-    peer_id: PublicKey,
-    request: JsonRpcRequest<serde_json::Value>,
-) -> Result<()> {
+    _method: server_methods::Lsps1Info,
+    mut context: CustomMsgContext<PluginState>,
+) -> Result<serde_json::Value> {
     log::debug!("lsps1_get_info");
 
-    // Opening the cln-rpc connection. We'll use this to send
-    // custom messages
-    let rpc_path = plugin.configuration().rpc_file;
-    let cln_rpc = cln_rpc::ClnRpc::new(rpc_path).await?;
-    let mut custom_msg_sender = CustomMsgResponder::new(cln_rpc, peer_id);
-
-    let info_response = lsps1_utils::info_response(plugin.options());
+    let info_response = lsps1_utils::info_response(context.plugin.options());
 
     let response = match info_response {
-        Ok(ok) => JsonRpcResponse::success(request.id, ok),
+        Ok(ok) => JsonRpcResponse::success(context.request.id, ok),
         Err(err) => {
             log::warn!("Error in handling lsps1.list_protocols call");
             log::warn!("Error {:?}", err);
             let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
-            JsonRpcResponse::error(request.id, error)
+            JsonRpcResponse::error(context.request.id, error)
         }
     };
 
-    custom_msg_sender.send_response(response).await?;
-    Ok(())
+    send_response(&mut context.cln_rpc, context.peer_id, response).await?;
+    do_continue()
 }
