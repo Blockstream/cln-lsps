@@ -49,6 +49,9 @@ async fn main() -> Result<()> {
             .option(options::lsps1_min_onchain_payment_size_sat())
             .option(options::lsps1_min_capacity())
             .option(options::lsps1_max_capacity())
+            .option(options::lsps1_fee_computation_base_fee_sat())
+            .option(options::lsps1_fee_computation_onchain_ppm())
+            .option(options::lsps1_fee_computation_liquidity_ppb())
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?

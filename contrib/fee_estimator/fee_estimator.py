@@ -190,9 +190,9 @@ def compute_fee(data):
     base_fee = x[0]
     ppb = x[1]
 
-    print(f"lsps1_base_fee_sat=                  {base_fee:10_.0f} sat")
-    print(f"lsps1_liquidity_locking_fee_ppb=     {ppb*1e9:10_.0f}")
-    print(f"lsps1_onchain_fee_ppm=               {1_000_000:10_.0f}")
+    print(f"lsps1_fee_computation_base_base_sat=  {base_fee:10_.0f} sat")
+    print(f"lsps1_fee_computation_onchain_ppm=    {ppb*1e9:10_.0f}")
+    print(f"lsps1_fee_computation_liquidity_ppb=  {1_000_000:10_.0f}")
 
 
 if __name__ == "__main__":
