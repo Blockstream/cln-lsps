@@ -1,49 +1,45 @@
-use anyhow::Result;
 use crate::lsps0::common_schemas::NetworkValidation;
 use crate::lsps1::schema::{Lsps1CreateOrderRequest, Lsps1Options};
+use anyhow::Result;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Lsps1OptionMismatchError {
-    property : String,
-    message : String
+    property: String,
+    message: String,
 }
 
 impl Lsps1OptionMismatchError {
-
-    fn new(property : String, message : String) -> Self {
-        Self {property, message}
+    fn new(property: String, message: String) -> Self {
+        Self { property, message }
     }
 }
 
-
-impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
-
-    pub fn validate_options(&self, options : &Lsps1Options) -> Result<(), Lsps1OptionMismatchError> {
-
+impl<V: NetworkValidation> Lsps1CreateOrderRequest<V> {
+    pub fn validate_options(&self, options: &Lsps1Options) -> Result<(), Lsps1OptionMismatchError> {
         if self.client_balance_sat < options.min_initial_client_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
                 "min_initial_client_balance_sat".to_string(), 
                 format!("You've requested client_balance_sat={} but the LSP-server requires at least {}",
-                        self.client_balance_sat, 
-                        options.min_initial_client_balance_sat)))
+                        self.client_balance_sat,
+                        options.min_initial_client_balance_sat)));
         }
 
         if self.client_balance_sat > options.max_initial_client_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
                 "max_initial_client_balance_sat".to_string(), 
                 format!("You've requested client_balance_sat={} but the LSP-server doesn't allow this value to exceed {}",
-                        self.client_balance_sat, 
-                        options.max_initial_client_balance_sat)))
-       }
+                        self.client_balance_sat,
+                        options.max_initial_client_balance_sat)));
+        }
 
         if self.lsp_balance_sat < options.min_initial_lsp_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
                     "min_initial_lsp_balance_sat".to_string(),
                     format!("You've requested a channel with lsp_balance_sat={} but the LSP-server requires at least {}",
                             self.lsp_balance_sat,
-                            options.min_initial_lsp_balance_sat)))
+                            options.min_initial_lsp_balance_sat)));
         }
 
         if self.lsp_balance_sat > options.max_initial_lsp_balance_sat {
@@ -61,12 +57,12 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
             Some(c) => c,
             None => {
                 return Err(Lsps1OptionMismatchError::new(
-                        "max_channel_balance_sat".to_string(),
-                        format!("Overflow when computing channel_capacity")
-                    ));
+                    "max_channel_balance_sat".to_string(),
+                    format!("Overflow when computing channel_capacity"),
+                ));
             }
         };
-        
+
         if capacity < options.min_channel_balance_sat {
             return Err(Lsps1OptionMismatchError::new(
                     "min_channel_balance_sat".to_string(),
@@ -82,7 +78,7 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
                     format!("You've requested a channel with capacity={} but the LSP-server only allows values up to {}",
                             capacity,
                             options.max_channel_balance_sat
-                            )))
+                            )));
         }
 
         // Verify the channel_expiry_blocks
@@ -92,9 +88,9 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
                     format!("You've requested to lease a channel for channel_expiry_block={} but the LSP-server only allows max_channel_expiry_blocks={}",
                             self.channel_expiry_blocks,
                             options.max_channel_expiry_blocks
-                            )))
+                            )));
         }
-        return Ok(())
+        return Ok(());
     }
 }
 
@@ -102,7 +98,7 @@ impl<V : NetworkValidation> Lsps1CreateOrderRequest<V> {
 mod tests {
 
     use crate::lsps0::common_schemas::SatAmount;
-    use crate::lsps1::builders::{Lsps1OptionsBuilder,Lsps1CreateOrderRequestBuilder};
+    use crate::lsps1::builders::{Lsps1CreateOrderRequestBuilder, Lsps1OptionsBuilder};
 
     fn get_options_builder() -> Lsps1OptionsBuilder {
         Lsps1OptionsBuilder::new()
@@ -142,11 +138,11 @@ mod tests {
 
     #[test]
     fn test_validate_order_against_options_lsp_balance_sat_error() {
-
         let options = get_options_builder()
             .min_initial_lsp_balance_sat(SatAmount::new(1_000))
             .max_initial_lsp_balance_sat(SatAmount::new(100_000))
-            .build().unwrap();
+            .build()
+            .unwrap();
         let order_1 = get_order_builder()
             .lsp_balance_sat(SatAmount::new(0))
             .build()
@@ -162,7 +158,6 @@ mod tests {
 
         assert_eq!(err1.property, "min_initial_lsp_balance_sat");
         assert_eq!(err2.property, "max_initial_lsp_balance_sat");
-
     }
 
     #[test]
@@ -170,7 +165,8 @@ mod tests {
         let options = get_options_builder()
             .min_initial_client_balance_sat(SatAmount::new(1_000))
             .max_initial_client_balance_sat(SatAmount::new(100_000))
-            .build().unwrap();
+            .build()
+            .unwrap();
 
         let order_1 = get_order_builder()
             .client_balance_sat(SatAmount::new(0))
@@ -198,7 +194,8 @@ mod tests {
             .max_initial_lsp_balance_sat(SatAmount::new(100_000))
             .min_channel_balance_sat(SatAmount::new(10_000))
             .max_channel_balance_sat(SatAmount::new(100_000))
-            .build().unwrap();
+            .build()
+            .unwrap();
 
         let order_1 = get_order_builder()
             .client_balance_sat(SatAmount::new(1_000))
