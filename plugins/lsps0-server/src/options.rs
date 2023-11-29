@@ -78,7 +78,7 @@ pub fn lsps1_fee_computation_base_fee_sat() -> ConfigOption {
         "lsps1_fee_computation_base_fee_sat",
         Value::String("2000".to_string()),
         "Base fee used for onchain cost for fee-computation LSPS1",
-        )
+    )
 }
 
 pub fn lsps1_fee_computation_onchain_ppm() -> ConfigOption {
@@ -86,12 +86,21 @@ pub fn lsps1_fee_computation_onchain_ppm() -> ConfigOption {
         "lsps1_fee_computation_onchain_ppm",
         Value::Integer(1_000_000),
         "Multiplier used for onchain-cost for fee-computation LSPS1",
-        )
+    )
 }
 
 pub fn lsps1_fee_computation_liquidity_ppb() -> ConfigOption {
     ConfigOption::new(
         "lsps1_fee_computation_liquidity_ppb",
         Value::Integer(400),
-        "Multiplier used to represent liquidity cost for fee-computaiton LSPS1")
+        "Multiplier used to represent liquidity cost for fee-computaiton LSPS1",
+    )
+}
+
+pub fn lsps1_order_lifetime_seconds() -> ConfigOption {
+    ConfigOption::new(
+        "lsps1_order_lifetime",
+        Value::Integer(3600 * 6),
+        "The amount of seconds an order is deemd valid",
+    )
 }

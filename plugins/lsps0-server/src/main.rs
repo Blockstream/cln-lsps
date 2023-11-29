@@ -52,6 +52,7 @@ async fn main() -> Result<()> {
             .option(options::lsps1_fee_computation_base_fee_sat())
             .option(options::lsps1_fee_computation_onchain_ppm())
             .option(options::lsps1_fee_computation_liquidity_ppb())
+            .option(options::lsps1_order_lifetime_seconds())
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?
