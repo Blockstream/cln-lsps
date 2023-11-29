@@ -25,6 +25,6 @@ impl ListprotocolsResponseBuilder {
             _private: (),
         };
 
-        return Ok(result);
+        Ok(result)
     }
 }

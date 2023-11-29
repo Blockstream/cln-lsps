@@ -260,7 +260,7 @@ mod test {
         let address: bitcoin::address::Address<NetworkChecked> =
             address.require_network(Network::Bitcoin).unwrap();
 
-        let onchain = OnchainAddress { address: address };
+        let onchain = OnchainAddress { address };
 
         let request = Lsps1CreateOrderRequest {
             api_version: 1,

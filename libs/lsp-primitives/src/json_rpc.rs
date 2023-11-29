@@ -148,7 +148,7 @@ where
     E: MapErrorCode,
 {
     pub fn create_request_no_params(&self, json_rpc_id: JsonRpcId) -> JsonRpcRequest<NoParams> {
-        self.create_request(NoParams::default(), json_rpc_id)
+        self.create_request(NoParams, json_rpc_id)
     }
 }
 
@@ -246,17 +246,17 @@ impl<I> JsonRpcRequest<I> {
     where
         E: MapErrorCode,
     {
-        return Self {
+        Self {
             jsonrpc: String::from("2.0"),
             id: generate_random_rpc_id(),
             method: method.method.into(),
             params,
-        };
+        }
     }
 }
 
 impl JsonRpcRequest<serde_json::Value> {
-    pub fn deserialize<'de, I>(self) -> Result<JsonRpcRequest<I>, serde_json::Error>
+    pub fn deserialize<I>(self) -> Result<JsonRpcRequest<I>, serde_json::Error>
     where
         I: DeserializeOwned,
     {
@@ -275,12 +275,12 @@ impl JsonRpcRequest<NoParams> {
     where
         E: MapErrorCode,
     {
-        return Self {
+        Self {
             jsonrpc: String::from("2.0"),
             id: generate_random_rpc_id(),
             method: method.method.into(),
-            params: NoParams::default(),
-        };
+            params: NoParams,
+        }
     }
 }
 
@@ -333,7 +333,7 @@ where
     E: MapErrorCode,
 {
     pub fn code_str(&self) -> &str {
-        return E::get_code_str(self.code);
+        E::get_code_str(self.code)
     }
 }
 
@@ -406,7 +406,7 @@ impl<O, E> JsonRpcResponse<O, E> {
     pub fn error(id: JsonRpcId, error: ErrorData<E>) -> Self {
         let error = JsonRpcResponseFailure {
             id,
-            error: error,
+            error,
             jsonrpc: String::from("2.0"),
         };
 
@@ -434,7 +434,7 @@ mod test {
 
     #[test]
     fn serialize_no_params() {
-        let no_params = NoParams::default();
+        let no_params = NoParams;
         let json_str = serde_json::to_string(&no_params).unwrap();
 
         assert_eq!(json_str, "{}")
@@ -450,7 +450,7 @@ mod test {
         let rpc_request = JsonRpcRequest {
             id: "abcefg".into(),
             jsonrpc: "2.0".into(),
-            params: NoParams::default(),
+            params: NoParams,
             method: "test.method".into(),
         };
 
@@ -514,7 +514,7 @@ mod test {
 
         assert_eq!(rpc_request.method, "test.method");
         assert_eq!(rpc_request.jsonrpc, "2.0");
-        assert_eq!(rpc_request.params, NoParams::default());
+        assert_eq!(rpc_request.params, NoParams);
     }
 
     #[test]

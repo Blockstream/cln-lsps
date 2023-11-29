@@ -14,20 +14,20 @@ impl FromStr for FeatureBitMap {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let hex = hex::decode(s).with_context(|| format!("Failed to parse feature-bitmap"))?;
-        return Ok(FeatureBitMap(hex));
+        let hex = hex::decode(s).context("Failed to parse feature-bitmap")?;
+        Ok(FeatureBitMap(hex))
     }
 }
 
 impl AsRef<[u8]> for &FeatureBitMap {
     fn as_ref(&self) -> &[u8] {
-        return &self.0;
+        &self.0
     }
 }
 
 impl FeatureBitMap {
     pub fn new(bitmap: Vec<u8>) -> Self {
-        return FeatureBitMap(bitmap);
+        FeatureBitMap(bitmap)
     }
 }
 
@@ -45,7 +45,7 @@ pub fn is_feature_bit_enabled<T: AsRef<[u8]>>(bitmap: T, index: usize) -> bool {
     let selected_byte = bm[n_bytes - 1 - byte_index];
     let bit_mask = 1u8 << (bit_index);
 
-    return (selected_byte & bit_mask) != 0;
+    (selected_byte & bit_mask) != 0
 }
 
 #[cfg(test)]
@@ -55,14 +55,14 @@ mod test {
     #[test]
     fn test_parse_bitmap() {
         // Check the lowest bits in the bitmap
-        let feature_bitmap_00 = FeatureBitMap::from_str(&"01").unwrap();
-        let feature_bitmap_01 = FeatureBitMap::from_str(&"02").unwrap();
-        let feature_bitmap_02 = FeatureBitMap::from_str(&"04").unwrap();
-        let feature_bitmap_03 = FeatureBitMap::from_str(&"08").unwrap();
-        let feature_bitmap_04 = FeatureBitMap::from_str(&"10").unwrap();
-        let feature_bitmap_05 = FeatureBitMap::from_str(&"20").unwrap();
-        let feature_bitmap_06 = FeatureBitMap::from_str(&"40").unwrap();
-        let feature_bitmap_07 = FeatureBitMap::from_str(&"80").unwrap();
+        let feature_bitmap_00 = FeatureBitMap::from_str("01").unwrap();
+        let feature_bitmap_01 = FeatureBitMap::from_str("02").unwrap();
+        let feature_bitmap_02 = FeatureBitMap::from_str("04").unwrap();
+        let feature_bitmap_03 = FeatureBitMap::from_str("08").unwrap();
+        let feature_bitmap_04 = FeatureBitMap::from_str("10").unwrap();
+        let feature_bitmap_05 = FeatureBitMap::from_str("20").unwrap();
+        let feature_bitmap_06 = FeatureBitMap::from_str("40").unwrap();
+        let feature_bitmap_07 = FeatureBitMap::from_str("80").unwrap();
 
         // Check that the expected bit is enabled
         assert!(is_feature_bit_enabled(&feature_bitmap_00, 0));
@@ -93,7 +93,7 @@ mod test {
         // Copied from LSPS0
         // This set bit number 729
         let data = "0200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-        let bitmap = FeatureBitMap::from_str(&data).unwrap();
+        let bitmap = FeatureBitMap::from_str(data).unwrap();
 
         // Check that the expected bit is enabled
         assert!(is_feature_bit_enabled(&bitmap, LSP_SERVER_FEATURE_BIT));

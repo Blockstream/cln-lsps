@@ -122,7 +122,7 @@ impl PublicKey {
 
     pub fn to_hex(key: Self) -> String {
         let data = key.0.serialize();
-        return hex::encode(data);
+        hex::encode(data)
     }
 
     pub fn inner(self) -> _PublicKey {
@@ -313,7 +313,7 @@ impl<'de> Deserialize<'de> for ShortChannelId {
     {
         use serde::de::Error;
         let s: String = Deserialize::deserialize(deserializer)?;
-        Ok(Self::from_str(&s).map_err(|e| Error::custom(e.to_string()))?)
+        Self::from_str(&s).map_err(|e| Error::custom(e.to_string()))
     }
 }
 
@@ -329,7 +329,7 @@ impl FromStr for ShortChannelId {
         }
 
         Ok(ShortChannelId(
-            (parts[0] << 40) | (parts[1] << 16) | (parts[2] << 0),
+            (parts[0] << 40) | (parts[1] << 16) | parts[2],
         ))
     }
 }
@@ -346,7 +346,7 @@ impl ShortChannelId {
         (self.0 >> 16) as u32 & 0xFFFFFF
     }
     pub fn outnum(&self) -> u16 {
-        self.0 as u16 & 0xFFFF
+        self.0 as u16
     }
 }
 

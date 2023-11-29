@@ -12,11 +12,11 @@ pub struct LspsInfoRequestBuilder;
 
 impl LspsInfoRequestBuilder {
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 
     pub fn build() -> Lsps1InfoRequest {
-        return Lsps1InfoRequest {};
+        Lsps1InfoRequest {}
     }
 }
 
@@ -66,7 +66,7 @@ impl Lsps1InfoResponseBuilder {
             _private: (),
         };
 
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -191,17 +191,17 @@ impl Lsps1OptionsBuilder {
         let min_onchain_payment_size_sat = self.min_onchain_payment_size_sat;
         let minimum_onchain_payment_confirmations = self.minimum_onchain_payment_confirmations;
 
-        if !(min_channel_balance_sat <= max_channel_balance_sat) {
+        if min_channel_balance_sat > max_channel_balance_sat {
             return Err(anyhow!("min_channel_balance_sat ({}) should be less than or equal to max_channel_balance_sat ({})", min_channel_balance_sat, max_channel_balance_sat));
         }
-        if !(min_initial_client_balance_sat <= max_initial_client_balance_sat) {
+        if min_initial_client_balance_sat > max_initial_client_balance_sat {
             return Err(anyhow!("min_initial_client_balance_sat ({}) should be less than or equal to max_initial_client_balance_sat ({})", min_initial_client_balance_sat, max_initial_client_balance_sat));
         }
-        if !(min_initial_lsp_balance_sat <= max_initial_lsp_balance_sat) {
+        if min_initial_lsp_balance_sat > max_initial_lsp_balance_sat {
             return Err(anyhow!("min_initial_lsp_balance_sat ({}) should be less than or equal to max_initial_lsp_balance_sat ({})", min_initial_lsp_balance_sat, max_initial_lsp_balance_sat));
         }
 
-        return Ok(Lsps1Options {
+        Ok(Lsps1Options {
             minimum_channel_confirmations,
             minimum_onchain_payment_confirmations,
             supports_zero_channel_reserve,
@@ -214,7 +214,7 @@ impl Lsps1OptionsBuilder {
             min_channel_balance_sat,
             max_channel_balance_sat,
             _private: (),
-        });
+        })
     }
 }
 
@@ -625,7 +625,7 @@ mod tests {
 
         assert_eq!(lsps1_options.minimum_channel_confirmations, 6);
         assert_eq!(lsps1_options.minimum_onchain_payment_confirmations, Some(6));
-        assert_eq!(lsps1_options.supports_zero_channel_reserve, false);
+        assert!(!lsps1_options.supports_zero_channel_reserve);
         assert_eq!(lsps1_options.max_channel_expiry_blocks, 5);
         assert_eq!(
             lsps1_options.min_onchain_payment_size_sat.unwrap(),
