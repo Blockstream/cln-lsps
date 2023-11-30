@@ -58,7 +58,7 @@ impl<V: NetworkValidation> Lsps1CreateOrderRequest<V> {
             None => {
                 return Err(Lsps1OptionMismatchError::new(
                     "max_channel_balance_sat".to_string(),
-                    "Overflow when computing channel_capacity".to_string()
+                    "Overflow when computing channel_capacity".to_string(),
                 ));
             }
         };

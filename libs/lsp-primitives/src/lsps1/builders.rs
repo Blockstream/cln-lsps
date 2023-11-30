@@ -280,24 +280,17 @@ impl Lsps1CreateOrderRequestBuilder {
 
     pub fn build(self) -> Result<Lsps1CreateOrderRequest<NetworkChecked>> {
         // Required fields
-        let api_version = self
-            .api_version
-            .context("Missing field 'api_version' in Lsps1CreateOrderRequestBuilder")?;
         let lsp_balance_sat = self
             .lsp_balance_sat
             .context("Missing field 'lsp_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
-        let client_balance_sat = self
-            .client_balance_sat
-            .context("Missing field 'client_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
-        let confirms_within_blocks = self
-            .confirms_within_blocks
-            .context("Missing field 'confirms_within_blocks' in Lsps1CreateOrderRequestBuilder")?;
         let channel_expiry_blocks = self
             .channel_expiry_blocks
             .context("Missing field 'channel_expirty_blocks' in Lsps1CreateOrderRequestBuilder")?;
-        let announce_channel = self
-            .announce_channel
-            .context("Missing field 'announce_channel' in Lsps1CreateOrderRequestBuilder")?;
+        // Fields that allow for reasonable defaults
+        let api_version = self.api_version.unwrap_or(1);
+        let client_balance_sat = self.client_balance_sat.unwrap_or(SatAmount::new(0));
+        let announce_channel = self.announce_channel.unwrap_or(false);
+        let confirms_within_blocks = self.confirms_within_blocks.unwrap_or(6);
 
         // Non-required fields
         let token = self.token;
