@@ -131,7 +131,7 @@ pub enum OrderState {
     #[serde(rename = "CREATED")]
     Created,
     #[serde(rename = "COMPLETED")]
-    Completedwy,
+    Completed,
     #[serde(rename = "FAILED")]
     Failed,
 }
@@ -142,8 +142,8 @@ pub enum PaymentState {
     ExpectPayment,
     #[serde(rename = "HOLD")]
     Hold,
-    #[serde(rename = "STATE")]
-    State,
+    #[serde(rename = "PAID")]
+    Paid,
     #[serde(rename = "REFUNDED")]
     Refunded,
 }
