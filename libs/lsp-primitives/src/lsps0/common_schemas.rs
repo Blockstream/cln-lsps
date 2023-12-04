@@ -120,8 +120,8 @@ impl PublicKey {
         Ok(PublicKey(publickey))
     }
 
-    pub fn to_hex(key: Self) -> String {
-        let data = key.0.serialize();
+    pub fn to_hex(&self) -> String {
+        let data = self.0.serialize();
         hex::encode(data)
     }
 
@@ -153,6 +153,11 @@ const DATETIME_FORMAT: &[FormatItem] =
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z");
 
 impl IsoDatetime {
+
+    pub fn now() -> Self {
+        Self::from_offset_date_time(time::OffsetDateTime::now_utc())
+    }
+
     pub fn from_offset_date_time(datetime: OffsetDateTime) -> Self {
         let offset = time::UtcOffset::from_whole_seconds(0).unwrap();
         let datetime_utc = datetime.to_offset(offset);

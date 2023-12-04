@@ -1,12 +1,13 @@
 use uuid::Uuid;
 
 use crate::db::schema::Lsps1Order as Lsps1OrderBase;
-use lsp_primitives::lsps0::common_schemas::{SatAmount, IsoDatetime};
+use lsp_primitives::lsps0::common_schemas::{SatAmount, IsoDatetime, PublicKey};
 
 
 #[derive(sqlx::FromRow)]
 pub struct Lsps1Order {
     pub (crate) uuid : String,
+    pub (crate) client_node_id : String,
     pub (crate) lsp_balance_sat : i64,
     pub (crate) client_balance_sat : i64,
     pub (crate) confirms_within_blocks : i64,
@@ -26,6 +27,7 @@ impl TryFrom<&Lsps1Order> for Lsps1OrderBase {
         Ok(
             Self {
                 uuid : Uuid::parse_str(&order.uuid)?,
+                client_node_id : PublicKey::from_hex(&order.client_node_id)?,
                 lsp_balance_sat : SatAmount::new(u64::try_from(order.lsp_balance_sat)?),
                 client_balance_sat : SatAmount::new(u64::try_from(order.client_balance_sat)?),
                 confirms_within_blocks : u8::try_from(order.confirms_within_blocks)?,
@@ -47,6 +49,7 @@ impl TryFrom<&Lsps1OrderBase> for Lsps1Order {
         Ok(
             Self {
                 uuid : order.uuid.to_string(),
+                client_node_id : order.client_node_id.to_hex(),
                 lsp_balance_sat : i64::try_from(order.lsp_balance_sat.sat_value())?,
                 client_balance_sat : i64::try_from(order.client_balance_sat.sat_value())?,
                 confirms_within_blocks : i64::try_from(order.confirms_within_blocks)?,

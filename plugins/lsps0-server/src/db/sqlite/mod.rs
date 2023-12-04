@@ -5,9 +5,10 @@ use anyhow::{Context, Result, anyhow};
 
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use uuid::Uuid;
+
+use lsp_primitives::lsps0::common_schemas::IsoDatetime;
 use crate::db::schema::Lsps1Order;
 use crate::db::sqlite::schema::Lsps1Order as Lsps1OrderSqlite;
-
 
 struct Database {
     pool: SqlitePool,
@@ -20,30 +21,63 @@ impl Database {
     }
 
     pub async fn create_order(&self, order: &Lsps1Order) ->Result<()> {
+        // Convert all data to sqlite types
+        // All integer types are i64, OnchainAddresses become String, ...
+        let now = IsoDatetime::now().unix_timestamp();
         let order = Lsps1OrderSqlite::try_from(order)?;
 
-       let query = sqlx::query!(r#"
+        // Create the transaction
+        let mut tx = self.pool.begin().await?;
+
+        // Insert the order
+        struct IdType{pub id : i64}
+
+        // Create the entry in the lsps1_order table
+        let order_id = sqlx::query_as!(
+            IdType,
+            r#"
             INSERT INTO lsps1_order (
-              uuid, lsp_balance_sat, client_balance_sat, confirms_within_blocks, channel_expiry_blocks,
-              token, refund_onchain_address, announce_channel, created_at, expires_at
+              uuid, client_node_id,
+              lsp_balance_sat, client_balance_sat,
+              confirms_within_blocks, channel_expiry_blocks,
+              token, refund_onchain_address,
+              announce_channel, created_at,
+              expires_at
             ) VALUES (
-                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10
-            );"#, 
-            order.uuid, order.lsp_balance_sat, order.client_balance_sat, order.confirms_within_blocks, order.channel_expiry_blocks,
-            order.token, order.refund_onchain_address, order.announce_channel,
-            order.created_at, order.expires_at);
-            
-        let _query_result = query
-            .execute(&self.pool)
-            .await
-            .map_err(|err| anyhow!("Error while executing query. {:?}", err))?;
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11
+            )
+            RETURNING id;"#,
+            order.uuid, order.client_node_id,
+            order.lsp_balance_sat, order.client_balance_sat,
+            order.confirms_within_blocks, order.channel_expiry_blocks,
+            order.token, order.refund_onchain_address,
+            order.announce_channel, order.created_at,
+            order.expires_at)
+            .fetch_optional(&mut *tx)
+            .await?
+            .ok_or(anyhow!("Failed to insert order into database"))?;
+
+        // Give the order a state
+        sqlx::query!(
+            r#"INSERT INTO lsps1_order_state (
+                order_id, order_state_enum_id,
+                created_at
+             ) VALUES (
+                ?1, ?2, ?3
+             );"#,
+             order_id.id, 1, now)
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
 
         return Ok(())
     }
 
     pub async fn get_order_by_uuid(&self, uuid : Uuid) -> Result<Option<Lsps1Order>> {
         let uuid_string = uuid.to_string();
-        let result = sqlx::query_as!(Lsps1OrderSqlite, r#"SELECT  * FROM lsps1_order where uuid = ?"#, uuid_string)
+        let result = sqlx::query_as!(Lsps1OrderSqlite, 
+                                     r#"SELECT  uuid, client_node_id, lsp_balance_sat, client_balance_sat, confirms_within_blocks, channel_expiry_blocks, token, refund_onchain_address, announce_channel, created_at, expires_at FROM lsps1_order where uuid = ?"#, uuid_string)
             .fetch_optional(&self.pool).await.context("Failed to execute query")?;
 
         match result {
@@ -55,11 +89,24 @@ impl Database {
     #[cfg(test)]
     pub async fn delete_order_by_uuid(&self, uuid : Uuid) -> Result<()> {
         let uuid_string = uuid.to_string();
-        sqlx::query!("DELETE FROM lsps1_order where uuid = ?1", uuid_string)
-            .execute(&self.pool)
-            .await
-            .context("Failed to execute delete_order query")
-            .map(|_| ())
+
+        // Start the transaction
+        let mut tx = self.pool.begin().await?;
+
+        // Remove the state of the order
+        sqlx::query!(
+            r#"
+            WITH to_delete as (SELECT id from lsps1_order WHERE uuid = ?1)
+            DELETE FROM lsps1_order_state where id in to_delete;"#,
+            uuid_string
+            ).execute(&mut *tx)
+            .await?;
+
+        sqlx::query!("DELETE FROM lsps1_order where uuid = ?1;", uuid_string)
+            .execute(&mut *tx)
+            .await?;
+
+        Ok(())
     }
 
 
@@ -68,7 +115,7 @@ impl Database {
 #[cfg(test)]
 mod test {
     use super::*;
-    use lsp_primitives::lsps0::common_schemas::{SatAmount, IsoDatetime};
+    use lsp_primitives::lsps0::common_schemas::{SatAmount, IsoDatetime, PublicKey};
 
     use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
@@ -76,7 +123,6 @@ mod test {
         let options = SqliteConnectOptions::default()
             .filename("./data/lsp_server.db")
             .create_if_missing(true);
-        println!("{:?}", options);
         Database::connect_with_options(options).await.unwrap()
     }
 
@@ -93,6 +139,7 @@ mod test {
         let expires_at = SystemTime::now().checked_add(Duration::from_secs(60*60*24)).unwrap().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
         let order = Lsps1Order {
             uuid,
+            client_node_id : PublicKey::from_hex("026d58c2b93d278acef549167e34cf6c541fc2332b1e36e7fe57e54576cd5fa170").unwrap(),
             lsp_balance_sat : SatAmount::new(100_000),
             client_balance_sat : SatAmount::new(0),
             confirms_within_blocks: 0,
@@ -126,5 +173,6 @@ mod test {
 
         // Remove the entry from the database
         db.delete_order_by_uuid(uuid).await.unwrap();
+        println!("Deleted orders");
     }
 }
