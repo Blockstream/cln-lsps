@@ -1,10 +1,14 @@
 mod custom_msg;
+mod db;
 mod lsps1_utils;
 mod options;
+
+use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use log;
 
+use cln_plugin::options::Value as ConfigValue;
 use cln_plugin::{Builder, Plugin};
 
 use lsp_primitives::json_rpc::{
@@ -22,6 +26,9 @@ use serde_json::json;
 
 use crate::custom_msg::context::{CustomMsgContext, CustomMsgContextBuilder};
 use crate::custom_msg::util::send_response;
+
+use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
+use sqlx::Connection;
 
 #[derive(Clone)]
 struct PluginState {}
@@ -53,6 +60,7 @@ async fn main() -> Result<()> {
             .option(options::lsps1_fee_computation_onchain_ppm())
             .option(options::lsps1_fee_computation_liquidity_ppb())
             .option(options::lsps1_order_lifetime_seconds())
+            .option(options::lsp_server_database_connection())
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?
@@ -62,6 +70,33 @@ async fn main() -> Result<()> {
         };
 
     let plugin = configured_plugin.start(PluginState::new()).await?;
+
+    // Connect to the database and run migration scripts
+    let connection_string = match plugin.option("lsp_server_database_connection") {
+        Some(ConfigValue::OptString) => {
+            let lightning_dir = plugin.configuration().lightning_dir;
+            format!("sqlite://{}/lsp_server.db", lightning_dir)
+        }
+        Some(ConfigValue::String(x)) => x,
+        _ => {
+            log::warn!("Invalid value `lsp_server_database_connection`");
+            log::warn!("The value should be a valid connection string");
+            log::warn!("An example is `sqlite://home/user/data/lsp_server.db`");
+            log::warn!("");
+            log::warn!("We are currently only supporting sqlite.");
+            log::warn!("If the database file doesn't exist the plugin will create it for you");
+            log::warn!("If no value is specified we will create the database inside the lightning directory");
+            return Ok(());
+        }
+    };
+
+    log::info!("Connecting to database '{}'", connection_string);
+    let options = SqliteConnectOptions::from_str(&connection_string)?.create_if_missing(true);
+    let mut connection = SqliteConnection::connect_with(&options).await.unwrap();
+    log::info!("Running database migration scripts");
+    sqlx::migrate!().run(&mut connection).await?;
+    log::info!("Successfully executed migrations");
+
     plugin.join().await?;
     return Ok(());
 }

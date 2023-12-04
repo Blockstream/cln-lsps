@@ -104,3 +104,10 @@ pub fn lsps1_order_lifetime_seconds() -> ConfigOption {
         "The amount of seconds an order is deemd valid",
     )
 }
+
+pub fn lsp_server_database_connection() -> ConfigOption {
+    ConfigOption::new(
+        "lsp_server_database_connection",
+        Value::OptString,
+        "The fully qualfied patth to the database. E.g: sqlite://home/user/data/lsp_server_database.db")
+}

@@ -12,7 +12,7 @@ use serde::ser::Error as DeError;
 use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 
 use time::format_description::FormatItem;
-use time::macros::format_description;
+use time::macros::{format_description, offset};
 use time::{OffsetDateTime, PrimitiveDateTime};
 
 use crate::secp256k1::PublicKey as _PublicKey;
@@ -160,6 +160,15 @@ impl IsoDatetime {
         Self {
             datetime: primitive,
         }
+    }
+
+    pub fn from_unix_timestamp(value : i64) -> Result<Self> {
+        let offset = OffsetDateTime::from_unix_timestamp(value).context("Failed to construct datetime")?;
+        Ok(Self::from_offset_date_time(offset))
+    }
+
+    pub fn unix_timestamp(&self) -> i64 {
+        self.datetime.assume_offset(offset!(UTC)).unix_timestamp()
     }
 
     pub fn from_primitive_date_time(datetime: PrimitiveDateTime) -> Self {
