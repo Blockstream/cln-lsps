@@ -359,6 +359,25 @@ impl ShortChannelId {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct FeeRate {
+    fee_rate : u64
+}
+
+impl FeeRate {
+
+    pub fn from_sats_per_kwu(sats_kwu : u64) -> Self {
+        Self {
+            fee_rate : sats_kwu
+        }
+    }
+
+    pub fn to_sats_per_kwu(&self) -> u64 {
+        self.fee_rate
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -528,5 +547,16 @@ mod test {
         let address_checked = address_unchecked.require_network(Network::Bitcoin).unwrap();
         let json_value = serde_json::to_value(address_checked).unwrap();
         assert_eq!(json_value, "32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf");
+    }
+
+    #[test]
+    fn serialize_fee_rate() {
+        let min_fee = FeeRate::from_sats_per_kwu(253);
+        let json_value = serde_json::to_value(min_fee).unwrap();
+
+        assert_eq!(json_value, serde_json::json!(253));
+        
+
+
     }
 }
