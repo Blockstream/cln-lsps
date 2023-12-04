@@ -1,5 +1,4 @@
 use lsp_primitives::lsps0::common_schemas::{SatAmount, IsoDatetime, FeeRate, PublicKey};
-use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 use uuid::Uuid;
 
 pub struct Lsps1Order {
@@ -16,12 +15,12 @@ pub struct Lsps1Order {
     pub (crate) expires_at : IsoDatetime
 }
 
-pub struct Lsps1Payment {
+pub struct Lsps1PaymentDetails {
     pub (crate) fee_total_sat : SatAmount,
     pub (crate) order_total_sat : SatAmount,
     pub (crate) bolt11_invoice : String,
     pub (crate) onchain_address : Option<String>,
-    pub (crate) onchain_block_confirmations_required : Option<String>,
+    pub (crate) onchain_block_confirmations_required : Option<u8>,
     pub (crate) minimum_fee_for_0conf : Option<FeeRate>
 }
 

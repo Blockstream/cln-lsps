@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::db::schema::Lsps1Order as Lsps1OrderBase;
+use crate::db::schema::{Lsps1Order as Lsps1OrderBase, Lsps1PaymentDetails as Lsps1PaymentDetailsBase};
 use lsp_primitives::lsps0::common_schemas::{SatAmount, IsoDatetime, PublicKey};
 
 
@@ -17,6 +17,43 @@ pub struct Lsps1Order {
     pub (crate) announce_channel : bool,
     pub (crate) created_at : i64,
     pub (crate) expires_at : i64
+}
+
+#[derive(sqlx::FromRow)]
+pub struct Lsps1PaymentDetails {
+    pub (crate) fee_total_sat : i64,
+    pub (crate) order_total_sat : i64,
+    pub (crate) bolt11_invoice : String,
+    pub (crate) onchain_address : Option<String>,
+    pub (crate) onchain_block_confirmations_required : Option<i64>,
+    pub (crate) minimum_fee_for_0conf : Option<i64>
+}
+
+impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
+    type Error = anyhow::Error;
+
+
+    fn try_from(payment: &Lsps1PaymentDetailsBase) -> Result<Self, Self::Error> {
+
+        let min_0conf = payment.minimum_fee_for_0conf
+            .clone()
+            .map(|f| f.to_sats_per_kwu())
+            .map(|f| i64::try_from(f))
+            .transpose()?;
+        let block_conf = payment.onchain_block_confirmations_required
+            .map(|n| i64::try_from(n))
+            .transpose()?;
+
+        Ok( Self {
+            fee_total_sat : i64::try_from(payment.fee_total_sat.sat_value())?,
+            order_total_sat : i64::try_from(payment.order_total_sat.sat_value())?,
+            bolt11_invoice : payment.bolt11_invoice.clone(),
+            onchain_address : payment.onchain_address.clone(),
+            onchain_block_confirmations_required : block_conf,
+            minimum_fee_for_0conf : min_0conf,
+        })
+    }
+
 }
 
 impl TryFrom<&Lsps1Order> for Lsps1OrderBase {

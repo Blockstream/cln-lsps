@@ -7,8 +7,10 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use uuid::Uuid;
 
 use lsp_primitives::lsps0::common_schemas::IsoDatetime;
-use crate::db::schema::Lsps1Order;
-use crate::db::sqlite::schema::Lsps1Order as Lsps1OrderSqlite;
+use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails};
+use crate::db::sqlite::schema::{
+    Lsps1Order as Lsps1OrderSqlite,
+    Lsps1PaymentDetails as Lsps1PaymentDetailsSqlite};
 
 struct Database {
     pool: SqlitePool,
@@ -20,11 +22,13 @@ impl Database {
         Ok(Database { pool })
     }
 
-    pub async fn create_order(&self, order: &Lsps1Order) ->Result<()> {
+    /// Stores the order and related payment details in the database
+    pub async fn create_order(&self, order: &Lsps1Order, payment : &Lsps1PaymentDetails ) ->Result<()> {
         // Convert all data to sqlite types
         // All integer types are i64, OnchainAddresses become String, ...
         let now = IsoDatetime::now().unix_timestamp();
         let order = Lsps1OrderSqlite::try_from(order)?;
+        let payment = Lsps1PaymentDetailsSqlite::try_from(payment)?;
 
         // Create the transaction
         let mut tx = self.pool.begin().await?;
@@ -56,6 +60,31 @@ impl Database {
             .fetch_optional(&mut *tx)
             .await?
             .ok_or(anyhow!("Failed to insert order into database"))?;
+
+        // Create the payment
+        sqlx::query!(
+            r#"
+            INSERT INTO lsps1_payment_details (
+               order_id,
+               fee_total_sat,
+               order_total_sat,
+               bolt11_invoice,
+               onchain_address,
+               onchain_block_confirmations_required,
+               minimum_fee_for_0conf
+            ) VALUES 
+            (
+              ?1, ?2, ?3, ?4, ?5, ?6, ?7);
+            "#,
+            order_id.id,
+            payment.fee_total_sat,
+            payment.order_total_sat,
+            payment.bolt11_invoice,
+            payment.onchain_address,
+            payment.onchain_block_confirmations_required,
+            payment.minimum_fee_for_0conf)
+            .execute(&mut *tx)
+            .await?;
 
         // Give the order a state
         sqlx::query!(
@@ -97,10 +126,21 @@ impl Database {
         sqlx::query!(
             r#"
             WITH to_delete as (SELECT id from lsps1_order WHERE uuid = ?1)
-            DELETE FROM lsps1_order_state where id in to_delete;"#,
+            DELETE FROM lsps1_order_state where order_id in to_delete;"#,
             uuid_string
             ).execute(&mut *tx)
             .await?;
+
+        // Remove the payment associated to the order
+        sqlx::query!(
+            r#"
+            WITH to_delete as (SELECT id from lsps1_order WHERE uuid = ?1)
+            DELETE FROM lsps1_payment_details where order_id in to_delete;"#,
+            uuid_string
+            ).execute(&mut *tx)
+            .await?;
+
+
 
         sqlx::query!("DELETE FROM lsps1_order where uuid = ?1;", uuid_string)
             .execute(&mut *tx)
@@ -152,7 +192,16 @@ mod test {
 
         };
 
-        let _ = db.create_order(&order).await.unwrap();
+        let payment = Lsps1PaymentDetails {
+            fee_total_sat : SatAmount::new(500),
+            order_total_sat : SatAmount::new(500),
+            bolt11_invoice : String::from("erik"),
+            onchain_address : None,
+            minimum_fee_for_0conf : None,
+            onchain_block_confirmations_required: None
+        };
+
+        let _ = db.create_order(&order, &payment).await.unwrap();
 
         // Confirm the order is in the database
         // There are a lot of conversions going on. (Sqlite only supports i64)
@@ -169,7 +218,6 @@ mod test {
         assert!(order.token.is_none());
         assert_eq!(order.channel_expiry_blocks, 6*24*30);
         assert_eq!(order.announce_channel, false);
-
 
         // Remove the entry from the database
         db.delete_order_by_uuid(uuid).await.unwrap();
