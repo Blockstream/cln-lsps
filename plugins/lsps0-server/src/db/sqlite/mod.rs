@@ -137,9 +137,19 @@ impl Database {
 
     pub async fn get_order_by_uuid(&self, uuid: Uuid) -> Result<Option<Lsps1Order>> {
         let uuid_string = uuid.to_string();
-        let result = sqlx::query_as!(Lsps1OrderSqlite,
-                                     r#"SELECT  uuid, client_node_id, lsp_balance_sat, client_balance_sat, confirms_within_blocks, channel_expiry_blocks, token, refund_onchain_address, announce_channel, created_at, expires_at FROM lsps1_order where uuid = ?"#, uuid_string)
-            .fetch_optional(&self.pool).await.context("Failed to execute query")?;
+        let result = sqlx::query_as!(
+            Lsps1OrderSqlite,
+            r#"SELECT
+                uuid, client_node_id, lsp_balance_sat,
+                client_balance_sat, confirms_within_blocks, channel_expiry_blocks,
+                token, refund_onchain_address, announce_channel,
+                created_at, expires_at
+            FROM lsps1_order where uuid = ?"#,
+            uuid_string
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to execute query")?;
 
         match result {
             Some(r) => Ok(Some(Lsps1Order::try_from(&r)?)),
