@@ -1,13 +1,15 @@
-use anyhow::{Result, Context};
-use lsp_primitives::lsps0::common_schemas::{SatAmount, MsatAmount, IsoDatetime};
+use anyhow::{Context, Result};
+use lsp_primitives::lsps0::common_schemas::{IsoDatetime, MsatAmount, SatAmount};
 
 pub trait IntoSqliteInteger {
     fn into_sqlite_integer(&self) -> Result<i64>;
 }
 
-pub trait FromSqliteInteger where Self : Sized
+pub trait FromSqliteInteger
+where
+    Self: Sized,
 {
-    fn from_sqlite_integer(value : i64) -> Result<Self>;
+    fn from_sqlite_integer(value: i64) -> Result<Self>;
 }
 
 impl IntoSqliteInteger for u64 {
@@ -17,7 +19,7 @@ impl IntoSqliteInteger for u64 {
 }
 
 impl FromSqliteInteger for u64 {
-    fn from_sqlite_integer(value : i64) -> Result<Self> {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
         u64::try_from(value).context(format!("Failed to fit {} in i64", value))
     }
 }
@@ -29,7 +31,7 @@ impl IntoSqliteInteger for SatAmount {
 }
 
 impl FromSqliteInteger for SatAmount {
-    fn from_sqlite_integer(value : i64) -> Result<Self> {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
         let vu64 = u64::try_from(value).context("Failed to represent negative SatAmount")?;
         Ok(SatAmount::new(vu64))
     }
@@ -42,7 +44,7 @@ impl IntoSqliteInteger for MsatAmount {
 }
 
 impl FromSqliteInteger for MsatAmount {
-    fn from_sqlite_integer(value : i64) -> Result<Self> {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
         let vu64 = u64::try_from(value).context("Failed to represent negative SatAmount")?;
         Ok(MsatAmount::new(vu64))
     }
@@ -55,7 +57,7 @@ impl IntoSqliteInteger for IsoDatetime {
 }
 
 impl FromSqliteInteger for IsoDatetime {
-    fn from_sqlite_integer(value : i64) -> Result<Self> {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
         IsoDatetime::from_unix_timestamp(value)
     }
 }

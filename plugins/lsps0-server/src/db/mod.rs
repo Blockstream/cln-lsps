@@ -1,2 +1,2 @@
-mod sqlite;
 mod schema;
+mod sqlite;

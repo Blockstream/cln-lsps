@@ -7,7 +7,7 @@ fn main() {
     // It will use the database specified in the DATABASE_URL environment variable.
     let initial_db_url = env::var("DATABASE_URL");
     match initial_db_url {
-        Ok(_) => {}, // Don't change the user specified config
+        Ok(_) => {} // Don't change the user specified config
         Err(_) => {
             // By default we use the path "./data/lsp_server.db" to initiate the database
             let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -16,7 +16,7 @@ fn main() {
             let db_url = format!("sqlite:{}", db_file_path.to_str().unwrap());
 
             // If the paths doesn't exist yet we'll create it and ensure a database exists
-            if ! data_path.exists() {
+            if !data_path.exists() {
                 std::fs::create_dir(&data_path).unwrap();
             }
 
