@@ -62,7 +62,8 @@ impl Database {
             .ok_or(anyhow!("Failed to insert order into database"))?;
 
         // Create the payment
-        sqlx::query!(
+        let payment_id = sqlx::query_as!(
+            IdType,
             r#"
             INSERT INTO lsps1_payment_details (
                order_id,
@@ -74,7 +75,8 @@ impl Database {
                minimum_fee_for_0conf
             ) VALUES 
             (
-              ?1, ?2, ?3, ?4, ?5, ?6, ?7);
+              ?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            RETURNING id;
             "#,
             order_id.id,
             payment.fee_total_sat,
@@ -83,7 +85,7 @@ impl Database {
             payment.onchain_address,
             payment.onchain_block_confirmations_required,
             payment.minimum_fee_for_0conf)
-            .execute(&mut *tx)
+            .fetch_one(&mut *tx)
             .await?;
 
         // Give the order a state
@@ -98,8 +100,20 @@ impl Database {
             .execute(&mut *tx)
             .await?;
 
-        tx.commit().await?;
+        // Give the payment a state
+        sqlx::query!(
+            r#"INSERT INTO lsps1_payment_state (
+              payment_details_id,
+              payment_state,
+              created_at
+            ) VALUES (
+               ?1, 1, ?2
+            );"#, 
+            payment_id.id, now)
+            .execute(&mut *tx)
+            .await?;
 
+        tx.commit().await?;
         return Ok(())
     }
 
@@ -125,17 +139,31 @@ impl Database {
         // Remove the state of the order
         sqlx::query!(
             r#"
-            WITH to_delete as (SELECT id from lsps1_order WHERE uuid = ?1)
-            DELETE FROM lsps1_order_state where order_id in to_delete;"#,
+            WITH to_delete AS (SELECT id FROM lsps1_order WHERE uuid = ?1)
+            DELETE FROM lsps1_order_state WHERE order_id in to_delete;"#,
             uuid_string
             ).execute(&mut *tx)
+            .await?;
+
+        // Remove the payment state
+        sqlx::query!(
+            r#"
+            WITH to_delete AS (
+              SELECT payment.id FROM lsps1_order AS ord
+              JOIN lsps1_payment_details AS payment
+              ON ord.id = payment.order_id
+              WHERE ord.uuid = ?1
+            )
+            DELETE FROM lsps1_payment_state WHERE payment_details_id in to_delete;
+            "#, uuid_string)
+            .execute(&mut *tx)
             .await?;
 
         // Remove the payment associated to the order
         sqlx::query!(
             r#"
             WITH to_delete as (SELECT id from lsps1_order WHERE uuid = ?1)
-            DELETE FROM lsps1_payment_details where order_id in to_delete;"#,
+            DELETE FROM lsps1_payment_details WHERE order_id in to_delete;"#,
             uuid_string
             ).execute(&mut *tx)
             .await?;
