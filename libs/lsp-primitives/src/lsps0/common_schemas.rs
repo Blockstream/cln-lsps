@@ -27,6 +27,12 @@ pub struct OnchainAddress<V: NetworkValidation> {
     pub address: Address<V>,
 }
 
+impl Display for OnchainAddress<NetworkChecked> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.address)
+    }
+}
+
 pub trait NetworkCheckable {
     type Checked;
 
@@ -144,7 +150,7 @@ impl PublicKey {
 // achieved if the LSPS2 sends a fully compliant timestamp.
 //
 // I have decided to fail early if another timestamp is received
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Copy)]
 pub struct IsoDatetime {
     pub datetime: PrimitiveDateTime,
 }
@@ -211,9 +217,9 @@ impl<'de> Deserialize<'de> for IsoDatetime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Copy)]
 pub struct SatAmount(u64);
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Copy)]
 pub struct MsatAmount(u64);
 
 impl std::fmt::Display for SatAmount {

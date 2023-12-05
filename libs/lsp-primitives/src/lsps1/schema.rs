@@ -86,7 +86,7 @@ pub struct Lsps1CreateOrderResponse<V: NetworkValidation> {
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
     pub confirms_within_blocks: u8,
-    pub channel_expiry_blocks: u8,
+    pub channel_expiry_blocks: u32,
     pub token: String,
     #[serde(rename = "announceChannel")]
     pub announce_channel: bool,

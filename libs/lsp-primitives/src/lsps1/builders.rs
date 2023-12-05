@@ -319,7 +319,7 @@ pub struct Lsps1CreateOrderResponseBuilder {
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
     confirms_within_blocks: Option<u8>,
-    channel_expiry_blocks: Option<u8>,
+    channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     announce_channel: Option<bool>,
     created_at: Option<IsoDatetime>,
@@ -329,8 +329,21 @@ pub struct Lsps1CreateOrderResponseBuilder {
 }
 
 impl Lsps1CreateOrderResponseBuilder {
+
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn from_request(request : Lsps1CreateOrderRequest<NetworkChecked>) -> Self {
+        Self::new()
+            .api_version(request.api_version)
+            .lsp_balance_sat(request.lsp_balance_sat)
+            .client_balance_sat(request.client_balance_sat)
+            .confirms_within_blocks(request.confirms_within_blocks)
+            .channel_expiry_blocks(request.channel_expiry_blocks)
+            .token(request.token)
+             // .refund_onchain_address(request.refund_onchain_address)
+             .announce_channel(request.announce_channel)
     }
 
     pub fn uuid(mut self, uuid: Uuid) -> Self {
@@ -353,12 +366,12 @@ impl Lsps1CreateOrderResponseBuilder {
         self.confirms_within_blocks = Some(confirms_within_blocks);
         self
     }
-    pub fn channel_expiry_blocks(mut self, channel_expiry_blocks: u8) -> Self {
+    pub fn channel_expiry_blocks(mut self, channel_expiry_blocks: u32) -> Self {
         self.channel_expiry_blocks = Some(channel_expiry_blocks);
         self
     }
-    pub fn token(mut self, token: String) -> Self {
-        self.token = Some(token);
+    pub fn token(mut self, token: Option<String>) -> Self {
+        self.token = token;
         self
     }
     pub fn announce_channel(mut self, announce_channel: bool) -> Self {
@@ -495,6 +508,11 @@ pub struct PaymentBuilder {
 }
 
 impl PaymentBuilder {
+
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn state(mut self, state: PaymentState) -> Self {
         self.state = Some(state);
         self

@@ -187,7 +187,7 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonRpcRequest<I> {
     pub jsonrpc: String,
     pub id: JsonRpcId,
