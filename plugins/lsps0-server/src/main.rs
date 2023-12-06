@@ -36,7 +36,7 @@ use sqlx::Connection;
 
 use crate::db::sqlite::Database;
 use crate::error::CustomMsgError;
-use crate::lsps1::hooks::{do_lsps1_create_order, do_lsps1_get_info};
+use crate::lsps1::hooks::{do_lsps1_create_order, do_lsps1_get_info, do_lsps1_get_order};
 use crate::network::parse_network;
 
 #[derive(Clone)]
@@ -224,14 +224,19 @@ async fn handle_custom_msg(
         .build()?;
 
     // Process the incoming custom msg
+    // TODO: FInd a way to handle the errors which isn't super verbose
+    type JRM = JsonRpcMethodEnum;
     let result = match method {
-        JsonRpcMethodEnum::Lsps0ListProtocols(m) => do_list_protocols(m, &mut context)
+        JRM::Lsps0ListProtocols(m) => do_list_protocols(m, &mut context)
             .await
             .map(|x| serde_json::to_value(x).unwrap()),
-        JsonRpcMethodEnum::Lsps1Info(m) => do_lsps1_get_info(m, &mut context)
+        JRM::Lsps1Info(m) => do_lsps1_get_info(m, &mut context)
             .await
             .map(|x| serde_json::to_value(x).unwrap()),
-        JsonRpcMethodEnum::Lsps1CreateOrder(m) => do_lsps1_create_order(m, &mut context)
+        JRM::Lsps1CreateOrder(m) => do_lsps1_create_order(m, &mut context)
+            .await
+            .map(|x| serde_json::to_value(x).unwrap()),
+        JRM::Lsps1GetOrder(m) => do_lsps1_get_order(m, &mut context)
             .await
             .map(|x| serde_json::to_value(x).unwrap()),
     };

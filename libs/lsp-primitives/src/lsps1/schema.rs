@@ -1,14 +1,12 @@
 use crate::json_rpc::NoParams;
 use crate::lsps0::common_schemas::{
-    IsoDatetime, Network, NetworkCheckable, NetworkChecked, NetworkUnchecked, NetworkValidation,
-    OnchainAddress, SatAmount,
+    FeeRate, IsoDatetime, Network, NetworkCheckable, NetworkChecked, NetworkUnchecked,
+    NetworkValidation, OnchainAddress, SatAmount,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use anyhow::Result;
-
-pub type OnchainFeeRate = u64;
 
 pub type Lsps1InfoRequest = NoParams;
 
@@ -172,7 +170,7 @@ pub struct Payment<V: NetworkValidation> {
     pub onchain_address: Option<OnchainAddress<V>>,
     pub required_onchain_block_confirmations: Option<u8>,
 
-    pub minimum_fee_for_0conf: Option<OnchainFeeRate>,
+    pub minimum_fee_for_0conf: Option<FeeRate>,
     pub onchain_payment: Option<OnchainPayment>,
 
     // Prevents struct initialization. Use PaymentBuilder instead
@@ -199,6 +197,15 @@ impl NetworkCheckable for Payment<NetworkUnchecked> {
         Ok(result)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Lsps1GetOrderRequest {
+    pub uuid: String,
+    #[serde(skip_serializing, default)]
+    _private: (),
+}
+pub type Lsps1GetOrderResponseChecked = Lsps1CreateOrderResponse<NetworkChecked>;
+pub type Lsps1GetOrderResponseUnchecked = Lsps1CreateOrderResponse<NetworkUnchecked>;
 
 #[cfg(test)]
 mod test {

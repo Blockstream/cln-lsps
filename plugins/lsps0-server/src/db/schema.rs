@@ -42,6 +42,7 @@ pub struct Lsps1PaymentDetails {
     pub(crate) fee_total_sat: SatAmount,
     pub(crate) order_total_sat: SatAmount,
     pub(crate) bolt11_invoice: String,
+    pub(crate) bolt11_invoice_label: String,
     pub(crate) onchain_address: Option<String>,
     pub(crate) onchain_block_confirmations_required: Option<u8>,
     pub(crate) minimum_fee_for_0conf: Option<FeeRate>,
@@ -52,6 +53,7 @@ pub struct Lsps1PaymentDetailsBuilder {
     pub(crate) fee_total_sat: Option<SatAmount>,
     pub(crate) order_total_sat: Option<SatAmount>,
     pub(crate) bolt11_invoice: Option<String>,
+    pub(crate) bolt11_invoice_label: Option<String>,
     pub(crate) onchain_address: Option<String>,
     pub(crate) onchain_block_confirmations_required: Option<u8>,
     pub(crate) minimum_fee_for_0conf: Option<FeeRate>,
@@ -62,6 +64,7 @@ impl Lsps1OrderBuilder {
         Self::default()
     }
 
+    #[allow(dead_code)]
     pub fn uuid(mut self, uuid: Uuid) -> Self {
         self.uuid = Some(uuid);
         self
@@ -72,26 +75,31 @@ impl Lsps1OrderBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn client_balance_sat(mut self, client_balance_sat: SatAmount) -> Self {
         self.client_balance_sat = Some(client_balance_sat);
         self
     }
 
+    #[allow(dead_code)]
     pub fn lsp_balance_sat(mut self, lsp_balance_sat: SatAmount) -> Self {
         self.lsp_balance_sat = Some(lsp_balance_sat);
         self
     }
 
+    #[allow(dead_code)]
     pub fn confirms_within_blocks(mut self, confirms_within_blocks: u8) -> Self {
         self.confirms_within_blocks = Some(confirms_within_blocks);
         self
     }
 
+    #[allow(dead_code)]
     pub fn channel_expiry_blocks(mut self, channel_expiry_blocks: Option<u32>) -> Self {
         self.channel_expiry_blocks = channel_expiry_blocks;
         self
     }
 
+    #[allow(dead_code)]
     pub fn token(mut self, token: Option<String>) -> Self {
         self.token = token;
         self
@@ -204,11 +212,18 @@ impl Lsps1PaymentDetailsBuilder {
         self
     }
 
+    pub fn bolt11_invoice_label(mut self, bolt11_invoice_label: String) -> Self {
+        self.bolt11_invoice_label = Some(bolt11_invoice_label);
+        self
+    }
+
+    #[allow(dead_code)]
     pub fn onchain_address(mut self, onchain_address: Option<String>) -> Self {
         self.onchain_address = onchain_address;
         self
     }
 
+    #[allow(dead_code)]
     pub fn onchain_block_confirmations_required(
         mut self,
         onchain_block_confirmations_required: Option<u8>,
@@ -217,6 +232,7 @@ impl Lsps1PaymentDetailsBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn minimum_fee_for_0conf(mut self, minimum_fee_for_0conf: Option<FeeRate>) -> Self {
         self.minimum_fee_for_0conf = minimum_fee_for_0conf;
         self
@@ -233,6 +249,9 @@ impl Lsps1PaymentDetailsBuilder {
             bolt11_invoice: self
                 .bolt11_invoice
                 .context("Missing field 'bolt11_invoice'")?,
+            bolt11_invoice_label: self
+                .bolt11_invoice_label
+                .context("Missing field 'bolt11_invoice_label'")?,
             onchain_address: self.onchain_address,
             onchain_block_confirmations_required: self.onchain_block_confirmations_required,
             minimum_fee_for_0conf: self.minimum_fee_for_0conf,

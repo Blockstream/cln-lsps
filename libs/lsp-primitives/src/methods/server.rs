@@ -6,7 +6,8 @@ use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
 pub use crate::lsps0::common_schemas::{NetworkChecked, NetworkUnchecked};
 pub use crate::lsps0::schema::ListprotocolsResponse;
 pub use crate::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest,
+    Lsps1GetOrderResponseChecked, Lsps1InfoRequest, Lsps1InfoResponse,
 };
 pub use crate::lsps2::schema::{
     Lsps2BuyError, Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoError, Lsps2GetInfoRequest,
@@ -45,6 +46,9 @@ pub type Lsps1CreateOrder = JsonRpcMethod<
     DefaultError,
 >;
 
+pub type Lsps1GetOrder =
+    JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponseChecked, DefaultError>;
+
 // LSPS0: Transport layer
 pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
     Lsps0ListProtocols::new("lsps0.list_protocols");
@@ -52,11 +56,13 @@ pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
 // LSPS1: Buy Channels
 pub const LSPS1_GETINFO: Lsps1Info = Lsps1Info::new("lsps1.info");
 pub const LSPS1_CREATE_ORDER: Lsps1CreateOrder = Lsps1CreateOrder::new("lsps1.create_order");
+pub const LSPS1_GET_ORDER: Lsps1GetOrder = Lsps1GetOrder::new("lsps1.get_order");
 
 pub enum JsonRpcMethodEnum {
     Lsps0ListProtocols(Lsps0ListProtocols),
     Lsps1Info(Lsps1Info),
     Lsps1CreateOrder(Lsps1CreateOrder),
+    Lsps1GetOrder(Lsps1GetOrder),
 }
 
 impl Serialize for JsonRpcMethodEnum {
@@ -95,16 +101,13 @@ impl<'de> Deserialize<'de> for JsonRpcMethodEnum {
     }
 }
 
-pub enum JsonRpcRequestEnum {
-    Lsps0ListProtocols(Lsps0ListProtocols),
-}
-
 impl JsonRpcMethodEnum {
     pub fn from_method_name(value: &str) -> Result<JsonRpcMethodEnum> {
         match value {
             "lsps0.list_protocols" => Ok(Self::Lsps0ListProtocols(LSPS0_LIST_PROTOCOLS)),
             "lsps1.info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
             "lsps1.create_order" => Ok(Self::Lsps1CreateOrder(LSPS1_CREATE_ORDER)),
+            "lsps1.get_order" => Ok(Self::Lsps1GetOrder(LSPS1_GET_ORDER)),
             default => Err(anyhow!("Unknown method '{}'", default)),
         }
     }
@@ -114,6 +117,7 @@ impl JsonRpcMethodEnum {
             Self::Lsps0ListProtocols(x) => x.name(),
             Self::Lsps1Info(x) => x.name(),
             Self::Lsps1CreateOrder(x) => x.name(),
+            Self::Lsps1GetOrder(x) => x.name(),
         }
     }
 }

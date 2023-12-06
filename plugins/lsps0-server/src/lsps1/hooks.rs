@@ -1,4 +1,5 @@
 use anyhow::Result;
+use uuid::Uuid;
 
 use lsp_primitives::methods::server as server_methods;
 
@@ -7,12 +8,13 @@ use lsp_primitives::lsps0::common_schemas::{
 };
 use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
 use lsp_primitives::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState, PaymentState,
 };
 
 use crate::custom_msg::context::CustomMsgContext;
 use crate::error::CustomMsgError;
 use crate::lsps1::fee_calc::FixedFeeCalculator;
+use crate::lsps1::msg::{BuildLsps1Order, BuildUsingDbPayment};
 use crate::lsps1::payment_calc::PaymentCalc;
 use crate::lsps1_utils;
 use crate::PluginState;
@@ -64,9 +66,9 @@ pub(crate) async fn do_lsps1_create_order(
         .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
     let options = info_response.options;
 
-    // TODO: Return the approriate error information
-    // consult LSPS1 cause it is rather picky about the response and error-code
-    order.validate_options(&options)
+    // Return an error if the order is invalid
+    order
+        .validate_options(&options)
         .map_err(|e| CustomMsgError::Lsps1OptionMismatch(e))?;
 
     // Construct the database order object
@@ -115,4 +117,48 @@ pub(crate) async fn do_lsps1_create_order(
         .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
 
     Ok(response)
+}
+
+pub(crate) async fn do_lsps1_get_order(
+    method: server_methods::Lsps1GetOrder,
+    context: &mut CustomMsgContext<PluginState>,
+) -> Result<Lsps1CreateOrderResponse<NetworkChecked>, CustomMsgError> {
+    let typed_request = method
+        .into_typed_request(context.request.clone())
+        .map_err(|x| CustomMsgError::InvalidParams(x.to_string().into()))?;
+
+    let uuid_value = Uuid::parse_str(&typed_request.params.uuid)
+        .map_err(|_| CustomMsgError::NotFound("Order not found".into()))?;
+
+    let db = context.plugin.state().database.clone();
+
+    // TODO: Risk of PhantomData
+    // Read both queries in a single transaction
+    let order = db
+        .get_order_by_uuid(uuid_value)
+        .await
+        .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?
+        .ok_or_else(|| CustomMsgError::NotFound("Order not found".into()))?;
+
+    let payment_details = db
+        .get_payment_details_by_uuid(uuid_value)
+        .await
+        .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?
+        .ok_or_else(|| {
+            CustomMsgError::InternalError(
+                "Failed to find associated payment to existing order".into(),
+            )
+        })?;
+
+    let payment = PaymentBuilder::new()
+        .db_payment_details(payment_details)
+        .state(PaymentState::ExpectPayment)
+        .build()
+        .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?;
+
+    Lsps1CreateOrderResponseBuilder::new()
+        .db_order(order)
+        .payment(payment)
+        .build()
+        .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))
 }

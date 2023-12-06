@@ -83,18 +83,20 @@ impl Database {
                fee_total_sat,
                order_total_sat,
                bolt11_invoice,
+               bolt11_invoice_label,
                onchain_address,
                onchain_block_confirmations_required,
                minimum_fee_for_0conf
             ) VALUES 
             (
-              ?1, ?2, ?3, ?4, ?5, ?6, ?7)
+              ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
             RETURNING id;
             "#,
             order_id.id,
             payment.fee_total_sat,
             payment.order_total_sat,
             payment.bolt11_invoice,
+            payment.bolt11_invoice_label,
             payment.onchain_address,
             payment.onchain_block_confirmations_required,
             payment.minimum_fee_for_0conf
@@ -156,6 +158,38 @@ impl Database {
 
         match result {
             Some(r) => Ok(Some(Lsps1Order::try_from(&r)?)),
+            None => Ok(None),
+        }
+    }
+
+    pub async fn get_payment_details_by_uuid(
+        &self,
+        uuid: Uuid,
+    ) -> Result<Option<Lsps1PaymentDetails>> {
+        let uuid_string = uuid.to_string();
+
+        let result = sqlx::query_as!(
+            Lsps1PaymentDetailsSqlite,
+            r#"SELECT
+               p.fee_total_sat,
+               p.order_total_sat,
+               p.bolt11_invoice,
+               p.bolt11_invoice_label,
+               p.onchain_address,
+               p.onchain_block_confirmations_required,
+               p.minimum_fee_for_0conf
+               FROM lsps1_payment_details as p
+               JOIN lsps1_order as o
+               ON o.id = p.order_id
+               WHERE o.uuid = ?1"#,
+            uuid_string
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to execute query")?;
+
+        match result {
+            Some(r) => Ok(Some(Lsps1PaymentDetails::try_from(&r)?)),
             None => Ok(None),
         }
     }
@@ -266,7 +300,8 @@ mod test {
         let payment = Lsps1PaymentDetails {
             fee_total_sat: SatAmount::new(500),
             order_total_sat: SatAmount::new(500),
-            bolt11_invoice: String::from("erik"),
+            bolt11_invoice: String::from("some_bolt_11_invoice"),
+            bolt11_invoice_label: String::from("lsps1.uuid"),
             onchain_address: None,
             minimum_fee_for_0conf: None,
             onchain_block_confirmations_required: None,

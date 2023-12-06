@@ -4,7 +4,7 @@ use crate::db::schema::{
     Lsps1Order as Lsps1OrderBase, Lsps1PaymentDetails as Lsps1PaymentDetailsBase,
 };
 use crate::db::sqlite::conversion::{FromSqliteInteger, IntoSqliteInteger};
-use lsp_primitives::lsps0::common_schemas::{IsoDatetime, PublicKey, SatAmount};
+use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
 use lsp_primitives::lsps1::schema::OrderState;
 
 #[derive(sqlx::FromRow)]
@@ -28,6 +28,7 @@ pub struct Lsps1PaymentDetails {
     pub(crate) fee_total_sat: i64,
     pub(crate) order_total_sat: i64,
     pub(crate) bolt11_invoice: String,
+    pub(crate) bolt11_invoice_label: String,
     pub(crate) onchain_address: Option<String>,
     pub(crate) onchain_block_confirmations_required: Option<i64>,
     pub(crate) minimum_fee_for_0conf: Option<i64>,
@@ -52,9 +53,36 @@ impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
             fee_total_sat: i64::try_from(payment.fee_total_sat.sat_value())?,
             order_total_sat: i64::try_from(payment.order_total_sat.sat_value())?,
             bolt11_invoice: payment.bolt11_invoice.clone(),
+            bolt11_invoice_label: payment.bolt11_invoice_label.clone(),
             onchain_address: payment.onchain_address.clone(),
             onchain_block_confirmations_required: block_conf,
             minimum_fee_for_0conf: min_0conf,
+        })
+    }
+}
+
+impl TryFrom<&Lsps1PaymentDetails> for Lsps1PaymentDetailsBase {
+    type Error = anyhow::Error;
+
+    fn try_from(payment: &Lsps1PaymentDetails) -> Result<Self, Self::Error> {
+        let onchain_block_confirmations_required = payment
+            .onchain_block_confirmations_required
+            .map(|p| u8::from_sqlite_integer(p))
+            .transpose()?;
+
+        let minimum_fee_for_0conf = payment
+            .onchain_block_confirmations_required
+            .map(|p| FeeRate::from_sqlite_integer(p))
+            .transpose()?;
+
+        Ok(Self {
+            fee_total_sat: SatAmount::from_sqlite_integer(payment.fee_total_sat)?,
+            order_total_sat: SatAmount::from_sqlite_integer(payment.fee_total_sat)?,
+            bolt11_invoice: payment.bolt11_invoice.clone(),
+            bolt11_invoice_label: payment.bolt11_invoice_label.clone(),
+            onchain_address: payment.onchain_address.clone(),
+            onchain_block_confirmations_required,
+            minimum_fee_for_0conf,
         })
     }
 }

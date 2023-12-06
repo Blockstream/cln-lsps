@@ -1,5 +1,4 @@
 use anyhow::Result;
-use uuid::Uuid;
 
 use cln_rpc::model::requests::InvoiceRequest;
 use cln_rpc::primitives::AmountOrAny;
@@ -24,8 +23,9 @@ impl<T: FeeCalculator> PaymentCalc<T> {
     ) -> Result<Lsps1PaymentDetails> {
         // Compute the fee-rate and the bolt11-invoice
         let fee = self.fee_calc.calculate_fee(context, order.clone())?;
+        let bolt_11_invoice_label = format!("lsps1_{}", order.uuid);
         let bolt11_invoice = self
-            .construct_bolt11_invoice(context, order, fee.order_total_sat)
+            .construct_bolt11_invoice(context, order, fee.order_total_sat, &bolt_11_invoice_label)
             .await?;
 
         // We do not support onchain payments.
@@ -34,14 +34,16 @@ impl<T: FeeCalculator> PaymentCalc<T> {
             .fee_total_sat(fee.fee_total_sat)
             .order_total_sat(fee.order_total_sat)
             .bolt11_invoice(bolt11_invoice)
+            .bolt11_invoice_label(bolt_11_invoice_label)
             .build()
     }
 
-    pub async fn construct_bolt11_invoice(
+    async fn construct_bolt11_invoice(
         &mut self,
         context: &mut CustomMsgContext<PluginState>,
         order: &Lsps1Order,
         amount: SatAmount,
+        label: &str,
     ) -> Result<String> {
         // cln_rpc
         let cln_rpc = &mut context.cln_rpc;
@@ -59,7 +61,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
         let cln_amount = cln_rpc::primitives::Amount::from_sat(amount.sat_value());
         let invoice_request = InvoiceRequest {
             amount_msat: AmountOrAny::Amount(cln_amount),
-            label: Uuid::new_v4().to_string(),
+            label: label.to_string(),
             description,
             expiry: Some(order.expires_at.unix_timestamp() as u64),
             cltv: None,

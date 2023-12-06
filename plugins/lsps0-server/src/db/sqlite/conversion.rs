@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use lsp_primitives::lsps0::common_schemas::{IsoDatetime, MsatAmount, SatAmount};
+use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, MsatAmount, SatAmount};
 use lsp_primitives::lsps1::schema::OrderState;
 
 pub trait IntoSqliteInteger {
@@ -11,6 +11,18 @@ where
     Self: Sized,
 {
     fn from_sqlite_integer(value: i64) -> Result<Self>;
+}
+
+impl IntoSqliteInteger for u8 {
+    fn into_sqlite_integer(&self) -> Result<i64> {
+        i64::try_from(*self).context(format!("Failed to fit {} in i64", self))
+    }
+}
+
+impl FromSqliteInteger for u8 {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
+        u8::try_from(value).context(format!("Failed to fit {} in i64", value))
+    }
 }
 
 impl IntoSqliteInteger for u64 {
@@ -60,6 +72,19 @@ impl IntoSqliteInteger for IsoDatetime {
 impl FromSqliteInteger for IsoDatetime {
     fn from_sqlite_integer(value: i64) -> Result<Self> {
         IsoDatetime::from_unix_timestamp(value)
+    }
+}
+
+impl IntoSqliteInteger for FeeRate {
+    fn into_sqlite_integer(&self) -> Result<i64> {
+        self.to_sats_per_kwu().into_sqlite_integer()
+    }
+}
+
+impl FromSqliteInteger for FeeRate {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
+        let fee_rate = u64::from_sqlite_integer(value)?;
+        Ok(FeeRate::from_sats_per_kwu(fee_rate))
     }
 }
 

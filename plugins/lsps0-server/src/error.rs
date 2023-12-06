@@ -6,6 +6,7 @@ pub enum CustomMsgError {
     InternalError(Box<str>),
     UnknownMethod(Box<str>),
     Lsps1OptionMismatch(Lsps1OptionMismatchError),
+    NotFound(Box<str>),
 }
 
 impl TryFrom<CustomMsgError> for ErrorData<DefaultError> {
@@ -19,6 +20,14 @@ impl TryFrom<CustomMsgError> for ErrorData<DefaultError> {
             }
             CustomMsgError::UnknownMethod(method) => Ok(ErrorData::unknown_method(&method)),
             CustomMsgError::Lsps1OptionMismatch(om) => ErrorData::try_from(om),
+            CustomMsgError::NotFound(msg) => {
+                let default_error = DefaultError(serde_json::json!({"message" : msg}));
+                Ok(ErrorData {
+                    code: 404,
+                    message: "Not Found".into(),
+                    data: Some(default_error),
+                })
+            }
         }
     }
 }

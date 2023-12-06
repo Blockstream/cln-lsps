@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Context, Result};
 use uuid::Uuid;
 
-use crate::lsps0::schema::{IsoDatetime, NetworkChecked, OnchainAddress, SatAmount};
+use crate::lsps0::schema::{FeeRate, IsoDatetime, NetworkChecked, OnchainAddress, SatAmount};
 use crate::lsps1::schema::{
     Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
-    Lsps1Options, OnchainFeeRate, OnchainPayment, OrderState, Payment, PaymentState,
+    Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
 };
 
 #[derive(Default, Debug)]
@@ -502,7 +502,7 @@ pub struct PaymentBuilder {
     onchain_address: Option<OnchainAddress<NetworkChecked>>,
     required_onchain_block_confirmations: Option<u8>,
 
-    minimum_fee_for_0conf: Option<OnchainFeeRate>,
+    minimum_fee_for_0conf: Option<FeeRate>,
     onchain_payment: Option<OnchainPayment>,
 }
 
@@ -531,8 +531,11 @@ impl PaymentBuilder {
         self
     }
 
-    pub fn onchain_address(mut self, onchain_address: OnchainAddress<NetworkChecked>) -> Self {
-        self.onchain_address = Some(onchain_address);
+    pub fn onchain_address(
+        mut self,
+        onchain_address: Option<OnchainAddress<NetworkChecked>>,
+    ) -> Self {
+        self.onchain_address = onchain_address;
         self
     }
 
@@ -544,8 +547,8 @@ impl PaymentBuilder {
         self
     }
 
-    pub fn minimum_fee_for_0conf(mut self, minimum_fee_for_0conf: OnchainFeeRate) -> Self {
-        self.minimum_fee_for_0conf = Some(minimum_fee_for_0conf);
+    pub fn minimum_fee_for_0conf(mut self, minimum_fee_for_0conf: Option<FeeRate>) -> Self {
+        self.minimum_fee_for_0conf = minimum_fee_for_0conf;
         self
     }
 
