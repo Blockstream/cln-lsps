@@ -1,5 +1,4 @@
 use crate::json_rpc::{DefaultError, ErrorData};
-use crate::lsps0::common_schemas::NetworkValidation;
 use crate::lsps1::schema::{Lsps1CreateOrderRequest, Lsps1Options};
 use anyhow::Result;
 
@@ -29,7 +28,7 @@ impl Lsps1OptionMismatchError {
     }
 }
 
-impl<V: NetworkValidation> Lsps1CreateOrderRequest<V> {
+impl Lsps1CreateOrderRequest {
     pub fn validate_options(&self, options: &Lsps1Options) -> Result<(), Lsps1OptionMismatchError> {
         if self.client_balance_sat < options.min_initial_client_balance_sat {
             return Err(Lsps1OptionMismatchError::new(

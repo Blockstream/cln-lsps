@@ -1,7 +1,5 @@
 use anyhow::{Context, Result};
-use lsp_primitives::lsps0::common_schemas::{
-    FeeRate, IsoDatetime, NetworkChecked, PublicKey, SatAmount,
-};
+use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
 use lsp_primitives::lsps1::schema::{Lsps1CreateOrderRequest, OrderState};
 use uuid::Uuid;
 
@@ -125,10 +123,7 @@ impl Lsps1OrderBuilder {
         self
     }
 
-    pub fn order_request(
-        mut self,
-        order_request: &Lsps1CreateOrderRequest<NetworkChecked>,
-    ) -> Self {
+    pub fn order_request(mut self, order_request: &Lsps1CreateOrderRequest) -> Self {
         self.client_balance_sat = Some(order_request.client_balance_sat);
         self.lsp_balance_sat = Some(order_request.lsp_balance_sat);
         self.confirms_within_blocks = Some(order_request.confirms_within_blocks);

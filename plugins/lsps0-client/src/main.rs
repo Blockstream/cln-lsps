@@ -9,11 +9,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use lsp_primitives::json_rpc::{JsonRpcId, JsonRpcResponse, NoParams};
-use lsp_primitives::lsps0::common_schemas::{
-    Network, NetworkCheckable, NetworkUnchecked, PublicKey,
-};
+use lsp_primitives::lsps0::common_schemas::{Network, NetworkCheckable, PublicKey};
 use lsp_primitives::lsps1;
-use lsp_primitives::methods::client as client_methods;
+use lsp_primitives::methods;
 
 use cln_lsps0::client::{LspClient, RequestId, LSPS_MESSAGE_ID};
 use cln_lsps0::cln_rpc_client::ClnRpcLspClient;
@@ -155,7 +153,7 @@ async fn list_protocols(
 
     // Make the request to the LSP-server and return the result
     let lsp_protocol_list = client
-        .request(&pubkey, client_methods::LSPS0_LIST_PROTOCOLS, NoParams)
+        .request(&pubkey, methods::LSPS0_LIST_PROTOCOLS, NoParams)
         .await?;
     log::debug!("ProtocolList Request {:?}", lsp_protocol_list);
 
@@ -179,7 +177,7 @@ async fn lsps0_get_info(
     let response = client
         .request(
             &pubkey,
-            client_methods::LSPS1_GETINFO,
+            methods::LSPS1_GETINFO,
             lsps1::schema::Lsps1InfoRequest {},
         )
         .await?;
@@ -197,9 +195,11 @@ async fn lsps1_create_order(
     let network = str_to_network(&plugin.configuration().network)?;
     let mut client = create_lsp_client_from_plugin(plugin).await?;
 
-    let request: plugin_rpc::Lsps1CreateOrderRequest<NetworkUnchecked> =
-        serde_json::from_value(request)?;
-    let request = request.require_network(network)?;
+    let request: plugin_rpc::Lsps1CreateOrderRequest = serde_json::from_value(request)?;
+
+    // Check the network
+    request.refund_onchain_address.require_network(&network)?;
+
     let pubkey = PublicKey::from_hex(&request.peer_id)?;
 
     let create_order_request = lsps1::builders::Lsps1CreateOrderRequestBuilder::new()
@@ -216,11 +216,7 @@ async fn lsps1_create_order(
 
     // Make the request to the LSP-server and return the result
     let response = client
-        .request(
-            &pubkey,
-            client_methods::LSPS1_CREATE_ORDER,
-            create_order_request,
-        )
+        .request(&pubkey, methods::LSPS1_CREATE_ORDER, create_order_request)
         .await?;
 
     match response {

@@ -3,11 +3,10 @@
 ///
 ///
 use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
-pub use crate::lsps0::common_schemas::{NetworkChecked, NetworkUnchecked};
 pub use crate::lsps0::schema::ListprotocolsResponse;
 pub use crate::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest,
-    Lsps1GetOrderResponseChecked, Lsps1InfoRequest, Lsps1InfoResponse,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest, Lsps1GetOrderResponse,
+    Lsps1InfoRequest, Lsps1InfoResponse,
 };
 pub use crate::lsps2::schema::{
     Lsps2BuyError, Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoError, Lsps2GetInfoRequest,
@@ -40,14 +39,10 @@ use anyhow::{anyhow, Result};
 pub type Lsps0ListProtocols = JsonRpcMethod<NoParams, ListprotocolsResponse, DefaultError>;
 
 pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
-pub type Lsps1CreateOrder = JsonRpcMethod<
-    Lsps1CreateOrderRequest<NetworkUnchecked>,
-    Lsps1CreateOrderResponse<NetworkChecked>,
-    DefaultError,
->;
+pub type Lsps1CreateOrder =
+    JsonRpcMethod<Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
 
-pub type Lsps1GetOrder =
-    JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponseChecked, DefaultError>;
+pub type Lsps1GetOrder = JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
 
 // LSPS0: Transport layer
 pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =

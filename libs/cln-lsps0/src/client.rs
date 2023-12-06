@@ -6,9 +6,9 @@ use lsp_primitives::json_rpc::{
 };
 
 use lsp_primitives::lsps0;
-use lsp_primitives::lsps0::common_schemas::{NetworkChecked, NetworkUnchecked, PublicKey};
+use lsp_primitives::lsps0::common_schemas::PublicKey;
 use lsp_primitives::lsps1;
-use lsp_primitives::methods::client as client_methods;
+use lsp_primitives::methods;
 
 use async_trait::async_trait;
 
@@ -93,7 +93,7 @@ pub trait LspClient {
         peer_id: &PublicKey,
     ) -> Result<lsps0::schema::ListprotocolsResponse> {
         let response = self
-            .request(peer_id, client_methods::LSPS0_LIST_PROTOCOLS, NoParams)
+            .request(peer_id, methods::LSPS0_LIST_PROTOCOLS, NoParams)
             .await?;
         match response {
             JsonRpcResponse::Error(err) => {
@@ -108,7 +108,7 @@ pub trait LspClient {
         peer_id: &PublicKey,
     ) -> Result<lsps1::schema::Lsps1InfoResponse> {
         let response = self
-            .request(peer_id, client_methods::LSPS1_GETINFO, NoParams)
+            .request(peer_id, methods::LSPS1_GETINFO, NoParams)
             .await?;
         match response {
             JsonRpcResponse::Error(err) => {
@@ -121,10 +121,10 @@ pub trait LspClient {
     async fn lsps1_create_order(
         &mut self,
         peer_id: &PublicKey,
-        order_request: lsps1::schema::Lsps1CreateOrderRequest<NetworkChecked>,
-    ) -> Result<lsps1::schema::Lsps1CreateOrderResponse<NetworkUnchecked>> {
+        order_request: lsps1::schema::Lsps1CreateOrderRequest,
+    ) -> Result<lsps1::schema::Lsps1CreateOrderResponse> {
         let response = self
-            .request(peer_id, client_methods::LSPS1_CREATE_ORDER, order_request)
+            .request(peer_id, methods::LSPS1_CREATE_ORDER, order_request)
             .await?;
 
         // TODO: We probably want to store this order in the data-store

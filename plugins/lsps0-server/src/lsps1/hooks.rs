@@ -1,14 +1,12 @@
 use anyhow::Result;
 use uuid::Uuid;
 
-use lsp_primitives::methods::server as server_methods;
+use lsp_primitives::methods;
 
-use lsp_primitives::lsps0::common_schemas::{
-    IsoDatetime, NetworkCheckable, NetworkChecked, SatAmount,
-};
+use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, SatAmount};
 use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
 use lsp_primitives::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState, PaymentState,
+    Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState, PaymentState,
 };
 
 use crate::custom_msg::context::CustomMsgContext;
@@ -20,7 +18,7 @@ use crate::lsps1_utils;
 use crate::PluginState;
 
 pub(crate) async fn do_lsps1_get_info(
-    _method: server_methods::Lsps1Info,
+    _method: methods::Lsps1Info,
     context: &mut CustomMsgContext<PluginState>,
 ) -> Result<Lsps1InfoResponse, CustomMsgError> {
     log::debug!("lsps1_get_info");
@@ -40,9 +38,9 @@ pub(crate) async fn do_lsps1_get_info(
 }
 
 pub(crate) async fn do_lsps1_create_order(
-    method: server_methods::Lsps1CreateOrder,
+    method: methods::Lsps1CreateOrder,
     context: &mut CustomMsgContext<PluginState>,
-) -> Result<Lsps1CreateOrderResponse<NetworkChecked>, CustomMsgError> {
+) -> Result<Lsps1CreateOrderResponse, CustomMsgError> {
     log::debug!("lsps1_create_order");
 
     // Define the relevant timestamps
@@ -56,9 +54,10 @@ pub(crate) async fn do_lsps1_create_order(
         .into_typed_request(context.request.clone())
         .map_err(|x| CustomMsgError::InvalidParams(x.to_string().into()))?;
 
-    let order: Lsps1CreateOrderRequest<NetworkChecked> = typed_request
-        .params
-        .require_network(context.network)
+    let order = typed_request.params;
+    order
+        .refund_onchain_address
+        .require_network(&context.network)
         .map_err(|x| CustomMsgError::InvalidParams(x.to_string().into()))?;
 
     // TODO: find a nicer way to get the options
@@ -120,9 +119,9 @@ pub(crate) async fn do_lsps1_create_order(
 }
 
 pub(crate) async fn do_lsps1_get_order(
-    method: server_methods::Lsps1GetOrder,
+    method: methods::Lsps1GetOrder,
     context: &mut CustomMsgContext<PluginState>,
-) -> Result<Lsps1CreateOrderResponse<NetworkChecked>, CustomMsgError> {
+) -> Result<Lsps1CreateOrderResponse, CustomMsgError> {
     let typed_request = method
         .into_typed_request(context.request.clone())
         .map_err(|x| CustomMsgError::InvalidParams(x.to_string().into()))?;

@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use uuid::Uuid;
 
-use crate::lsps0::schema::{FeeRate, IsoDatetime, NetworkChecked, OnchainAddress, SatAmount};
+use crate::lsps0::schema::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
 use crate::lsps1::schema::{
     Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
     Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
@@ -226,7 +226,7 @@ pub struct Lsps1CreateOrderRequestBuilder {
     confirms_within_blocks: Option<u8>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
-    refund_onchain_address: Option<OnchainAddress<NetworkChecked>>,
+    refund_onchain_address: Option<OnchainAddress>,
     announce_channel: Option<bool>,
 }
 
@@ -267,7 +267,7 @@ impl Lsps1CreateOrderRequestBuilder {
 
     pub fn refund_onchain_address(
         mut self,
-        refund_onchain_address: Option<OnchainAddress<NetworkChecked>>,
+        refund_onchain_address: Option<OnchainAddress>,
     ) -> Self {
         self.refund_onchain_address = refund_onchain_address;
         self
@@ -278,7 +278,7 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Lsps1CreateOrderRequest<NetworkChecked>> {
+    pub fn build(self) -> Result<Lsps1CreateOrderRequest> {
         // Required fields
         let lsp_balance_sat = self
             .lsp_balance_sat
@@ -325,7 +325,7 @@ pub struct Lsps1CreateOrderResponseBuilder {
     created_at: Option<IsoDatetime>,
     expires_at: Option<IsoDatetime>,
     order_state: Option<OrderState>,
-    payment: Option<Payment<NetworkChecked>>,
+    payment: Option<Payment>,
 }
 
 impl Lsps1CreateOrderResponseBuilder {
@@ -333,7 +333,7 @@ impl Lsps1CreateOrderResponseBuilder {
         Self::default()
     }
 
-    pub fn from_request(request: Lsps1CreateOrderRequest<NetworkChecked>) -> Self {
+    pub fn from_request(request: Lsps1CreateOrderRequest) -> Self {
         Self::new()
             .api_version(request.api_version)
             .lsp_balance_sat(request.lsp_balance_sat)
@@ -389,12 +389,12 @@ impl Lsps1CreateOrderResponseBuilder {
         self.order_state = Some(order_state);
         self
     }
-    pub fn payment(mut self, payment: Payment<NetworkChecked>) -> Self {
+    pub fn payment(mut self, payment: Payment) -> Self {
         self.payment = Some(payment);
         self
     }
 
-    pub fn build(self) -> Result<Lsps1CreateOrderResponse<NetworkChecked>> {
+    pub fn build(self) -> Result<Lsps1CreateOrderResponse> {
         //required variables
         let order_id = self
             .uuid
@@ -499,7 +499,7 @@ pub struct PaymentBuilder {
     order_total_sat: Option<SatAmount>,
 
     bolt11_invoice: Option<String>,
-    onchain_address: Option<OnchainAddress<NetworkChecked>>,
+    onchain_address: Option<OnchainAddress>,
     required_onchain_block_confirmations: Option<u8>,
 
     minimum_fee_for_0conf: Option<FeeRate>,
@@ -531,10 +531,7 @@ impl PaymentBuilder {
         self
     }
 
-    pub fn onchain_address(
-        mut self,
-        onchain_address: Option<OnchainAddress<NetworkChecked>>,
-    ) -> Self {
+    pub fn onchain_address(mut self, onchain_address: Option<OnchainAddress>) -> Self {
         self.onchain_address = onchain_address;
         self
     }
@@ -557,7 +554,7 @@ impl PaymentBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Payment<NetworkChecked>> {
+    pub fn build(self) -> Result<Payment> {
         // Required fields
         let state = self.state.context("Missing field 'state'")?;
         let fee_total_sat = self

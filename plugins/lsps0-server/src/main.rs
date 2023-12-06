@@ -20,8 +20,8 @@ use lsp_primitives::json_rpc::{
 
 use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
 use lsp_primitives::lsps0::schema::ListprotocolsResponse;
-use lsp_primitives::methods::server as server_methods;
-use lsp_primitives::methods::server::JsonRpcMethodEnum;
+use lsp_primitives::methods;
+use lsp_primitives::methods::JsonRpcMethodEnum;
 
 use cln_lsps0::client::LSPS_MESSAGE_ID;
 use cln_lsps0::custom_msg_hook::RpcCustomMsgMessage;
@@ -263,7 +263,7 @@ async fn handle_custom_msg(
 }
 
 async fn do_list_protocols(
-    _method: server_methods::Lsps0ListProtocols,
+    _method: methods::Lsps0ListProtocols,
     _context: &mut CustomMsgContext<PluginState>,
 ) -> Result<ListprotocolsResponse, CustomMsgError> {
     ListprotocolsResponseBuilder::new()

@@ -1,5 +1,4 @@
 use core::str::FromStr;
-
 use std::fmt::{Display, Formatter};
 
 use anyhow::{anyhow, Context, Result};
@@ -17,46 +16,65 @@ use time::{OffsetDateTime, PrimitiveDateTime};
 
 use crate::secp256k1::PublicKey as _PublicKey;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 #[serde(transparent)]
-pub struct OnchainAddress<V: NetworkValidation> {
-    #[serde(bound(
-        serialize = "Address<V> : Serialize",
-        deserialize = "Address<V> : Deserialize<'de>"
-    ))]
-    pub address: Address<V>,
+pub struct OnchainAddress {
+    pub address: Address,
 }
 
-impl Display for OnchainAddress<NetworkChecked> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.address)
-    }
-}
-
-pub trait NetworkCheckable {
-    type Checked;
-
-    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked>;
-}
-
-impl NetworkCheckable for OnchainAddress<NetworkUnchecked> {
-    type Checked = OnchainAddress<NetworkChecked>;
-
-    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked> {
+impl<'de> Deserialize<'de> for OnchainAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let address_unchecked = Address::<NetworkUnchecked>::deserialize(deserializer)?;
         Ok(OnchainAddress {
-            address: self.address.require_network(network)?,
+            address: address_unchecked.assume_checked(),
         })
     }
 }
 
-impl NetworkCheckable for Option<OnchainAddress<NetworkUnchecked>> {
-    type Checked = Option<OnchainAddress<NetworkChecked>>;
+pub trait NetworkCheckable {
+    fn require_network(&self, network: &bitcoin::Network) -> Result<()>;
+}
 
-    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked> {
-        match self {
-            Some(x) => Ok(Some(x.require_network(network)?)),
-            None => Ok(None),
+impl NetworkCheckable for OnchainAddress {
+    fn require_network(&self, network: &bitcoin::Network) -> Result<()> {
+        if network != self.address.network() {
+            Err(anyhow!(
+                "Network mismatch: Expected {} but got {}",
+                network,
+                self.address.network()
+            ))
+        } else {
+            Ok(())
         }
+    }
+}
+
+impl NetworkCheckable for Option<OnchainAddress> {
+    fn require_network(&self, network: &bitcoin::Network) -> Result<()> {
+        match self {
+            Some(x) => x.require_network(network),
+            None => Ok(()),
+        }
+    }
+}
+
+impl FromStr for OnchainAddress {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let address = Address::<NetworkUnchecked>::from_str(s)?;
+        Ok(Self {
+            address: address.assume_checked(),
+        })
+    }
+}
+
+impl Display for OnchainAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.address)
     }
 }
 
@@ -522,15 +540,14 @@ mod test {
     #[test]
     fn deserialize_onchain_address() {
         let regtest_address_json = "\"bcrt1qkm08480v79rzjp7tx2pjrly423ncv85k65nsmu\"";
-        let parsed =
-            serde_json::from_str::<OnchainAddress<NetworkUnchecked>>(regtest_address_json).unwrap();
+        let parsed = serde_json::from_str::<OnchainAddress>(regtest_address_json).unwrap();
         parsed
             .clone()
-            .require_network(Network::Regtest)
+            .require_network(&Network::Regtest)
             .expect("Is okay because it is a regtest address");
         parsed
             .clone()
-            .require_network(Network::Bitcoin)
+            .require_network(&Network::Bitcoin)
             .expect_err("Should fail because the address is not a mainnet address");
 
         // We don't te test the NetworkChecked case here

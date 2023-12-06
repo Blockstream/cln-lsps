@@ -1,12 +1,7 @@
 use crate::json_rpc::NoParams;
-use crate::lsps0::common_schemas::{
-    FeeRate, IsoDatetime, Network, NetworkCheckable, NetworkChecked, NetworkUnchecked,
-    NetworkValidation, OnchainAddress, SatAmount,
-};
+use crate::lsps0::common_schemas::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use anyhow::Result;
 
 pub type Lsps1InfoRequest = NoParams;
 
@@ -40,18 +35,14 @@ pub struct Lsps1Options {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Lsps1CreateOrderRequest<V: NetworkValidation> {
+pub struct Lsps1CreateOrderRequest {
     pub api_version: u16,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
     pub confirms_within_blocks: u8,
     pub channel_expiry_blocks: u32,
     pub token: Option<String>,
-    #[serde(bound(
-        serialize = " OnchainAddress<V> : Serialize",
-        deserialize = " OnchainAddress<V> : Deserialize<'de>"
-    ))]
-    pub refund_onchain_address: Option<OnchainAddress<V>>,
+    pub refund_onchain_address: Option<OnchainAddress>,
     #[serde(rename = "announceChannel")]
     pub announce_channel: bool,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
@@ -59,26 +50,8 @@ pub struct Lsps1CreateOrderRequest<V: NetworkValidation> {
     pub(crate) _private: (),
 }
 
-impl NetworkCheckable for Lsps1CreateOrderRequest<NetworkUnchecked> {
-    type Checked = Lsps1CreateOrderRequest<NetworkChecked>;
-
-    fn require_network(self, network: Network) -> Result<Self::Checked> {
-        Ok(Self::Checked {
-            api_version: self.api_version,
-            lsp_balance_sat: self.lsp_balance_sat,
-            client_balance_sat: self.client_balance_sat,
-            confirms_within_blocks: self.confirms_within_blocks,
-            channel_expiry_blocks: self.channel_expiry_blocks,
-            token: self.token,
-            refund_onchain_address: self.refund_onchain_address.require_network(network)?,
-            announce_channel: self.announce_channel,
-            _private: self._private,
-        })
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Lsps1CreateOrderResponse<V: NetworkValidation> {
+pub struct Lsps1CreateOrderResponse {
     pub order_id: Uuid,
     pub api_version: u16,
     pub lsp_balance_sat: SatAmount,
@@ -92,36 +65,10 @@ pub struct Lsps1CreateOrderResponse<V: NetworkValidation> {
     pub expires_at: IsoDatetime,
     pub order_state: OrderState,
 
-    #[serde(bound(
-        serialize = " Payment<V> : Serialize",
-        deserialize = " Payment<V> : Deserialize<'de>"
-    ))]
-    pub payment: Payment<V>,
+    pub payment: Payment,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
     #[serde(skip_serializing, default)]
     pub(crate) _private: (),
-}
-
-impl NetworkCheckable for Lsps1CreateOrderResponse<NetworkUnchecked> {
-    type Checked = Lsps1CreateOrderResponse<NetworkChecked>;
-
-    fn require_network(self, network: Network) -> Result<Self::Checked> {
-        Ok(Self::Checked {
-            order_id: self.order_id,
-            api_version: self.api_version,
-            lsp_balance_sat: self.lsp_balance_sat,
-            client_balance_sat: self.client_balance_sat,
-            confirms_within_blocks: self.confirms_within_blocks,
-            channel_expiry_blocks: self.channel_expiry_blocks,
-            token: self.token,
-            announce_channel: self.announce_channel,
-            created_at: self.created_at,
-            expires_at: self.expires_at,
-            order_state: self.order_state,
-            payment: self.payment.require_network(network)?,
-            _private: self._private,
-        })
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -157,17 +104,13 @@ pub struct OnchainPayment {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Payment<V: NetworkValidation> {
+pub struct Payment {
     pub state: PaymentState,
     pub fee_total_sat: SatAmount,
     pub order_total_sat: SatAmount,
 
     pub bolt11_invoice: String,
-    #[serde(bound(
-        serialize = " OnchainAddress<V> : Serialize",
-        deserialize = " OnchainAddress<V> : Deserialize<'de>"
-    ))]
-    pub onchain_address: Option<OnchainAddress<V>>,
+    pub onchain_address: Option<OnchainAddress>,
     pub required_onchain_block_confirmations: Option<u8>,
 
     pub minimum_fee_for_0conf: Option<FeeRate>,
@@ -178,34 +121,14 @@ pub struct Payment<V: NetworkValidation> {
     pub(crate) _private: (),
 }
 
-impl NetworkCheckable for Payment<NetworkUnchecked> {
-    type Checked = Payment<NetworkChecked>;
-
-    fn require_network(self, network: bitcoin::Network) -> Result<Self::Checked> {
-        let result = Self::Checked {
-            state: self.state,
-            fee_total_sat: self.fee_total_sat,
-            order_total_sat: self.order_total_sat,
-            bolt11_invoice: self.bolt11_invoice,
-            onchain_address: self.onchain_address.require_network(network)?,
-            required_onchain_block_confirmations: self.required_onchain_block_confirmations,
-            minimum_fee_for_0conf: self.minimum_fee_for_0conf,
-            onchain_payment: self.onchain_payment,
-            _private: self._private,
-        };
-
-        Ok(result)
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lsps1GetOrderRequest {
     pub uuid: String,
     #[serde(skip_serializing, default)]
     _private: (),
 }
-pub type Lsps1GetOrderResponseChecked = Lsps1CreateOrderResponse<NetworkChecked>;
-pub type Lsps1GetOrderResponseUnchecked = Lsps1CreateOrderResponse<NetworkUnchecked>;
+
+pub type Lsps1GetOrderResponse = Lsps1CreateOrderResponse;
 
 #[cfg(test)]
 mod test {
@@ -262,12 +185,8 @@ mod test {
 
     #[test]
     fn lsps1_implements_serialize() {
-        let address: bitcoin::address::Address<NetworkUnchecked> =
-            "32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf".parse().unwrap();
-        let address: bitcoin::address::Address<NetworkChecked> =
-            address.require_network(Network::Bitcoin).unwrap();
-
-        let onchain = OnchainAddress { address };
+        use core::str::FromStr;
+        let onchain = OnchainAddress::from_str("32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf").unwrap();
 
         let request = Lsps1CreateOrderRequest {
             api_version: 1,
