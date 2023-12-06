@@ -329,12 +329,11 @@ pub struct Lsps1CreateOrderResponseBuilder {
 }
 
 impl Lsps1CreateOrderResponseBuilder {
-
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn from_request(request : Lsps1CreateOrderRequest<NetworkChecked>) -> Self {
+    pub fn from_request(request: Lsps1CreateOrderRequest<NetworkChecked>) -> Self {
         Self::new()
             .api_version(request.api_version)
             .lsp_balance_sat(request.lsp_balance_sat)
@@ -342,8 +341,8 @@ impl Lsps1CreateOrderResponseBuilder {
             .confirms_within_blocks(request.confirms_within_blocks)
             .channel_expiry_blocks(request.channel_expiry_blocks)
             .token(request.token)
-             // .refund_onchain_address(request.refund_onchain_address)
-             .announce_channel(request.announce_channel)
+            // .refund_onchain_address(request.refund_onchain_address)
+            .announce_channel(request.announce_channel)
     }
 
     pub fn uuid(mut self, uuid: Uuid) -> Self {
@@ -508,7 +507,6 @@ pub struct PaymentBuilder {
 }
 
 impl PaymentBuilder {
-
     pub fn new() -> Self {
         Self::default()
     }

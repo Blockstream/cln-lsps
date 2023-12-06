@@ -68,7 +68,7 @@ impl IntoSqliteInteger for OrderState {
         Ok(match self {
             OrderState::Created => 1,
             OrderState::Completed => 2,
-            OrderState::Failed => 3
+            OrderState::Failed => 3,
         })
     }
 }
@@ -79,7 +79,7 @@ impl FromSqliteInteger for OrderState {
             1 => Ok(OrderState::Created),
             2 => Ok(OrderState::Completed),
             3 => Ok(OrderState::Failed),
-            _ => Err(anyhow!("Unknown order state"))
+            _ => Err(anyhow!("Unknown order state")),
         }
     }
 }

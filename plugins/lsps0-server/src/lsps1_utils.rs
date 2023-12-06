@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 
-use lsp_primitives::lsps0::common_schemas::{PublicKey, SatAmount, NetworkChecked};
+use lsp_primitives::lsps0::common_schemas::SatAmount;
 use lsp_primitives::lsps1::builders::{Lsps1InfoResponseBuilder, Lsps1OptionsBuilder};
-use lsp_primitives::lsps1::schema::{Lsps1InfoResponse, Lsps1CreateOrderRequest, Lsps1Options};
+use lsp_primitives::lsps1::schema::Lsps1InfoResponse;
 
 use cln_plugin::options::{ConfigOption, Value};
 
@@ -149,16 +149,6 @@ fn parse_option_to_sat(option: &ConfigOption) -> Result<SatAmount> {
     ))?;
     Ok(SatAmount::new(value_u64))
 }
-
-fn process_order(
-    _client_id : PublicKey,
-    order : Lsps1CreateOrderRequest<NetworkChecked>,
-    options: Lsps1Options
-    ) -> Result<()> {
-    let _validated = order.validate_options(&options);
-    todo!("implement");
-}
-
 
 #[cfg(test)]
 mod test {

@@ -1,3 +1,4 @@
+use crate::json_rpc::{DefaultError, ErrorData};
 use crate::lsps0::common_schemas::NetworkValidation;
 use crate::lsps1::schema::{Lsps1CreateOrderRequest, Lsps1Options};
 use anyhow::Result;
@@ -8,6 +9,18 @@ use serde::{Deserialize, Serialize};
 pub struct Lsps1OptionMismatchError {
     property: String,
     message: String,
+}
+
+impl TryFrom<Lsps1OptionMismatchError> for ErrorData<DefaultError> {
+    type Error = anyhow::Error;
+
+    fn try_from(error: Lsps1OptionMismatchError) -> Result<ErrorData<DefaultError>> {
+        Ok(ErrorData {
+            code: 1000,
+            message: "Option mismatch".into(),
+            data: Some(DefaultError(serde_json::to_value(error)?)),
+        })
+    }
 }
 
 impl Lsps1OptionMismatchError {

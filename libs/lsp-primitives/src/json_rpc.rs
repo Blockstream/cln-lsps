@@ -351,42 +351,42 @@ where
 }
 
 impl ErrorData<DefaultError> {
-    pub fn parse_error(message: String) -> Self {
+    pub fn parse_error(_message: String) -> Self {
         Self {
             code: -32700,
-            message,
+            message: String::from("parse_error"),
             data: None,
         }
     }
 
-    pub fn invalid_request(message: String) -> Self {
+    pub fn invalid_request(_message: String) -> Self {
         Self {
             code: -32600,
-            message,
+            message: String::from("invalid_request"),
             data: None,
         }
     }
 
-    pub fn unknown_method(message: String) -> Self {
+    pub fn unknown_method(method: &str) -> Self {
         Self {
             code: -32601,
-            message,
-            data: None,
+            message: String::from("unknown_method"),
+            data: Some(DefaultError(serde_json::json!({"method" : method}))),
         }
     }
 
-    pub fn invalid_params(message: String) -> Self {
+    pub fn invalid_params(message: &str) -> Self {
         Self {
             code: -32602,
-            message,
-            data: None,
+            message: String::from("invalid_params"),
+            data: Some(DefaultError(serde_json::json!({"message" : message}))),
         }
     }
 
-    pub fn internal_error(message: String) -> Self {
+    pub fn internal_error() -> Self {
         Self {
             code: -32603,
-            message,
+            message: String::from("internal_error"),
             data: None,
         }
     }
@@ -415,7 +415,7 @@ impl<O, E> JsonRpcResponse<O, E> {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DefaultError(serde_json::Value);
+pub struct DefaultError(pub serde_json::Value);
 
 pub trait MapErrorCode {
     fn get_code_str(code: i64) -> &'static str;

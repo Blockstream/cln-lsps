@@ -136,10 +136,7 @@ impl Database {
         return Ok(());
     }
 
-    pub async fn get_order_by_uuid(
-        &self, uuid: 
-        Uuid
-        ) -> Result<Option<Lsps1Order>> {
+    pub async fn get_order_by_uuid(&self, uuid: Uuid) -> Result<Option<Lsps1Order>> {
         let uuid_string = uuid.to_string();
         let result = sqlx::query_as!(
             Lsps1OrderSqlite,
@@ -263,7 +260,7 @@ mod test {
             token: None,
             channel_expiry_blocks: 6 * 24 * 30,
             announce_channel: false,
-            order_state : OrderState::Created
+            order_state: OrderState::Created,
         };
 
         let payment = Lsps1PaymentDetails {

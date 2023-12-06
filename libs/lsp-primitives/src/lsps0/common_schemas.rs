@@ -159,7 +159,6 @@ const DATETIME_FORMAT: &[FormatItem] =
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z");
 
 impl IsoDatetime {
-
     pub fn now() -> Self {
         Self::from_offset_date_time(time::OffsetDateTime::now_utc())
     }
@@ -173,8 +172,9 @@ impl IsoDatetime {
         }
     }
 
-    pub fn from_unix_timestamp(value : i64) -> Result<Self> {
-        let offset = OffsetDateTime::from_unix_timestamp(value).context("Failed to construct datetime")?;
+    pub fn from_unix_timestamp(value: i64) -> Result<Self> {
+        let offset =
+            OffsetDateTime::from_unix_timestamp(value).context("Failed to construct datetime")?;
         Ok(Self::from_offset_date_time(offset))
     }
 
@@ -373,15 +373,12 @@ impl ShortChannelId {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct FeeRate {
-    fee_rate : u64
+    fee_rate: u64,
 }
 
 impl FeeRate {
-
-    pub fn from_sats_per_kwu(sats_kwu : u64) -> Self {
-        Self {
-            fee_rate : sats_kwu
-        }
+    pub fn from_sats_per_kwu(sats_kwu: u64) -> Self {
+        Self { fee_rate: sats_kwu }
     }
 
     pub fn to_sats_per_kwu(&self) -> u64 {
@@ -566,8 +563,5 @@ mod test {
         let json_value = serde_json::to_value(min_fee).unwrap();
 
         assert_eq!(json_value, serde_json::json!(253));
-        
-
-
     }
 }

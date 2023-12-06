@@ -4,13 +4,13 @@ use cln_plugin::Plugin;
 use cln_rpc::ClnRpc;
 
 use lsp_primitives::json_rpc::JsonRpcRequest;
-use lsp_primitives::lsps0::common_schemas::{PublicKey, Network};
+use lsp_primitives::lsps0::common_schemas::{Network, PublicKey};
 
 pub struct CustomMsgContext<PluginState>
 where
     PluginState: Send + Clone,
 {
-    pub network : Network,
+    pub network: Network,
     pub plugin: Plugin<PluginState>,
     pub cln_rpc: ClnRpc,
     pub peer_id: PublicKey,
@@ -22,7 +22,7 @@ pub struct CustomMsgContextBuilder<PluginState>
 where
     PluginState: Send + Clone,
 {
-    network : Option<Network>,
+    network: Option<Network>,
     plugin: Option<Plugin<PluginState>>,
     cln_rpc: Option<ClnRpc>,
     peer_id: Option<PublicKey>,
@@ -35,7 +35,7 @@ where
 {
     pub fn new() -> Self {
         Self {
-            network : None,
+            network: None,
             plugin: None,
             cln_rpc: None,
             peer_id: None,
@@ -43,7 +43,7 @@ where
         }
     }
 
-    pub fn network(mut self, network : Network) -> Self {
+    pub fn network(mut self, network: Network) -> Self {
         self.network = Some(network);
         self
     }

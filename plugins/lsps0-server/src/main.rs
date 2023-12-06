@@ -1,14 +1,14 @@
 mod custom_msg;
 mod db;
-mod lsps1_utils;
-mod options;
-mod lsps1;
-mod network;
 mod error;
+mod lsps1;
+mod lsps1_utils;
+mod network;
+mod options;
 
 use std::str::FromStr;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use log;
 
 use cln_plugin::options::Value as ConfigValue;
@@ -19,6 +19,7 @@ use lsp_primitives::json_rpc::{
 };
 
 use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
+use lsp_primitives::lsps0::schema::ListprotocolsResponse;
 use lsp_primitives::methods::server as server_methods;
 use lsp_primitives::methods::server::JsonRpcMethodEnum;
 
@@ -33,19 +34,19 @@ use crate::custom_msg::util::send_response;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
 use sqlx::Connection;
 
-use crate::network::parse_network;
-use crate::lsps1::hooks::{do_lsps1_get_info};
 use crate::db::sqlite::Database;
+use crate::error::CustomMsgError;
+use crate::lsps1::hooks::{do_lsps1_create_order, do_lsps1_get_info};
+use crate::network::parse_network;
 
 #[derive(Clone)]
 struct PluginState {
-    database : Database, // Already uses Arc under the hood. Cheap and safe to clone
-
+    database: Database, // Already uses Arc under the hood. Cheap and safe to clone
 }
 
 impl PluginState {
-    fn new(database : Database) -> Self {
-        Self { database}
+    fn new(database: Database) -> Self {
+        Self { database }
     }
 }
 
@@ -111,7 +112,7 @@ async fn main() -> Result<()> {
 
     let plugin = configured_plugin.start(PluginState::new(database)).await?;
 
-     plugin.join().await.unwrap();
+    plugin.join().await.unwrap();
 
     return Ok(());
 }
@@ -200,7 +201,7 @@ async fn handle_custom_msg(
     let method = match method {
         Ok(m) => m,
         Err(_) => {
-            let error = ErrorData::unknown_method(format!("Method unknown '{}'", method_str));
+            let error = ErrorData::unknown_method(&method_str);
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
             send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
@@ -222,40 +223,48 @@ async fn handle_custom_msg(
         .cln_rpc(cln_rpc)
         .build()?;
 
-    return match method {
-        JsonRpcMethodEnum::Lsps0ListProtocols(m) => do_list_protocols(m, context).await,
-        JsonRpcMethodEnum::Lsps1Info(m) => do_lsps1_get_info(m, context).await,
-        _ => {
-            let error = ErrorData::unknown_method(format!("Method unknown '{}'", method_str));
-            let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
-            send_response(&mut context.cln_rpc, peer_id.clone(), rpc_response).await?;
-            return do_continue();
+    // Process the incoming custom msg
+    let result = match method {
+        JsonRpcMethodEnum::Lsps0ListProtocols(m) => do_list_protocols(m, &mut context)
+            .await
+            .map(|x| serde_json::to_value(x).unwrap()),
+        JsonRpcMethodEnum::Lsps1Info(m) => do_lsps1_get_info(m, &mut context)
+            .await
+            .map(|x| serde_json::to_value(x).unwrap()),
+        JsonRpcMethodEnum::Lsps1CreateOrder(m) => do_lsps1_create_order(m, &mut context)
+            .await
+            .map(|x| serde_json::to_value(x).unwrap()),
+    };
+
+    match result {
+        Ok(result) => {
+            let json_rpc_response = JsonRpcResponse::<_, DefaultError>::success(id, result);
+            send_response(&mut context.cln_rpc, *peer_id, json_rpc_response).await?;
+        }
+        Err(err) => {
+            let error_data = ErrorData::try_from(err);
+            if error_data.is_ok() {
+                let json_rpc_response =
+                    JsonRpcResponse::<(), DefaultError>::error(id, error_data.unwrap());
+                send_response(&mut context.cln_rpc, *peer_id, json_rpc_response).await?;
+            } else {
+                log::debug!("Ignored message {:?}.{:?}", peer_id, id);
+                log::debug!("Reason {:?}", error_data.unwrap_err());
+            }
         }
     };
+
+    do_continue()
 }
 
 async fn do_list_protocols(
     _method: server_methods::Lsps0ListProtocols,
-    mut context: CustomMsgContext<PluginState>,
-) -> Result<serde_json::Value> {
-    // Opening the cln-rpc connection. We'll use this to send
-    // custom messages
-    // Create the response object
-    let protocol_list = ListprotocolsResponseBuilder::new()
+    _context: &mut CustomMsgContext<PluginState>,
+) -> Result<ListprotocolsResponse, CustomMsgError> {
+    ListprotocolsResponseBuilder::new()
         .protocols(vec![0, 1])
-        .build();
-
-    let response = match protocol_list {
-        Ok(pl) => JsonRpcResponse::success(context.request.id, pl),
-        Err(err) => {
-            log::warn!("Error in handling lsps1.list_protocols call");
-            log::warn!("Error {:?}", err);
-            let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
-            JsonRpcResponse::error(context.request.id, error)
-        }
-    };
-
-    send_response(&mut context.cln_rpc, context.peer_id, response).await?;
-    do_continue()
+        .build()
+        .map_err(|_| {
+            CustomMsgError::InternalError("Failed to construct ListprotocolsResponse".into())
+        })
 }
-
