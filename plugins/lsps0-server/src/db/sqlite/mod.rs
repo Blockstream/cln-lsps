@@ -12,7 +12,8 @@ use crate::db::sqlite::schema::{
 };
 use lsp_primitives::lsps0::common_schemas::IsoDatetime;
 
-struct Database {
+#[derive(Clone)]
+pub struct Database {
     pool: SqlitePool,
 }
 
@@ -110,7 +111,7 @@ impl Database {
                 ?1, ?2, ?3
              );"#,
             order_id.id,
-            1,
+            order.order_state,
             now
         )
         .execute(&mut *tx)
@@ -135,7 +136,10 @@ impl Database {
         return Ok(());
     }
 
-    pub async fn get_order_by_uuid(&self, uuid: Uuid) -> Result<Option<Lsps1Order>> {
+    pub async fn get_order_by_uuid(
+        &self, uuid: 
+        Uuid
+        ) -> Result<Option<Lsps1Order>> {
         let uuid_string = uuid.to_string();
         let result = sqlx::query_as!(
             Lsps1OrderSqlite,
@@ -143,8 +147,10 @@ impl Database {
                 uuid, client_node_id, lsp_balance_sat,
                 client_balance_sat, confirms_within_blocks, channel_expiry_blocks,
                 token, refund_onchain_address, announce_channel,
-                created_at, expires_at
-            FROM lsps1_order where uuid = ?"#,
+                ord.created_at, expires_at, os.order_state_enum_id as order_state
+            FROM lsps1_order AS ord
+            JOIN lsps1_order_state AS os ON ord.id = os.order_id
+            WHERE uuid = ?"#,
             uuid_string
         )
         .fetch_optional(&self.pool)
@@ -212,6 +218,7 @@ impl Database {
 mod test {
     use super::*;
     use lsp_primitives::lsps0::common_schemas::{IsoDatetime, PublicKey, SatAmount};
+    use lsp_primitives::lsps1::schema::OrderState;
 
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -256,6 +263,7 @@ mod test {
             token: None,
             channel_expiry_blocks: 6 * 24 * 30,
             announce_channel: false,
+            order_state : OrderState::Created
         };
 
         let payment = Lsps1PaymentDetails {

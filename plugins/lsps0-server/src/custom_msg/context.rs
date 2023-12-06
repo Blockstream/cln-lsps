@@ -4,12 +4,13 @@ use cln_plugin::Plugin;
 use cln_rpc::ClnRpc;
 
 use lsp_primitives::json_rpc::JsonRpcRequest;
-use lsp_primitives::lsps0::common_schemas::PublicKey;
+use lsp_primitives::lsps0::common_schemas::{PublicKey, Network};
 
 pub struct CustomMsgContext<PluginState>
 where
     PluginState: Send + Clone,
 {
+    pub network : Network,
     pub plugin: Plugin<PluginState>,
     pub cln_rpc: ClnRpc,
     pub peer_id: PublicKey,
@@ -21,6 +22,7 @@ pub struct CustomMsgContextBuilder<PluginState>
 where
     PluginState: Send + Clone,
 {
+    network : Option<Network>,
     plugin: Option<Plugin<PluginState>>,
     cln_rpc: Option<ClnRpc>,
     peer_id: Option<PublicKey>,
@@ -33,11 +35,17 @@ where
 {
     pub fn new() -> Self {
         Self {
+            network : None,
             plugin: None,
             cln_rpc: None,
             peer_id: None,
             request: None,
         }
+    }
+
+    pub fn network(mut self, network : Network) -> Self {
+        self.network = Some(network);
+        self
     }
 
     pub fn plugin(mut self, plugin: Plugin<PluginState>) -> Self {
@@ -61,12 +69,14 @@ where
     }
 
     pub fn build(self) -> Result<CustomMsgContext<PluginState>> {
+        let network = self.network.context("Missing value for 'network'")?;
         let plugin = self.plugin.context("Missing value for 'plugin'")?;
         let cln_rpc = self.cln_rpc.context("Missing value for 'cln_rpc'")?;
         let peer_id = self.peer_id.context("Missing value for 'peer_id'")?;
         let request = self.request.context("Missing value for 'request'")?;
 
         Ok(CustomMsgContext {
+            network,
             plugin,
             cln_rpc,
             peer_id,

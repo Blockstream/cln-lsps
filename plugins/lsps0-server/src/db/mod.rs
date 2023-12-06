@@ -1,2 +1,2 @@
-mod schema;
-mod sqlite;
+pub(crate) mod schema;
+pub(crate) mod sqlite;

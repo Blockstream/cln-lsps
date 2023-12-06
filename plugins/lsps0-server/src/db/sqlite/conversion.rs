@@ -1,5 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, MsatAmount, SatAmount};
+use lsp_primitives::lsps1::schema::OrderState;
 
 pub trait IntoSqliteInteger {
     fn into_sqlite_integer(&self) -> Result<i64>;
@@ -59,5 +60,26 @@ impl IntoSqliteInteger for IsoDatetime {
 impl FromSqliteInteger for IsoDatetime {
     fn from_sqlite_integer(value: i64) -> Result<Self> {
         IsoDatetime::from_unix_timestamp(value)
+    }
+}
+
+impl IntoSqliteInteger for OrderState {
+    fn into_sqlite_integer(&self) -> Result<i64> {
+        Ok(match self {
+            OrderState::Created => 1,
+            OrderState::Completed => 2,
+            OrderState::Failed => 3
+        })
+    }
+}
+
+impl FromSqliteInteger for OrderState {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
+        match value {
+            1 => Ok(OrderState::Created),
+            2 => Ok(OrderState::Completed),
+            3 => Ok(OrderState::Failed),
+            _ => Err(anyhow!("Unknown order state"))
+        }
     }
 }

@@ -105,9 +105,9 @@ pub fn lsps1_order_lifetime_seconds() -> ConfigOption {
     )
 }
 
-pub fn lsp_server_database_connection() -> ConfigOption {
+pub fn lsp_server_database_url() -> ConfigOption {
     ConfigOption::new(
-        "lsp_server_database_connection",
+        "lsp_server_database_url",
         Value::OptString,
         "The fully qualfied patth to the database. E.g: sqlite://home/user/data/lsp_server_database.db")
 }

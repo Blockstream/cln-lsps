@@ -2,10 +2,13 @@ mod custom_msg;
 mod db;
 mod lsps1_utils;
 mod options;
+mod lsps1;
+mod network;
+mod error;
 
 use std::str::FromStr;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use log;
 
 use cln_plugin::options::Value as ConfigValue;
@@ -30,12 +33,19 @@ use crate::custom_msg::util::send_response;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
 use sqlx::Connection;
 
+use crate::network::parse_network;
+use crate::lsps1::hooks::{do_lsps1_get_info};
+use crate::db::sqlite::Database;
+
 #[derive(Clone)]
-struct PluginState {}
+struct PluginState {
+    database : Database, // Already uses Arc under the hood. Cheap and safe to clone
+
+}
 
 impl PluginState {
-    fn new() -> Self {
-        Self {}
+    fn new(database : Database) -> Self {
+        Self { database}
     }
 }
 
@@ -60,7 +70,7 @@ async fn main() -> Result<()> {
             .option(options::lsps1_fee_computation_onchain_ppm())
             .option(options::lsps1_fee_computation_liquidity_ppb())
             .option(options::lsps1_order_lifetime_seconds())
-            .option(options::lsp_server_database_connection())
+            .option(options::lsp_server_database_url())
             .hook("custommsg", handle_custom_msg)
             .configure()
             .await?
@@ -69,12 +79,12 @@ async fn main() -> Result<()> {
             None => return Ok(()),
         };
 
-    let plugin = configured_plugin.start(PluginState::new()).await?;
-
     // Connect to the database and run migration scripts
-    let connection_string = match plugin.option("lsp_server_database_connection") {
-        Some(ConfigValue::OptString) => {
-            let lightning_dir = plugin.configuration().lightning_dir;
+    let connection_string = match configured_plugin.option("lsp_server_database_url") {
+        Some(ConfigValue::OptString) | None => {
+            log::info!("No config found for 'lsp_server_database_url'");
+            log::info!("The default path will be used");
+            let lightning_dir = configured_plugin.configuration().lightning_dir;
             format!("sqlite://{}/lsp_server.db", lightning_dir)
         }
         Some(ConfigValue::String(x)) => x,
@@ -97,7 +107,12 @@ async fn main() -> Result<()> {
     sqlx::migrate!().run(&mut connection).await?;
     log::info!("Successfully executed migrations");
 
-    plugin.join().await?;
+    let database = Database::connect_with_options(options).await.unwrap();
+
+    let plugin = configured_plugin.start(PluginState::new(database)).await?;
+
+     plugin.join().await.unwrap();
+
     return Ok(());
 }
 
@@ -192,11 +207,15 @@ async fn handle_custom_msg(
         }
     };
 
+    // TODO: Send a nicer response
+    let network = parse_network(&plugin.configuration().network).unwrap();
+
     // Execute the handler for the specific method
     // Each handler accepts a `CustomMsgContext` containing all relevant information
     // Each handler returns a `Result<serde_json::Value>`. The handler should return
     // {"result" : "continue" }
     let mut context = CustomMsgContextBuilder::new()
+        .network(network)
         .request(json_rpc_request)
         .plugin(plugin)
         .peer_id(peer_id.clone())
@@ -240,24 +259,3 @@ async fn do_list_protocols(
     do_continue()
 }
 
-async fn do_lsps1_get_info(
-    _method: server_methods::Lsps1Info,
-    mut context: CustomMsgContext<PluginState>,
-) -> Result<serde_json::Value> {
-    log::debug!("lsps1_get_info");
-
-    let info_response = lsps1_utils::info_response(context.plugin.options());
-
-    let response = match info_response {
-        Ok(ok) => JsonRpcResponse::success(context.request.id, ok),
-        Err(err) => {
-            log::warn!("Error in handling lsps1.list_protocols call");
-            log::warn!("Error {:?}", err);
-            let error = ErrorData::<DefaultError>::internal_error("Internal server error".into());
-            JsonRpcResponse::error(context.request.id, error)
-        }
-    };
-
-    send_response(&mut context.cln_rpc, context.peer_id, response).await?;
-    do_continue()
-}

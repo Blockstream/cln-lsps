@@ -4,6 +4,8 @@ use crate::db::schema::{
     Lsps1Order as Lsps1OrderBase, Lsps1PaymentDetails as Lsps1PaymentDetailsBase,
 };
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, PublicKey, SatAmount};
+use lsp_primitives::lsps1::schema::OrderState;
+use crate::db::sqlite::conversion::{FromSqliteInteger, IntoSqliteInteger};
 
 #[derive(sqlx::FromRow)]
 pub struct Lsps1Order {
@@ -18,6 +20,7 @@ pub struct Lsps1Order {
     pub(crate) announce_channel: bool,
     pub(crate) created_at: i64,
     pub(crate) expires_at: i64,
+    pub(crate) order_state: i64
 }
 
 #[derive(sqlx::FromRow)]
@@ -72,6 +75,7 @@ impl TryFrom<&Lsps1Order> for Lsps1OrderBase {
             announce_channel: order.announce_channel,
             created_at: IsoDatetime::from_unix_timestamp(order.created_at)?,
             expires_at: IsoDatetime::from_unix_timestamp(order.expires_at)?,
+            order_state : OrderState::from_sqlite_integer(order.order_state)?
         })
     }
 }
@@ -92,6 +96,7 @@ impl TryFrom<&Lsps1OrderBase> for Lsps1Order {
             announce_channel: order.announce_channel,
             created_at: order.created_at.unix_timestamp(),
             expires_at: order.expires_at.unix_timestamp(),
+            order_state : order.order_state.into_sqlite_integer()?
         })
     }
 }

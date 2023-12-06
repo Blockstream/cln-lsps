@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.75"
+async-trait = "0.1.74"
 cln-lsps0 = { version = "0.1.0", path = "../../libs/cln-lsps0" }
 cln-plugin = "0.1.6"
 cln-rpc = "0.1.6"
