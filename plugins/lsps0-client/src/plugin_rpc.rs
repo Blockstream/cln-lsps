@@ -40,7 +40,7 @@ pub struct Lsps1CreateOrderRequest {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Lsps0SendRequest {
-    pub peer_id : String,
-    pub method : String,
-    pub params : String
+    pub peer_id: String,
+    pub method: String,
+    pub params: String,
 }

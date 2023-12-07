@@ -8,7 +8,7 @@ use tokio;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use lsp_primitives::json_rpc::{JsonRpcId, JsonRpcResponse, NoParams, JsonRpcMethod, DefaultError};
+use lsp_primitives::json_rpc::{DefaultError, JsonRpcId, JsonRpcMethod, JsonRpcResponse, NoParams};
 use lsp_primitives::lsps0::common_schemas::{Network, NetworkCheckable, PublicKey};
 use lsp_primitives::lsps1;
 use lsp_primitives::methods;
@@ -61,7 +61,8 @@ async fn main() -> Result<()> {
             .rpcmethod(
                 "lsps0-send-request",
                 "Send a json RPC request",
-                lsps0_send_request)
+                lsps0_send_request,
+            )
             .rpcmethod(
                 "lsps1-get-info",
                 "Get info and pricing to purchase a channel from an LSP",
@@ -168,21 +169,20 @@ async fn list_protocols(
 }
 
 async fn lsps0_send_request(
-    plugin : Plugin<PluginState>,
-    request : serde_json::Value
+    plugin: Plugin<PluginState>,
+    request: serde_json::Value,
 ) -> Result<serde_json::value::Value, Error> {
-
     let mut client = create_lsp_client_from_plugin(plugin).await?;
 
     // Parsing the request
-    let request : plugin_rpc::Lsps0SendRequest = serde_json::from_value(request)?;
+    let request: plugin_rpc::Lsps0SendRequest = serde_json::from_value(request)?;
 
     pub type Method<'a> = JsonRpcMethod<'a, serde_json::Value, serde_json::Value, DefaultError>;
     let method = Method::new(&request.method);
 
-    let peer_id : PublicKey = PublicKey::from_hex(&request.peer_id)?;
-    let params : serde_json::Value = serde_json::to_value(request.params)?;
+    let peer_id: PublicKey = PublicKey::from_hex(&request.peer_id)?;
 
+    let params: serde_json::Value = serde_json::from_str(&request.params)?;
     let response = client.request(&peer_id, method, params).await?;
 
     Ok(serde_json::to_value(response)?)
