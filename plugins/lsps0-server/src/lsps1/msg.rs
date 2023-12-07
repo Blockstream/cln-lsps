@@ -12,7 +12,7 @@ impl BuildLsps1Order for Lsps1CreateOrderResponseBuilder {
             .client_balance_sat(order.client_balance_sat)
             .confirms_within_blocks(order.confirms_within_blocks)
             .channel_expiry_blocks(order.channel_expiry_blocks)
-            .token(order.token)
+            .token(order.token.unwrap_or("".to_string()))
             .announce_channel(order.announce_channel)
             .created_at(order.created_at)
             .expires_at(order.expires_at)

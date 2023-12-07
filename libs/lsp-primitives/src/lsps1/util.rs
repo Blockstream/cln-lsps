@@ -4,7 +4,7 @@ use anyhow::Result;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Lsps1OptionMismatchError {
     property: String,
     message: String,

@@ -18,7 +18,7 @@ pub fn info_response(config_options: Vec<ConfigOption>) -> Result<Lsps1InfoRespo
     let mut lsps1_max_capacity = Option::<SatAmount>::None;
 
     for opt in config_options {
-        log::info!("{}={:?}", opt.name(), opt.value());
+        log::debug!("Reading LSPS1 option: {}={:?}", opt.name(), opt.value());
         match opt.name() {
             "lsps1_info_website" => {
                 let value = opt.value().as_str().map(|x| String::from(x));

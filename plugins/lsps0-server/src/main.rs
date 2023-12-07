@@ -238,6 +238,7 @@ async fn handle_custom_msg(
             send_response(&mut context.cln_rpc, *peer_id, json_rpc_response).await?;
         }
         Err(err) => {
+            log::warn!("Error {:?}", err);
             let error_data = ErrorData::try_from(err);
             if error_data.is_ok() {
                 let json_rpc_response =

@@ -1,6 +1,7 @@
 use lsp_primitives::json_rpc::{DefaultError, ErrorData};
 use lsp_primitives::lsps1::util::Lsps1OptionMismatchError;
 
+#[derive(Debug, Clone)]
 pub enum CustomMsgError {
     InvalidParams(Box<str>),
     InternalError(Box<str>),

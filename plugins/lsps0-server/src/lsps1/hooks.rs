@@ -103,6 +103,7 @@ pub(crate) async fn do_lsps1_create_order(
         .fee_total_sat(payment.fee_total_sat)
         .order_total_sat(payment.order_total_sat)
         .bolt11_invoice(payment.bolt11_invoice)
+        .state(PaymentState::ExpectPayment)
         .build()
         .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
 
@@ -139,6 +140,8 @@ pub(crate) async fn do_lsps1_get_order(
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?
         .ok_or_else(|| CustomMsgError::NotFound("Order not found".into()))?;
 
+    log::info!("Storing payment details in db");
+
     let payment_details = db
         .get_payment_details_by_uuid(uuid_value)
         .await
@@ -149,6 +152,7 @@ pub(crate) async fn do_lsps1_get_order(
             )
         })?;
 
+    log::info!("Creating payment");
     let payment = PaymentBuilder::new()
         .db_payment_details(payment_details)
         .state(PaymentState::ExpectPayment)
@@ -158,6 +162,7 @@ pub(crate) async fn do_lsps1_get_order(
     Lsps1CreateOrderResponseBuilder::new()
         .db_order(order)
         .payment(payment)
+        .order_state(OrderState::Created)
         .build()
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))
 }

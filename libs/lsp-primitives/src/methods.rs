@@ -42,7 +42,8 @@ pub type Lsps1Info = JsonRpcMethod<'static, Lsps1InfoRequest, Lsps1InfoResponse,
 pub type Lsps1CreateOrder =
     JsonRpcMethod<'static, Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
 
-pub type Lsps1GetOrder = JsonRpcMethod<'static, Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
+pub type Lsps1GetOrder =
+    JsonRpcMethod<'static, Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
 
 // LSPS0: Transport layer
 pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =

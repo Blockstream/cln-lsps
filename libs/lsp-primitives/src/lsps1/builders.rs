@@ -340,7 +340,7 @@ impl Lsps1CreateOrderResponseBuilder {
             .client_balance_sat(request.client_balance_sat)
             .confirms_within_blocks(request.confirms_within_blocks)
             .channel_expiry_blocks(request.channel_expiry_blocks)
-            .token(request.token)
+            .token(request.token.unwrap_or("".to_string()))
             // .refund_onchain_address(request.refund_onchain_address)
             .announce_channel(request.announce_channel)
     }
@@ -369,8 +369,8 @@ impl Lsps1CreateOrderResponseBuilder {
         self.channel_expiry_blocks = Some(channel_expiry_blocks);
         self
     }
-    pub fn token(mut self, token: Option<String>) -> Self {
-        self.token = token;
+    pub fn token(mut self, token: String) -> Self {
+        self.token = Some(token);
         self
     }
     pub fn announce_channel(mut self, announce_channel: bool) -> Self {
@@ -414,9 +414,7 @@ impl Lsps1CreateOrderResponseBuilder {
         let channel_expiry_blocks = self
             .channel_expiry_blocks
             .context("Missing field 'channel_expiry_blocks' in Lsps1CreateOrderRequestBuilder")?;
-        let token = self
-            .token
-            .context("Missing field 'token' in Lsps1CreateOrderRequestBuilder")?;
+        let token = self.token.unwrap_or("".to_string());
         let announce_channel = self
             .announce_channel
             .context("Missing field 'announce_channel' in Lsps1CreateOrderRequestBuilder")?;
