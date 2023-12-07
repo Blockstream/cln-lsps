@@ -1,9 +1,12 @@
-#[derive(Debug, Clone, Default)]
-pub struct PluginState {}
+use crate::db::sqlite::Database;
 
-impl PluginState {
-    pub fn new() -> Self {
-        Self::default()
-    }
+#[derive(Clone)]
+pub(crate) struct PluginState {
+    pub(crate) database: Database, // Already uses Arc under the hood. Cheap and safe to clone
 }
 
+impl PluginState {
+    pub(crate) fn new(database: Database) -> Self {
+        Self { database }
+    }
+}

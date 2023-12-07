@@ -5,6 +5,7 @@ mod lsps1;
 mod lsps1_utils;
 mod network;
 mod options;
+mod state;
 
 use std::str::FromStr;
 
@@ -38,17 +39,7 @@ use crate::db::sqlite::Database;
 use crate::error::CustomMsgError;
 use crate::lsps1::hooks::{do_lsps1_create_order, do_lsps1_get_info, do_lsps1_get_order};
 use crate::network::parse_network;
-
-#[derive(Clone)]
-struct PluginState {
-    database: Database, // Already uses Arc under the hood. Cheap and safe to clone
-}
-
-impl PluginState {
-    fn new(database: Database) -> Self {
-        Self { database }
-    }
-}
+use crate::state::PluginState;
 
 #[tokio::main]
 async fn main() -> Result<()> {
