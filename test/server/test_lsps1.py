@@ -27,7 +27,6 @@ def test_lsps1_create_order_violate_options(lsps_server, lsps_client):
     lsps_client.connect(lsps_server)
 
     params = dict(
-        api_version=1,
         lsp_balance_sat="0",
         client_balance_sat="1000001",  # Too large
         confirms_within_blocks=1,
@@ -53,7 +52,6 @@ def test_lsps1_create_order(lsps_server, lsps_client):
     lsps_client.connect(lsps_server)
 
     params = dict(
-        api_version=1,
         lsp_balance_sat="500000",
         client_balance_sat="0",
         confirms_within_blocks=1,
@@ -83,7 +81,6 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     lsps_client.connect(lsps_server)
 
     params = dict(
-        api_version=1,
         lsp_balance_sat="500000",
         client_balance_sat="0",
         confirms_within_blocks=1,
@@ -114,3 +111,4 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
 
     assert result["order_state"] == "CREATED"
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
+
