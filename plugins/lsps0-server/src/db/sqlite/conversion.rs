@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, MsatAmount, SatAmount};
-use lsp_primitives::lsps1::schema::OrderState;
+use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 
 pub trait IntoSqliteInteger {
     fn into_sqlite_integer(&self) -> Result<i64>;
@@ -100,11 +100,34 @@ impl IntoSqliteInteger for OrderState {
 
 impl FromSqliteInteger for OrderState {
     fn from_sqlite_integer(value: i64) -> Result<Self> {
-        match value {
+        match &value {
             1 => Ok(OrderState::Created),
             2 => Ok(OrderState::Completed),
             3 => Ok(OrderState::Failed),
-            _ => Err(anyhow!("Unknown order state")),
+            _ => Err(anyhow!("Unknown order state: {}", value)),
+        }
+    }
+}
+
+impl IntoSqliteInteger for PaymentState {
+    fn into_sqlite_integer(&self) -> Result<i64> {
+        Ok(match self {
+            PaymentState::ExpectPayment => 1,
+            PaymentState::Hold => 2,
+            PaymentState::Paid => 3,
+            PaymentState::Refunded => 4,
+        })
+    }
+}
+
+impl FromSqliteInteger for PaymentState {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
+        match &value {
+            1 => Ok(PaymentState::ExpectPayment),
+            2 => Ok(PaymentState::Hold),
+            3 => Ok(PaymentState::Paid),
+            4 => Ok(PaymentState::Refunded),
+            _ => Err(anyhow!("Unknown payment state: {}", value)),
         }
     }
 }
