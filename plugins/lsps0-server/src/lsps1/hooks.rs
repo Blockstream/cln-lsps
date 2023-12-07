@@ -127,7 +127,7 @@ pub(crate) async fn do_lsps1_get_order(
         .into_typed_request(context.request.clone())
         .map_err(|x| CustomMsgError::InvalidParams(x.to_string().into()))?;
 
-    let uuid_value = Uuid::parse_str(&typed_request.params.uuid)
+    let uuid_value = Uuid::parse_str(&typed_request.params.order_id)
         .map_err(|_| CustomMsgError::NotFound("Order not found".into()))?;
 
     let db = context.plugin.state().database.clone();
@@ -160,6 +160,7 @@ pub(crate) async fn do_lsps1_get_order(
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?;
 
     Lsps1CreateOrderResponseBuilder::new()
+        .api_version(1)
         .db_order(order)
         .payment(payment)
         .order_state(OrderState::Created)

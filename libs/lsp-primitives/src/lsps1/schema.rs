@@ -123,7 +123,7 @@ pub struct Payment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lsps1GetOrderRequest {
-    pub uuid: String,
+    pub order_id: String,
     #[serde(skip_serializing, default)]
     _private: (),
 }

@@ -77,3 +77,40 @@ def test_lsps1_create_order(lsps_server, lsps_client):
 
     assert result["order_state"] == "CREATED"
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
+
+
+def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
+    lsps_client.connect(lsps_server)
+
+    params = dict(
+        api_version=1,
+        lsp_balance_sat="500000",
+        client_balance_sat="0",
+        confirms_within_blocks=1,
+        channel_expiry_blocks=144,
+        announceChannel=False,
+    )
+
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"],
+        method="lsps1.create_order",
+        params=json.dumps(params),
+    )
+
+    order_id = response["result"]["order_id"]
+    params = json.dumps({"order_id": order_id})
+
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"], method="lsps1.get_order", params=params
+    )
+
+    result = response["result"]
+
+    assert result["lsp_balance_sat"] == "500000"
+    assert result["client_balance_sat"] == "0"
+    assert result["confirms_within_blocks"] == 1
+    assert result["channel_expiry_blocks"] == 144
+    assert result["announceChannel"] == False
+
+    assert result["order_state"] == "CREATED"
+    assert result["payment"]["state"] == "EXPECT_PAYMENT"
