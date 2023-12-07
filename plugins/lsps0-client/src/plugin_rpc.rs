@@ -11,22 +11,22 @@ use serde::{Deserialize, Serialize};
 
 use lsp_primitives::lsps0::common_schemas::{OnchainAddress, SatAmount};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ListProtocolsRequest {
     pub peer_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ListProtocolsResponse {
     pub protocols: Vec<u8>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Lsps1GetInfoRequest {
     pub peer_id: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Lsps1CreateOrderRequest {
     pub peer_id: String,
     pub lsp_balance_sat: SatAmount,
@@ -36,4 +36,11 @@ pub struct Lsps1CreateOrderRequest {
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,
     pub announce_channel: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Lsps0SendRequest {
+    pub peer_id : String,
+    pub method : String,
+    pub params : String
 }
