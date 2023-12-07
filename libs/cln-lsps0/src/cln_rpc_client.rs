@@ -38,7 +38,7 @@ impl LspClient for ClnRpcLspClient {
     async fn request_with_id<'a, I, O, E>(
         &mut self,
         peer_id: &PublicKey,
-        method: JsonRpcMethod<I, O, E>,
+        method: JsonRpcMethod<'a, I, O, E>,
         params: I,
         json_rpc_id: JsonRpcId,
     ) -> Result<JsonRpcResponse<O, E>>

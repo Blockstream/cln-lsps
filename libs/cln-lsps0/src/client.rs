@@ -59,7 +59,7 @@ pub trait LspClient {
     async fn request_with_id<'a, I, O, E>(
         &mut self,
         peer_id: &PublicKey,
-        method: JsonRpcMethod<I, O, E>,
+        method: JsonRpcMethod<'a, I, O, E>,
         param: I,
         rpc_id: JsonRpcId,
     ) -> Result<JsonRpcResponse<O, E>>
@@ -75,7 +75,7 @@ pub trait LspClient {
     async fn request<'a, I, O, E>(
         &mut self,
         peer_id: &PublicKey,
-        method: JsonRpcMethod<I, O, E>,
+        method: JsonRpcMethod<'a, I, O, E>,
         param: I,
     ) -> Result<JsonRpcResponse<O, E>>
     where

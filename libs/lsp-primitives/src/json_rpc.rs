@@ -73,11 +73,11 @@ pub fn generate_random_rpc_id() -> JsonRpcId {
 /// error-codes for a method.
 ///
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
-pub struct JsonRpcMethod<I, O, E>
+pub struct JsonRpcMethod<'a, I, O, E>
 where
     E: MapErrorCode,
 {
-    pub method: &'static str,
+    pub method: &'a str,
     #[serde(skip_serializing)]
     request: std::marker::PhantomData<I>,
     #[serde(skip_serializing)]
@@ -86,11 +86,11 @@ where
     error_type: std::marker::PhantomData<E>,
 }
 
-impl<I, O, E> JsonRpcMethod<I, O, E>
+impl<'a, I, O, E> JsonRpcMethod<'a, I, O, E>
 where
     E: MapErrorCode,
 {
-    pub const fn new(method: &'static str) -> Self {
+    pub const fn new(method: &'a str) -> Self {
         Self {
             method,
             request: std::marker::PhantomData,
@@ -99,7 +99,7 @@ where
         }
     }
 
-    pub const fn name(&self) -> &'static str {
+    pub const fn name(&self) -> &'a str {
         self.method
     }
 
@@ -143,7 +143,7 @@ where
     }
 }
 
-impl<O, E> JsonRpcMethod<NoParams, O, E>
+impl<O, E> JsonRpcMethod<'_, NoParams, O, E>
 where
     E: MapErrorCode,
 {
@@ -152,7 +152,7 @@ where
     }
 }
 
-impl<I, O, E> std::convert::From<&JsonRpcMethod<I, O, E>> for String
+impl<'a, I, O, E> std::convert::From<&'a JsonRpcMethod<'a, I, O, E>> for String
 where
     E: MapErrorCode,
 {
@@ -161,7 +161,7 @@ where
     }
 }
 
-impl<'de, I, O, E> JsonRpcMethod<I, O, E>
+impl<'de, I, O, E> JsonRpcMethod<'de, I, O, E>
 where
     O: Deserialize<'de>,
     E: Deserialize<'de> + MapErrorCode,
@@ -174,7 +174,7 @@ where
     }
 }
 
-impl<I, O, E> JsonRpcMethod<I, O, E>
+impl<I, O, E> JsonRpcMethod<'_, I, O, E>
 where
     O: DeserializeOwned,
     E: DeserializeOwned + MapErrorCode,

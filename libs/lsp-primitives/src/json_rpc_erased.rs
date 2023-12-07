@@ -33,8 +33,8 @@ pub type JsonRpcResponseSuccessErased = JsonRpcResponseSuccess<Vec<u8>>;
 pub type JsonRpcResponseFailureErased = JsonRpcResponseFailure<Vec<u8>>;
 pub type JsonRpcErrorDataErased = ErrorData<Vec<u8>>;
 
-pub trait JsonRpcMethodErased {
-    fn name(&self) -> &str;
+pub trait JsonRpcMethodErased<'a> {
+    fn name(&'a self) -> &'a str;
 
     fn create_request(
         &self,
@@ -53,13 +53,13 @@ pub trait JsonRpcMethodErased {
     ) -> Result<JsonRpcResponseErased, serde_json::Error>;
 }
 
-impl<I, O, E> JsonRpcMethodErased for JsonRpcMethod<I, O, E>
+impl<'a, I, O, E> JsonRpcMethodErased<'a> for JsonRpcMethod<'_, I, O, E>
 where
     I: serde::de::DeserializeOwned + Serialize,
     O: serde::de::DeserializeOwned + Serialize,
     E: serde::de::DeserializeOwned + Serialize + MapErrorCode,
 {
-    fn name(&self) -> &str {
+    fn name(&'a self) -> &str {
         self.method
     }
 
@@ -88,13 +88,13 @@ where
     }
 }
 
-impl<I, O, E> JsonRpcMethod<I, O, E>
+impl<I, O, E> JsonRpcMethod<'static, I, O, E>
 where
     I: serde::de::DeserializeOwned + Serialize + 'static,
     O: serde::de::DeserializeOwned + Serialize + 'static,
     E: serde::de::DeserializeOwned + Serialize + 'static + MapErrorCode,
 {
-    pub fn erase_box(self) -> Box<dyn JsonRpcMethodErased> {
+    pub fn erase_box(self) -> Box<dyn JsonRpcMethodErased<'static>> {
         Box::new(self)
     }
 
@@ -137,7 +137,7 @@ pub trait JsonRpcMethodUnerased<'a, I, O, E> {
 }
 
 /// Dummy implementation for when the user uses the generic api
-impl<'a, I, O, E> JsonRpcMethodUnerased<'a, I, O, E> for JsonRpcMethod<I, O, E>
+impl<'a, I, O, E> JsonRpcMethodUnerased<'a, I, O, E> for JsonRpcMethod<'a, I, O, E>
 where
     O: serde::de::DeserializeOwned,
     E: serde::de::DeserializeOwned + MapErrorCode,
@@ -170,7 +170,7 @@ where
 }
 
 struct UneraseWrapper<'a> {
-    inner: &'a dyn JsonRpcMethodErased,
+    inner: &'a dyn JsonRpcMethodErased<'a>,
 }
 
 impl<'a> JsonRpcMethodUnerased<'a, Vec<u8>, Vec<u8>, Vec<u8>> for UneraseWrapper<'a> {
@@ -201,11 +201,11 @@ impl<'a> JsonRpcMethodUnerased<'a, Vec<u8>, Vec<u8>, Vec<u8>> for UneraseWrapper
     }
 }
 
-impl dyn JsonRpcMethodErased {
+impl<'a> dyn JsonRpcMethodErased<'a> {
     // The impl promises here we return a concrete type
     // However, we'd rather keep the implementation details private in this module and don't want users messing with it
-    pub fn unerase(&self) -> impl JsonRpcMethodUnerased<Vec<u8>, Vec<u8>, Vec<u8>> {
-        UneraseWrapper { inner: self }
+    pub fn unerase(&'a self) -> impl JsonRpcMethodUnerased<Vec<u8>, Vec<u8>, Vec<u8>> {
+        UneraseWrapper::<'a> { inner: self }
     }
 }
 

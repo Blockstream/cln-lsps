@@ -36,13 +36,13 @@ use anyhow::{anyhow, Result};
 // 1. Add it to the JsonRpcMethodEnum
 // 2. Add it to the from_method_name function
 // 3. Add it to the ref_erase function
-pub type Lsps0ListProtocols = JsonRpcMethod<NoParams, ListprotocolsResponse, DefaultError>;
+pub type Lsps0ListProtocols = JsonRpcMethod<'static, NoParams, ListprotocolsResponse, DefaultError>;
 
-pub type Lsps1Info = JsonRpcMethod<Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
+pub type Lsps1Info = JsonRpcMethod<'static, Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
 pub type Lsps1CreateOrder =
-    JsonRpcMethod<Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
+    JsonRpcMethod<'static, Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
 
-pub type Lsps1GetOrder = JsonRpcMethod<Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
+pub type Lsps1GetOrder = JsonRpcMethod<'static, Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
 
 // LSPS0: Transport layer
 pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
