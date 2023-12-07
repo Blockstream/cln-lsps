@@ -160,7 +160,6 @@ pub(crate) async fn do_lsps1_get_order(
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?;
 
     Lsps1CreateOrderResponseBuilder::new()
-        .api_version(1)
         .db_order(order)
         .payment(payment)
         .order_state(OrderState::Created)

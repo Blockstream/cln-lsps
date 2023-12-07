@@ -228,7 +228,6 @@ async fn lsps1_create_order(
     let pubkey = PublicKey::from_hex(&request.peer_id)?;
 
     let create_order_request = lsps1::builders::Lsps1CreateOrderRequestBuilder::new()
-        .api_version(1)
         .lsp_balance_sat(request.lsp_balance_sat)
         .client_balance_sat(request.client_balance_sat)
         .confirms_within_blocks(request.confirms_within_blocks)

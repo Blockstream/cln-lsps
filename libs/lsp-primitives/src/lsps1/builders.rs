@@ -22,7 +22,6 @@ impl LspsInfoRequestBuilder {
 
 #[derive(Default, Debug)]
 pub struct Lsps1InfoResponseBuilder {
-    supported_versions: Option<Vec<u16>>,
     website: Option<String>,
     options: Option<Lsps1Options>,
 }
@@ -30,11 +29,6 @@ pub struct Lsps1InfoResponseBuilder {
 impl Lsps1InfoResponseBuilder {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    pub fn supported_versions(mut self, supported_versions: Vec<u16>) -> Self {
-        self.supported_versions = Some(supported_versions);
-        self
     }
 
     pub fn website(mut self, website: Option<String>) -> Self {
@@ -48,10 +42,6 @@ impl Lsps1InfoResponseBuilder {
     }
 
     pub fn build(self) -> Result<Lsps1InfoResponse> {
-        // Required fields
-        let supported_versions = self
-            .supported_versions
-            .context("Missing field 'supported_versions' in Lsps1InfoResponseBuilder")?;
         let options = self
             .options
             .context("Missing field 'options' in Lsps1InfoResponseBuilder")?;
@@ -60,7 +50,6 @@ impl Lsps1InfoResponseBuilder {
         let website = self.website;
 
         let result = Lsps1InfoResponse {
-            supported_versions,
             website,
             options,
             _private: (),
@@ -220,7 +209,6 @@ impl Lsps1OptionsBuilder {
 
 #[derive(Default, Debug)]
 pub struct Lsps1CreateOrderRequestBuilder {
-    api_version: Option<u16>,
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
     confirms_within_blocks: Option<u8>,
@@ -233,11 +221,6 @@ pub struct Lsps1CreateOrderRequestBuilder {
 impl Lsps1CreateOrderRequestBuilder {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    pub fn api_version(mut self, api_version: u16) -> Self {
-        self.api_version = Some(api_version);
-        self
     }
 
     pub fn lsp_balance_sat(mut self, lsp_balance_sat: SatAmount) -> Self {
@@ -287,7 +270,6 @@ impl Lsps1CreateOrderRequestBuilder {
             .channel_expiry_blocks
             .context("Missing field 'channel_expirty_blocks' in Lsps1CreateOrderRequestBuilder")?;
         // Fields that allow for reasonable defaults
-        let api_version = self.api_version.unwrap_or(1);
         let client_balance_sat = self.client_balance_sat.unwrap_or(SatAmount::new(0));
         let announce_channel = self.announce_channel.unwrap_or(false);
         let confirms_within_blocks = self.confirms_within_blocks.unwrap_or(6);
@@ -297,7 +279,6 @@ impl Lsps1CreateOrderRequestBuilder {
         let refund_onchain_address = self.refund_onchain_address;
 
         let request = Lsps1CreateOrderRequest {
-            api_version,
             lsp_balance_sat,
             client_balance_sat,
             confirms_within_blocks,
@@ -315,7 +296,6 @@ impl Lsps1CreateOrderRequestBuilder {
 #[derive(Default, Debug)]
 pub struct Lsps1CreateOrderResponseBuilder {
     uuid: Option<Uuid>,
-    api_version: Option<u16>,
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
     confirms_within_blocks: Option<u8>,
@@ -335,7 +315,6 @@ impl Lsps1CreateOrderResponseBuilder {
 
     pub fn from_request(request: Lsps1CreateOrderRequest) -> Self {
         Self::new()
-            .api_version(request.api_version)
             .lsp_balance_sat(request.lsp_balance_sat)
             .client_balance_sat(request.client_balance_sat)
             .confirms_within_blocks(request.confirms_within_blocks)
@@ -347,10 +326,6 @@ impl Lsps1CreateOrderResponseBuilder {
 
     pub fn uuid(mut self, uuid: Uuid) -> Self {
         self.uuid = Some(uuid);
-        self
-    }
-    pub fn api_version(mut self, api_version: u16) -> Self {
-        self.api_version = Some(api_version);
         self
     }
     pub fn lsp_balance_sat(mut self, lsp_balance_sat: SatAmount) -> Self {
@@ -399,9 +374,6 @@ impl Lsps1CreateOrderResponseBuilder {
         let order_id = self
             .uuid
             .context("Missing field 'order_id' in Lsps1CreateOrderRequestBuilder")?;
-        let api_version = self
-            .api_version
-            .context("Missing field 'api_version' in Lsps1CreateOrderRequestBuilder")?;
         let lsp_balance_sat = self
             .lsp_balance_sat
             .context("Missing field 'lsp_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
@@ -433,7 +405,6 @@ impl Lsps1CreateOrderResponseBuilder {
 
         let request = Lsps1CreateOrderResponse {
             order_id,
-            api_version,
             lsp_balance_sat,
             client_balance_sat,
             confirms_within_blocks,

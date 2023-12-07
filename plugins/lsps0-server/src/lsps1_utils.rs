@@ -117,7 +117,6 @@ pub fn info_response(config_options: Vec<ConfigOption>) -> Result<Lsps1InfoRespo
     Lsps1InfoResponseBuilder::new()
         .options(options)
         .website(website)
-        .supported_versions(vec![1])
         .build()
 }
 

@@ -7,7 +7,6 @@ pub type Lsps1InfoRequest = NoParams;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1InfoResponse {
-    pub supported_versions: Vec<u16>,
     pub website: Option<String>,
     pub options: Lsps1Options,
     // Prevents struct initialization. Use Lsps1InfoResponseBuilder instead
@@ -36,7 +35,6 @@ pub struct Lsps1Options {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1CreateOrderRequest {
-    pub api_version: u16,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
     pub confirms_within_blocks: u8,
@@ -53,7 +51,6 @@ pub struct Lsps1CreateOrderRequest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1CreateOrderResponse {
     pub order_id: Uuid,
-    pub api_version: u16,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
     pub confirms_within_blocks: u8,
