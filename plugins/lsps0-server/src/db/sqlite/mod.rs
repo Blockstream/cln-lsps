@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqliteQueryResult};
 use uuid::Uuid;
 
-use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails};
+use crate::db::schema::{Lsps1Channel, Lsps1Order, Lsps1PaymentDetails};
 use crate::db::sqlite::conversion::IntoSqliteInteger;
 use crate::db::sqlite::schema::{
     Lsps1Order as Lsps1OrderSqlite, Lsps1PaymentDetails as Lsps1PaymentDetailsSqlite,
@@ -255,6 +255,16 @@ impl Database {
         .execute(&mut *tx)
         .await?;
 
+        // Remove the associated channel
+        sqlx::query!(
+            r#"
+          WITH to_delete AS (SELECT id from lsps1_order where uuid =?1)
+          DELETE FROM lsps1_channel WHERE order_id in to_delete;"#,
+            uuid_string
+        )
+        .execute(&mut *tx)
+        .await?;
+
         sqlx::query!("DELETE FROM lsps1_order where uuid = ?1;", uuid_string)
             .execute(&mut *tx)
             .await?;
@@ -332,6 +342,62 @@ impl Database {
             ))
         }
     }
+
+    pub(crate) async fn create_channel(
+        &self,
+        order_id: &Uuid,
+        channel: Lsps1Channel,
+    ) -> Result<()> {
+        let order_uuid = order_id.to_string();
+
+        let result = sqlx::query!(
+            r#"
+             INSERT INTO lsps1_channel (order_id, channel_id)
+             SELECT o.id, ?2 FROM lsps1_order as o
+             where o.uuid = ?1;
+             "#,
+            order_uuid,
+            channel.channel_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        match result.rows_affected() {
+            0 => Err(anyhow!(
+                "Failed to find order '{}' and could not create channel",
+                order_uuid
+            )),
+            1 => Ok(()),
+            _ => Err(anyhow!(
+                "Error in updating state. Query affected {} rows",
+                result.rows_affected()
+            )),
+        }
+    }
+
+    pub(crate) async fn get_channel(&self, order_id: &Uuid) -> Result<Lsps1Channel> {
+        let order_uuid = order_id.to_string();
+
+        sqlx::query_as!(
+            Lsps1Channel,
+            r#"
+             SELECT c.channel_id FROM lsps1_channel as c
+             JOIN lsps1_order as od
+              ON c.order_id = od.id
+              WHERE od.uuid = ?1
+              "#,
+            order_uuid
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| anyhow!("db.get_channel Failed: {}", e))?
+        .ok_or_else(|| {
+            anyhow!(
+                "Failed to find order '{}' and could not create channel",
+                order_uuid
+            )
+        })
+    }
 }
 
 #[cfg(test)]
@@ -339,8 +405,6 @@ mod test {
     use super::*;
     use lsp_primitives::lsps0::common_schemas::{IsoDatetime, PublicKey, SatAmount};
     use lsp_primitives::lsps1::schema::OrderState;
-
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     async fn get_db() -> Database {
         let options = SqliteConnectOptions::default()
@@ -475,5 +539,31 @@ mod test {
         );
 
         // db.delete_order_by_uuid(uuid).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn store_channel_in_database() {
+        // Create a database connection
+        let db = get_db().await;
+
+        // Store the order and payment in the database
+        let order = create_test_order();
+        let payment = create_test_payment(&order);
+        let _ = db.create_order(&order, &payment).await.unwrap();
+
+        // Store the channel in the database
+        let channel_id = format!("channel.{}", order.uuid);
+        let channel = Lsps1Channel {
+            channel_id: channel_id.clone(),
+        };
+        let _ = db.create_channel(&order.uuid, channel).await.unwrap();
+
+        // Get the channel form the database
+        let returned_channel = db.get_channel(&order.uuid).await.unwrap();
+
+        assert_eq!(channel_id, returned_channel.channel_id);
+
+        // Clean up the test
+        db.delete_order_by_uuid(order.uuid).await.unwrap();
     }
 }

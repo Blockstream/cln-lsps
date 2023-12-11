@@ -62,6 +62,11 @@ pub struct Lsps1PaymentDetailsBuilder {
     pub(crate) state: Option<PaymentState>,
 }
 
+#[derive(Default)]
+pub struct Lsps1Channel {
+    pub(crate) channel_id: String,
+}
+
 impl Lsps1OrderBuilder {
     pub fn new() -> Self {
         Self::default()
