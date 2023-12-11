@@ -3,8 +3,8 @@ use uuid::Uuid;
 
 use crate::lsps0::schema::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
 use crate::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1InfoRequest, Lsps1InfoResponse,
-    Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
+    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest, Lsps1InfoRequest,
+    Lsps1InfoResponse, Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
 };
 
 #[derive(Default, Debug)]
@@ -473,6 +473,31 @@ pub struct PaymentBuilder {
 
     minimum_fee_for_0conf: Option<FeeRate>,
     onchain_payment: Option<OnchainPayment>,
+}
+
+#[derive(Default, Debug)]
+pub struct Lsps1GetOrderRequestBuilder {
+    order_id: Option<String>,
+}
+
+impl Lsps1GetOrderRequestBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn order_id(mut self, order_id: String) -> Self {
+        self.order_id = Some(order_id);
+        self
+    }
+
+    pub fn build(self) -> Result<Lsps1GetOrderRequest> {
+        Ok(Lsps1GetOrderRequest {
+            order_id: self
+                .order_id
+                .context("Missing field 'order_id' in Lsps1GetOrderRequestBuilder")?,
+            _private: (),
+        })
+    }
 }
 
 impl PaymentBuilder {

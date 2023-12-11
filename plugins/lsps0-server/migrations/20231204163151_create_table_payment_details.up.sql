@@ -5,9 +5,9 @@ CREATE TABLE lsps1_payment_details (
   order_id TEXT NOT NULL UNIQUE,
   fee_total_sat INTEGER NOT NULL,
   order_total_sat INTEGER NOT NULL,
-  bolt11_invoice TEXT NOT NULL,
-  bolt11_invoice_label TEXT NOT NULL,   -- This label is used by core lightning 
-  onchain_address TEXT,
+  bolt11_invoice TEXT UNIQUE NOT NULL,
+  bolt11_invoice_label TEXT UNIQUE NOT NULL,   -- This label is used by core lightning 
+  onchain_address TEXT UNIQUE,
   onchain_block_confirmations_required INTEGER,
   minimum_fee_for_0conf INTEGER,
   FOREIGN KEY (order_id) REFERENCES lsps1_order(id)

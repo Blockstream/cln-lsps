@@ -3,14 +3,17 @@ mod schema;
 
 use anyhow::{anyhow, Context, Result};
 
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqliteQueryResult};
 use uuid::Uuid;
 
 use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails};
+use crate::db::sqlite::conversion::IntoSqliteInteger;
 use crate::db::sqlite::schema::{
     Lsps1Order as Lsps1OrderSqlite, Lsps1PaymentDetails as Lsps1PaymentDetailsSqlite,
 };
+
 use lsp_primitives::lsps0::common_schemas::IsoDatetime;
+use lsp_primitives::lsps1::schema::PaymentState;
 
 #[derive(Clone)]
 pub struct Database {
@@ -108,13 +111,15 @@ impl Database {
         sqlx::query!(
             r#"INSERT INTO lsps1_order_state (
                 order_id, order_state_enum_id,
-                created_at
+                created_at,
+                generation
              ) VALUES (
-                ?1, ?2, ?3
+                ?1, ?2, ?3, ?4
              );"#,
             order_id.id,
             order.order_state,
-            now
+            now,
+            order.generation
         )
         .execute(&mut *tx)
         .await?;
@@ -124,12 +129,15 @@ impl Database {
             r#"INSERT INTO lsps1_payment_state (
               payment_details_id,
               payment_state,
-              created_at
+              created_at,
+              generation
             ) VALUES (
-               ?1, 1, ?2
+               ?1, ?2, ?3, ?4
             );"#,
             payment_id.id,
-            now
+            payment.state,
+            now,
+            payment.generation
         )
         .execute(&mut *tx)
         .await?;
@@ -138,7 +146,7 @@ impl Database {
         return Ok(());
     }
 
-    pub async fn get_order_by_uuid(&self, uuid: Uuid) -> Result<Option<Lsps1Order>> {
+    pub async fn get_order_by_uuid(&self, uuid: &Uuid) -> Result<Option<Lsps1Order>> {
         let uuid_string = uuid.to_string();
         let result = sqlx::query_as!(
             Lsps1OrderSqlite,
@@ -146,10 +154,13 @@ impl Database {
                 uuid, client_node_id, lsp_balance_sat,
                 client_balance_sat, confirms_within_blocks, channel_expiry_blocks,
                 token, refund_onchain_address, announce_channel,
-                ord.created_at, expires_at, os.order_state_enum_id as order_state
+                ord.created_at, expires_at, os.order_state_enum_id as order_state,
+                generation
             FROM lsps1_order AS ord
             JOIN lsps1_order_state AS os ON ord.id = os.order_id
-            WHERE uuid = ?"#,
+            WHERE uuid = ?
+            ORDER BY os.generation
+            LIMIT 1;"#,
             uuid_string
         )
         .fetch_optional(&self.pool)
@@ -177,11 +188,18 @@ impl Database {
                p.bolt11_invoice_label,
                p.onchain_address,
                p.onchain_block_confirmations_required,
-               p.minimum_fee_for_0conf
+               p.minimum_fee_for_0conf,
+               ps.payment_state as state,
+               ps.generation
                FROM lsps1_payment_details as p
                JOIN lsps1_order as o
                ON o.id = p.order_id
-               WHERE o.uuid = ?1"#,
+               JOIN lsps1_payment_state as ps
+               ON ps.payment_details_id = p.id
+               WHERE o.uuid = ?1
+               ORDER BY ps.generation DESC
+               LIMIT 1;
+               "#,
             uuid_string
         )
         .fetch_optional(&self.pool)
@@ -243,6 +261,77 @@ impl Database {
 
         Ok(())
     }
+
+    pub(crate) async fn get_payment_details_by_label(
+        &self,
+        label: &str,
+    ) -> Result<Option<Lsps1PaymentDetails>> {
+        log::debug!("Get payment by label={}", label);
+
+        let payment_details = sqlx::query_as!(
+            Lsps1PaymentDetailsSqlite,
+            r#"
+            SELECT 
+                fee_total_sat, order_total_sat, bolt11_invoice, 
+                bolt11_invoice_label, minimum_fee_for_0conf, 
+                onchain_address, onchain_block_confirmations_required,
+                ps.payment_state as state,
+                ps.generation
+            FROM lsps1_payment_details AS pd
+            JOIN lsps1_payment_state AS ps
+            ON pd.id = ps.payment_details_id
+            WHERE pd.bolt11_invoice_label = ?1
+            ORDER by ps.generation DESC
+            LIMIT 1
+            "#,
+            label
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match payment_details {
+            Some(r) => Ok(Some(Lsps1PaymentDetails::try_from(&r)?)),
+            None => Ok(None),
+        }
+    }
+
+    pub(crate) async fn update_payment_state(
+        &self,
+        label: &str,
+        state: PaymentState,
+        generation: u64,
+    ) -> Result<()> {
+        log::debug!("Update payment_state label={} to {:?}", label, state);
+        let state = state.into_sqlite_integer()?;
+        let created_at = IsoDatetime::now().into_sqlite_integer()?;
+        let generation = generation.into_sqlite_integer()?;
+        let new_generation = generation + 1;
+
+        let result: SqliteQueryResult = sqlx::query!(
+            r#"
+            INSERT INTO lsps1_payment_state 
+                (payment_details_id, payment_state, created_at, generation)
+            SELECT id, ?1, ?2, ?3
+                FROM lsps1_payment_details
+                WHERE bolt11_invoice_label = ?4
+            "#,
+            state,
+            created_at,
+            new_generation,
+            label
+        )
+        .execute(&self.pool)
+        .await?;
+
+        if result.rows_affected() == 1 {
+            Ok(())
+        } else {
+            Err(anyhow!(
+                "Error in updating state. Query affected {} rows",
+                result.rows_affected()
+            ))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -260,26 +349,15 @@ mod test {
         Database::connect_with_options(options).await.unwrap()
     }
 
-    #[tokio::test]
-    async fn create_order() {
-        // Create a database connection
-        let db = get_db().await;
-
+    fn create_test_order() -> Lsps1Order {
         // Create the order_uuid
         let uuid = Uuid::new_v4();
 
         // Show the database connection
-        let created_at = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64;
-        let expires_at = SystemTime::now()
-            .checked_add(Duration::from_secs(60 * 60 * 24))
-            .unwrap()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64;
-        let order = Lsps1Order {
+        let created_at = IsoDatetime::now();
+        let expires_at = IsoDatetime::now();
+
+        Lsps1Order {
             uuid,
             client_node_id: PublicKey::from_hex(
                 "026d58c2b93d278acef549167e34cf6c541fc2332b1e36e7fe57e54576cd5fa170",
@@ -288,47 +366,66 @@ mod test {
             lsp_balance_sat: SatAmount::new(100_000),
             client_balance_sat: SatAmount::new(0),
             confirms_within_blocks: 0,
-            created_at: IsoDatetime::from_unix_timestamp(created_at).unwrap(),
-            expires_at: IsoDatetime::from_unix_timestamp(expires_at).unwrap(),
+            created_at,
+            expires_at,
             refund_onchain_address: None,
             token: None,
             channel_expiry_blocks: 6 * 24 * 30,
             announce_channel: false,
             order_state: OrderState::Created,
-        };
+            generation: 0,
+        }
+    }
 
-        let payment = Lsps1PaymentDetails {
+    fn create_test_payment(order: &Lsps1Order) -> Lsps1PaymentDetails {
+        Lsps1PaymentDetails {
             fee_total_sat: SatAmount::new(500),
             order_total_sat: SatAmount::new(500),
-            bolt11_invoice: String::from("some_bolt_11_invoice"),
-            bolt11_invoice_label: String::from("lsps1.uuid"),
+            bolt11_invoice: format!("bolt11_invoice.{}", order.uuid),
+            bolt11_invoice_label: format!("test.order.{}", order.uuid),
             onchain_address: None,
             minimum_fee_for_0conf: None,
             onchain_block_confirmations_required: None,
-        };
+            state: PaymentState::ExpectPayment,
+            generation: 0,
+        }
+    }
 
-        let _ = db.create_order(&order, &payment).await.unwrap();
+    #[tokio::test]
+    async fn test_create_order() {
+        // Create a database connection
+        let db = get_db().await;
+
+        let initial_order = create_test_order();
+        let initial_payment = create_test_payment(&initial_order);
+        let uuid = initial_order.uuid;
+
+        let _ = db
+            .create_order(&initial_order, &initial_payment)
+            .await
+            .unwrap();
 
         // Confirm the order is in the database
         // There are a lot of conversions going on. (Sqlite only supports i64)
         // We test here that all conversions happen correctly and we are not corrupting any data in
         // the process
         let order = db
-            .get_order_by_uuid(uuid)
+            .get_order_by_uuid(&uuid)
             .await
             .expect("Query succeeded")
             .expect("Has a result");
-        assert_eq!(order.uuid, uuid);
+
+        assert_eq!(order.uuid, order.uuid);
         assert_eq!(order.lsp_balance_sat, SatAmount::new(100_000));
         assert_eq!(order.client_balance_sat, SatAmount::new(0));
         assert_eq!(order.confirms_within_blocks, 0);
         assert_eq!(
-            order.created_at,
-            IsoDatetime::from_unix_timestamp(created_at).unwrap()
+            order.created_at.unix_timestamp(),
+            initial_order.created_at.unix_timestamp()
         );
         assert_eq!(
-            order.expires_at,
-            IsoDatetime::from_unix_timestamp(expires_at).unwrap()
+            order.expires_at.unix_timestamp(),
+            initial_order.expires_at.unix_timestamp()
         );
         assert!(order.refund_onchain_address.is_none());
         assert!(order.token.is_none());
@@ -338,5 +435,45 @@ mod test {
         // Remove the entry from the database
         db.delete_order_by_uuid(uuid).await.unwrap();
         println!("Deleted orders");
+    }
+
+    #[tokio::test]
+    async fn update_order_payment_state() {
+        // Create a database connection
+        let db = get_db().await;
+
+        let order = create_test_order();
+        let payment = create_test_payment(&order);
+        let uuid = order.uuid;
+        let label = payment.bolt11_invoice_label.clone();
+
+        let _ = db.create_order(&order, &payment).await.unwrap();
+
+        println!("Attempting to update the payment state");
+        let _ = db
+            .update_payment_state(&label, PaymentState::Paid, payment.generation)
+            .await
+            .unwrap();
+
+        let result_label = db
+            .get_payment_details_by_label(&label)
+            .await
+            .unwrap()
+            .unwrap();
+        let result_uuid = db.get_payment_details_by_uuid(uuid).await.unwrap().unwrap();
+
+        assert_eq!(
+            result_uuid.state,
+            PaymentState::Paid,
+            "Bad state using uuid"
+        );
+
+        assert_eq!(
+            result_label.state,
+            PaymentState::Paid,
+            "Bad state using label"
+        );
+
+        // db.delete_order_by_uuid(uuid).await.unwrap();
     }
 }

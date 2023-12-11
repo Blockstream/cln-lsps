@@ -4,6 +4,7 @@ use cln_rpc::model::requests::InvoiceRequest;
 use cln_rpc::primitives::AmountOrAny;
 
 use lsp_primitives::lsps0::common_schemas::SatAmount;
+use lsp_primitives::lsps1::schema::PaymentState;
 
 use crate::custom_msg::context::CustomMsgContext;
 use crate::lsps1::fee_calc::FeeCalculator;
@@ -35,6 +36,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
             .order_total_sat(fee.order_total_sat)
             .bolt11_invoice(bolt11_invoice)
             .bolt11_invoice_label(bolt_11_invoice_label)
+            .state(PaymentState::ExpectPayment)
             .build()
     }
 
@@ -66,7 +68,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
             expiry: Some(order.expires_at.unix_timestamp() as u64),
             cltv: None,
             deschashonly: None,
-            fallbacks: None,
+            fallbacks: Some(vec![]), //Don't use an onchan fallback address
             preimage: None,
         };
 

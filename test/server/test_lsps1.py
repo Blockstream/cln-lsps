@@ -2,6 +2,8 @@ from pyln.testing.fixtures import *
 from test.fixtures import lsps_server, lsps_client
 import logging
 
+import json
+
 logger = logging.getLogger(__name__)
 
 
@@ -112,3 +114,50 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     assert result["order_state"] == "CREATED"
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
 
+
+def test_lsps1_order_is_marked_as_paid_after_payment(
+    lsps_client: LightningNode, lsps_server
+):
+    # Connect the client to server and open an initial channel
+    logger.info("Connecting and opening a channel")
+    lsps_client.connect(lsps_server)
+    lsps_client.openchannel(lsps_server)
+
+    # Client requests a channel of 500_000 sats to the server
+    logger.info("lsps1.create_order")
+    params = dict(
+        lsp_balance_sat="500000",
+        client_balance_sat="0",
+        confirms_within_blocks=1,
+        channel_expiry_blocks=144,
+        announceChannel=False,
+    )
+
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"],
+        method="lsps1.create_order",
+        params=json.dumps(params),
+    )
+
+    order_id = response["result"]["order_id"]
+    bolt11_invoice = response["result"]["payment"]["bolt11_invoice"]
+
+    # Client pays for the onchain invoice
+    logger.info("Pay order using bolt11_invoice")
+    pay_result = lsps_client.rpc.pay(bolt11_invoice)
+    logger.info(f"{pay_result}")
+
+    # Assert that core lightning has actually paid the invoice
+    list_pay_result = lsps_client.rpc.listpays(bolt11_invoice)
+    logger.info(f"{list_pay_result}")
+
+    # Client does lsps1.get_order
+    logger.info("lsps1.get_order and check if it is marked as Paid")
+    params = dict(order_id=order_id)
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"],
+        method="lsps1.get_order",
+        params=json.dumps(params),
+    )
+
+    assert response["result"]["payment"]["state"] == "PAID"

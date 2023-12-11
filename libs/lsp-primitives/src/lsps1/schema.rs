@@ -68,7 +68,7 @@ pub struct Lsps1CreateOrderResponse {
     pub(crate) _private: (),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum OrderState {
     #[serde(rename = "CREATED")]
     Created,
@@ -78,7 +78,7 @@ pub enum OrderState {
     Failed,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum PaymentState {
     #[serde(rename = "EXPECT_PAYMENT")]
     ExpectPayment,
@@ -122,7 +122,7 @@ pub struct Payment {
 pub struct Lsps1GetOrderRequest {
     pub order_id: String,
     #[serde(skip_serializing, default)]
-    _private: (),
+    pub(crate) _private: (),
 }
 
 pub type Lsps1GetOrderResponse = Lsps1CreateOrderResponse;

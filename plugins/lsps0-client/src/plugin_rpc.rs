@@ -44,3 +44,9 @@ pub struct Lsps0SendRequest {
     pub method: String,
     pub params: String,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Lsps1GetOrderRequest {
+    pub peer_id: String,
+    pub order_id: String,
+}

@@ -32,8 +32,9 @@ def lsps_server(node_factory: NodeFactory) -> LightningNode:
     logger.debug("Starting LSPS-server")
     server_plugin = get_server_plugin_path()
     options = lsps1_server_options()
-    lsps_server = node_factory.get_node(options={"plugin": server_plugin, **options})
-
+    lsps_server: LightningNode = node_factory.get_node(
+        options={"plugin": server_plugin, **options}
+    )
     return lsps_server
 
 
@@ -42,4 +43,5 @@ def lsps_client(node_factory: NodeFactory) -> LightningNode:
     logger.debug("Starting LSPS-client")
 
     client_plugin = get_client_plugin_path()
-    return node_factory.get_node(options={"plugin": client_plugin})
+    lsps_client = node_factory.get_node(options={"plugin": client_plugin})
+    return lsps_client

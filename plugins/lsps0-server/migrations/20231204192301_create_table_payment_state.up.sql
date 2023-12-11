@@ -1,9 +1,11 @@
 CREATE TABLE lsps1_payment_state (
   id INTEGER PRIMARY KEY NOT NULL,
-  payment_details_id INTEGER UNIQUE NOT NULL,
+  payment_details_id INTEGER NOT NULL,
   payment_state INTEGER NOT NULL,
   created_at INTEGER NOT NULL,
-  FOREIGN KEY (payment_details_id) REFERENCES lsps1_payment_details(id)
+  generation INTEGER NOT NULL,
+  FOREIGN KEY (payment_details_id) REFERENCES lsps1_payment_details(id),
+  FOREIGN KEY (payment_state) references lsps1_payment_state_enum(id)
 );
 
 CREATE TABLE lsps1_payment_state_enum (

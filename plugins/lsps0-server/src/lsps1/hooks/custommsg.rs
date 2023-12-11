@@ -80,7 +80,7 @@ pub(crate) async fn do_lsps1_create_order(
         .build()
         .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
 
-    // Compute the fee and construct all order details
+    // Compute the fee and cgeneratioionstruct all order details
     // TODO: Implement an actual mechanism to compute the fee
     // Ideally, we would have alinear system built-in and
     // provide hooks to the operator to allow them to implement their
@@ -103,7 +103,7 @@ pub(crate) async fn do_lsps1_create_order(
         .fee_total_sat(payment.fee_total_sat)
         .order_total_sat(payment.order_total_sat)
         .bolt11_invoice(payment.bolt11_invoice)
-        .state(PaymentState::ExpectPayment)
+        .state(payment.state)
         .build()
         .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
 
@@ -135,7 +135,7 @@ pub(crate) async fn do_lsps1_get_order(
     // TODO: Risk of PhantomData
     // Read both queries in a single transaction
     let order = db
-        .get_order_by_uuid(uuid_value)
+        .get_order_by_uuid(&uuid_value)
         .await
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?
         .ok_or_else(|| CustomMsgError::NotFound("Order not found".into()))?;
@@ -155,7 +155,6 @@ pub(crate) async fn do_lsps1_get_order(
     log::info!("Creating payment");
     let payment = PaymentBuilder::new()
         .db_payment_details(payment_details)
-        .state(PaymentState::ExpectPayment)
         .build()
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?;
 

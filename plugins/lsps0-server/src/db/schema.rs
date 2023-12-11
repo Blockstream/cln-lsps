@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
-use lsp_primitives::lsps1::schema::{Lsps1CreateOrderRequest, OrderState};
+use lsp_primitives::lsps1::schema::{Lsps1CreateOrderRequest, OrderState, PaymentState};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -17,6 +17,7 @@ pub struct Lsps1Order {
     pub(crate) created_at: IsoDatetime,
     pub(crate) expires_at: IsoDatetime,
     pub(crate) order_state: OrderState,
+    pub(crate) generation: u64,
 }
 
 #[derive(Default)]
@@ -33,6 +34,7 @@ pub struct Lsps1OrderBuilder {
     pub(crate) created_at: Option<IsoDatetime>,
     pub(crate) expires_at: Option<IsoDatetime>,
     pub(crate) order_state: Option<OrderState>,
+    pub(crate) generation: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -44,6 +46,8 @@ pub struct Lsps1PaymentDetails {
     pub(crate) onchain_address: Option<String>,
     pub(crate) onchain_block_confirmations_required: Option<u8>,
     pub(crate) minimum_fee_for_0conf: Option<FeeRate>,
+    pub(crate) state: PaymentState,
+    pub(crate) generation: u64,
 }
 
 #[derive(Default)]
@@ -55,6 +59,7 @@ pub struct Lsps1PaymentDetailsBuilder {
     pub(crate) onchain_address: Option<String>,
     pub(crate) onchain_block_confirmations_required: Option<u8>,
     pub(crate) minimum_fee_for_0conf: Option<FeeRate>,
+    pub(crate) state: Option<PaymentState>,
 }
 
 impl Lsps1OrderBuilder {
@@ -183,6 +188,7 @@ impl Lsps1OrderBuilder {
             refund_onchain_address: self.refund_onchain_address,
             announce_channel,
             order_state,
+            generation: 0,
         })
     }
 }
@@ -233,6 +239,11 @@ impl Lsps1PaymentDetailsBuilder {
         self
     }
 
+    pub fn state(mut self, state: PaymentState) -> Self {
+        self.state = Some(state);
+        self
+    }
+
     pub fn build(self) -> Result<Lsps1PaymentDetails> {
         Ok(Lsps1PaymentDetails {
             fee_total_sat: self
@@ -250,6 +261,10 @@ impl Lsps1PaymentDetailsBuilder {
             onchain_address: self.onchain_address,
             onchain_block_confirmations_required: self.onchain_block_confirmations_required,
             minimum_fee_for_0conf: self.minimum_fee_for_0conf,
+            state: self
+                .state
+                .context("Missing field 'state' in Lsps1PaymentDetails")?,
+            generation: 0,
         })
     }
 }

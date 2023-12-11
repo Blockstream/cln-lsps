@@ -5,7 +5,7 @@ use crate::db::schema::{
 };
 use crate::db::sqlite::conversion::{FromSqliteInteger, IntoSqliteInteger};
 use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
-use lsp_primitives::lsps1::schema::OrderState;
+use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 
 #[derive(sqlx::FromRow)]
 pub struct Lsps1Order {
@@ -21,6 +21,7 @@ pub struct Lsps1Order {
     pub(crate) created_at: i64,
     pub(crate) expires_at: i64,
     pub(crate) order_state: i64,
+    pub(crate) generation: i64,
 }
 
 #[derive(sqlx::FromRow)]
@@ -32,6 +33,8 @@ pub struct Lsps1PaymentDetails {
     pub(crate) onchain_address: Option<String>,
     pub(crate) onchain_block_confirmations_required: Option<i64>,
     pub(crate) minimum_fee_for_0conf: Option<i64>,
+    pub(crate) state: i64,
+    pub(crate) generation: i64,
 }
 
 impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
@@ -57,6 +60,8 @@ impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
             onchain_address: payment.onchain_address.clone(),
             onchain_block_confirmations_required: block_conf,
             minimum_fee_for_0conf: min_0conf,
+            state: payment.state.into_sqlite_integer()?,
+            generation: payment.generation.into_sqlite_integer()?,
         })
     }
 }
@@ -83,6 +88,8 @@ impl TryFrom<&Lsps1PaymentDetails> for Lsps1PaymentDetailsBase {
             onchain_address: payment.onchain_address.clone(),
             onchain_block_confirmations_required,
             minimum_fee_for_0conf,
+            state: PaymentState::from_sqlite_integer(payment.state)?,
+            generation: u64::from_sqlite_integer(payment.generation)?,
         })
     }
 }
@@ -104,6 +111,7 @@ impl TryFrom<&Lsps1Order> for Lsps1OrderBase {
             created_at: IsoDatetime::from_unix_timestamp(order.created_at)?,
             expires_at: IsoDatetime::from_unix_timestamp(order.expires_at)?,
             order_state: OrderState::from_sqlite_integer(order.order_state)?,
+            generation: u64::from_sqlite_integer(order.generation)?,
         })
     }
 }
@@ -125,6 +133,7 @@ impl TryFrom<&Lsps1OrderBase> for Lsps1Order {
             created_at: order.created_at.unix_timestamp(),
             expires_at: order.expires_at.unix_timestamp(),
             order_state: order.order_state.into_sqlite_integer()?,
+            generation: order.generation.into_sqlite_integer()?,
         })
     }
 }

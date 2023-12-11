@@ -1,3 +1,4 @@
+mod cln_objects;
 mod custom_msg;
 mod db;
 mod error;
@@ -36,8 +37,11 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
 use sqlx::Connection;
 
 use crate::db::sqlite::Database;
-use crate::error::CustomMsgError;
-use crate::lsps1::hooks::{do_lsps1_create_order, do_lsps1_get_info, do_lsps1_get_order};
+use crate::error::{CustomMsgError, InvoicePaymentError};
+use crate::lsps1::hooks::{
+    do_lsps1_create_order, do_lsps1_get_info, do_lsps1_get_order,
+    invoice_payment as lsps1_invoice_payment,
+};
 use crate::network::parse_network;
 use crate::state::PluginState;
 
@@ -64,12 +68,16 @@ async fn main() -> Result<()> {
             .option(options::lsps1_order_lifetime_seconds())
             .option(options::lsp_server_database_url())
             .hook("custommsg", handle_custom_msg)
+            .hook("invoice_payment", handle_paid_invoice)
+            .dynamic()
             .configure()
             .await?
         {
             Some(p) => p,
             None => return Ok(()),
         };
+
+    let x = configured_plugin.configuration();
 
     // Connect to the database and run migration scripts
     let connection_string = match configured_plugin.option("lsp_server_database_url") {
@@ -112,6 +120,7 @@ fn do_continue() -> Result<serde_json::Value> {
     Ok(json!({"result" : "continue"}))
 }
 
+/// Handles an incoming custom message
 async fn handle_custom_msg(
     plugin: Plugin<PluginState>,
     request: serde_json::Value,
@@ -252,6 +261,44 @@ async fn handle_custom_msg(
     };
 
     do_continue()
+}
+
+/// Hook method for a paid invoice
+async fn handle_paid_invoice(
+    plugin: Plugin<PluginState>,
+    value: serde_json::Value,
+) -> Result<serde_json::Value> {
+    log::info!("Paid invoice hook : {:?}", value);
+    let payment_result = serde_json::from_value::<cln_objects::PaymentHook>(value);
+
+    match payment_result {
+        Ok(payment) => {
+            let label = payment.payment.label.clone();
+
+            let result = lsps1_invoice_payment(plugin, &payment.payment).await;
+
+            if result.is_err() {
+                match result.unwrap_err() {
+                    InvoicePaymentError::PaymentRejected(reason) => {
+                        log::warn!("Rejected payment for invoice {}: {}", label, reason);
+                        return Ok(cln_objects::PaymentHookResponse::reject());
+                    }
+                    InvoicePaymentError::Log(log) => {
+                        log::warn!("{}", log);
+                    }
+                    InvoicePaymentError::NotMine => {
+                        log::debug!("Ignored payment for LSPS1 {}", label)
+                    }
+                }
+            }
+        }
+        Err(err) => {
+            log::warn!("Error in parsing payment_hook");
+            log::warn!("{:?}", err);
+        }
+    };
+
+    Ok(cln_objects::PaymentHookResponse::r#continue())
 }
 
 async fn do_list_protocols(

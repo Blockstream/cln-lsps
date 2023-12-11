@@ -73,7 +73,13 @@ async fn main() -> Result<()> {
                 "Order a channel from an LSP",
                 lsps1_create_order,
             )
+            .rpcmethod(
+                "lsps1-get-order",
+                "Get info about an order",
+                lsps1_get_order,
+            )
             .hook("custommsg", handle_custom_msg)
+            .dynamic()
             .configure()
             .await?
         {
@@ -151,8 +157,7 @@ async fn list_protocols(
     log::debug!("Created client");
 
     // Parse the users request
-    let request: plugin_rpc::ListProtocolsRequest =
-        serde_json::from_value(request).with_context(|| "Failed to parse RPC-request")?;
+    let request: plugin_rpc::ListProtocolsRequest = serde_json::from_value(request)?;
     log::debug!("plugin_rpc_request created {:?}", request);
     let pubkey: PublicKey = PublicKey::from_hex(&request.peer_id)?;
 
@@ -241,6 +246,33 @@ async fn lsps1_create_order(
     // Make the request to the LSP-server and return the result
     let response = client
         .request(&pubkey, methods::LSPS1_CREATE_ORDER, create_order_request)
+        .await?;
+
+    match response {
+        JsonRpcResponse::Ok(ok) => return Ok(json!(ok.result)),
+        JsonRpcResponse::Error(err) => {
+            return Err(anyhow!("{} : {}", err.error.code, err.error.message))
+        }
+    }
+}
+
+async fn lsps1_get_order(
+    plugin: Plugin<PluginState>,
+    request: serde_json::Value,
+) -> Result<serde_json::Value, Error> {
+    // Create a client that for sending messages
+    let mut client = create_lsp_client_from_plugin(plugin).await?;
+
+    // Parse the request and pubkey
+    let request: plugin_rpc::Lsps1GetOrderRequest = serde_json::from_value(request)?;
+    let pubkey = PublicKey::from_hex(&request.peer_id)?;
+
+    let get_order_request = lsps1::builders::Lsps1GetOrderRequestBuilder::new()
+        .order_id(request.order_id)
+        .build()?;
+
+    let response = client
+        .request(&pubkey, methods::LSPS1_GET_ORDER, get_order_request)
         .await?;
 
     match response {

@@ -31,5 +31,6 @@ impl BuildUsingDbPayment for PaymentBuilder {
             .bolt11_invoice(payment.bolt11_invoice)
             .onchain_address(None)
             .minimum_fee_for_0conf(payment.minimum_fee_for_0conf)
+            .state(payment.state)
     }
 }
