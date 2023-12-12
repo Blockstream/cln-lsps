@@ -1,128 +1,54 @@
-mod custom_msg;
-mod db;
-mod error;
-mod lsps1;
-mod lsps1_utils;
-mod network;
-mod options;
-mod state;
-mod cln;
-
-use std::str::FromStr;
-
+/// LSPS uses a JSON-rpc based communication schema
+/// on top of the BOLT8 custom msg's.
+/// 
+/// This is the implementation of the boilerplate for the server
+///
+///
 use anyhow::{Context, Result};
-use log;
+use cln_plugin::Plugin;
 
-use cln_plugin::options::Value as ConfigValue;
-use cln_plugin::{Builder, Plugin};
+use lsp_primitives::json_rpc::{JsonRpcRequest, JsonRpcResponse, JsonRpcResponseFailure, DefaultError};
 
-use lsp_primitives::json_rpc::{
-    DefaultError, ErrorData, JsonRpcId, JsonRpcRequest, JsonRpcResponse,
-};
-
-use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
-use lsp_primitives::lsps0::schema::ListprotocolsResponse;
-use lsp_primitives::methods;
-use lsp_primitives::methods::JsonRpcMethodEnum;
-
-use cln_lsps0::client::LSPS_MESSAGE_ID;
-use cln_lsps0::custom_msg_hook::RpcCustomMsgMessage;
-
-use serde_json::json;
-
-use crate::custom_msg::context::{CustomMsgContext, CustomMsgContextBuilder};
-use crate::custom_msg::util::send_response;
-
-use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
-use sqlx::Connection;
-
-use crate::db::sqlite::Database;
-use crate::error::CustomMsgError;
-use crate::lsps1::hooks::{
-    do_lsps1_create_order, do_lsps1_get_info, do_lsps1_get_order,
-    invoice_payment as lsps1_invoice_payment,
-};
-use crate::network::parse_network;
 use crate::state::PluginState;
-use crate::cln::hooks::invoice_payment::{InvoicePaymentHookResponse, InvoicePaymentHookData};
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    log::warn!("Do not use this implementation in any production context!!");
-    log::warn!(
-        "This implementation is developped for testing the corresponding LSP-client implementation"
-    );
+/// The hook that is attached to core-lightning
+/// This hook ensures that
+/// - any request is logged
+/// - a reply is sent for every request
+/// - {"result" : "continue"} is always returned to core Lightning
+/// 
+pub(crate) async fn handle_custom_msg(
+    plugin : Plugin<PluginState>,
+    request : serde_json::Value) -> Result<serde_json::Value> {
 
-    let configured_plugin =
-        match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
-            .option(options::lsps1_info_website())
-            .option(options::lsps1_minimum_channel_confirmations())
-            .option(options::lsps1_minimum_onchain_payment_confirmations())
-            .option(options::lsps1_supports_zero_channel_reserve())
-            .option(options::lsps1_max_channel_expiry_blocks())
-            .option(options::lsps1_min_onchain_payment_size_sat())
-            .option(options::lsps1_min_capacity())
-            .option(options::lsps1_max_capacity())
-            .option(options::lsps1_fee_computation_base_fee_sat())
-            .option(options::lsps1_fee_computation_onchain_ppm())
-            .option(options::lsps1_fee_computation_liquidity_ppb())
-            .option(options::lsps1_order_lifetime_seconds())
-            .option(options::lsp_server_database_url())
-            .hook("custommsg", handle_custom_msg)
-            .hook("invoice_payment", handle_paid_invoice)
-            .dynamic()
-            .configure()
-            .await?
-        {
-            Some(p) => p,
-            None => return Ok(()),
-        };
+    // Opening the cln-rpc connection. We'll use this to send
+    // custom messages
+    let rpc_path = plugin.configuration().rpc_file;
+    let mut cln_rpc = cln_rpc::ClnRpc::new(rpc_path).await?;
 
-    let x = configured_plugin.configuration();
 
-    // Connect to the database and run migration scripts
-    let connection_string = match configured_plugin.option("lsp_server_database_url") {
-        Some(ConfigValue::OptString) | None => {
-            log::info!("No config found for 'lsp_server_database_url'");
-            log::info!("The default path will be used");
-            let lightning_dir = configured_plugin.configuration().lightning_dir;
-            format!("sqlite://{}/lsp_server.db", lightning_dir)
-        }
-        Some(ConfigValue::String(x)) => x,
-        _ => {
-            log::warn!("Invalid value `lsp_server_database_connection`");
-            log::warn!("The value should be a valid connection string");
-            log::warn!("An example is `sqlite://home/user/data/lsp_server.db`");
-            log::warn!("");
-            log::warn!("We are currently only supporting sqlite.");
-            log::warn!("If the database file doesn't exist the plugin will create it for you");
-            log::warn!("If no value is specified we will create the database inside the lightning directory");
-            return Ok(());
-        }
-    };
+ 
+    let parse_result = parse_custom_msg(request);
+    match parse_result {
 
-    log::info!("Connecting to database '{}'", connection_string);
-    let options = SqliteConnectOptions::from_str(&connection_string)?.create_if_missing(true);
-    let mut connection = SqliteConnection::connect_with(&options).await.unwrap();
-    log::info!("Running database migration scripts");
-    sqlx::migrate!().run(&mut connection).await?;
-    log::info!("Successfully executed migrations");
+    }
 
-    let database = Database::connect_with_options(options).await.unwrap();
-
-    let plugin = configured_plugin.start(PluginState::new(database)).await?;
-
-    plugin.join().await.unwrap();
-
-    return Ok(());
+    Ok(serde_json::json!({"result" : "do_continue"}))
 }
 
-fn do_continue() -> Result<serde_json::Value> {
-    Ok(json!({"result" : "continue"}))
+
+/// Reply if the client doesn't provide a valid
+/// JSON-rpc request.
+///
+async fn parse_custom_msg(
+    request : serde_json::Value
+) -> Result<JsonRpcRequest<serde_json::Value>, JsonRpcResponseFailure<DefaultError>>
+{
+    todo!("Implement");
+
 }
 
-/// Handles an incoming custom message
-async fn handle_custom_msg(
+async fn handle_custom_msg2(
     plugin: Plugin<PluginState>,
     request: serde_json::Value,
 ) -> Result<serde_json::Value> {
@@ -264,43 +190,15 @@ async fn handle_custom_msg(
     do_continue()
 }
 
-/// Hook method for a paid invoice
-async fn handle_paid_invoice(
-    plugin: Plugin<PluginState>,
-    value: serde_json::Value,
-) -> Result<serde_json::Value> {
 
-    // Parse the incoming hook data
-    // If we fail we log an error and continue
-    let parsed = serde_json::from_value::<InvoicePaymentHookData>(value);
-    let hook_data = if let Ok(hook_data) = parsed {
-        hook_data
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn serialize_custom_msg_response() {
+        let value = serde_json::to_value(CustomMsgResponse::Continue).unwrap();
+        assert_eq!(value, serde_json::json!({"result" : "continue"}));
     }
-    else {
-        log::warn!("Error in parsing payment_hook");
-        return Ok(InvoicePaymentHookResponse::Continue.serialize())
-    };
-
-    // Handle the uinderlying plugin
-    let result = lsps1_invoice_payment(plugin, &hook_data.payment).await;
-    match result {
-        Ok(hook_response) =>  Ok(hook_response.serialize()),
-        Err(err) => {
-            log::warn!("Error in processing payment_hook");
-            log::warn!("{:?}", err);
-            Ok(InvoicePaymentHookResponse::Continue.serialize())
-        }
-    }
-}
-
-async fn do_list_protocols(
-    _method: methods::Lsps0ListProtocols,
-    _context: &mut CustomMsgContext<PluginState>,
-) -> Result<ListprotocolsResponse, CustomMsgError> {
-    ListprotocolsResponseBuilder::new()
-        .protocols(vec![0, 1])
-        .build()
-        .map_err(|_| {
-            CustomMsgError::InternalError("Failed to construct ListprotocolsResponse".into())
-        })
 }

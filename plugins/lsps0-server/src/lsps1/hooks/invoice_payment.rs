@@ -1,22 +1,19 @@
+use anyhow::{Context, Result};
 use cln_plugin::Plugin;
 
 use lsp_primitives::lsps1::schema::PaymentState;
 
-use crate::cln_objects::Payment;
-use crate::db::schema::Lsps1PaymentDetails;
+use crate::cln::hooks::invoice_payment::Payment;
+use crate::cln::hooks::invoice_payment::InvoicePaymentHookResponse;
 use crate::db::sqlite::queries::{GetPaymentDetailsQuery, UpdatePaymentStateQuery};
-use crate::error::InvoicePaymentError;
 use crate::state::PluginState;
 
 pub(crate) async fn invoice_payment(
     plugin: Plugin<PluginState>,
     payment: &Payment,
-) -> Result<(), InvoicePaymentError> {
+) -> Result<InvoicePaymentHookResponse> {
     let db = &plugin.state().database;
-    let mut tx = db
-        .begin()
-        .await
-        .map_err(|x| InvoicePaymentError::Log(x.to_string()))?;
+    let mut tx = db.begin().await?;
 
     log::info!("Looking for payment with label in database");
     // Check if we should handle the invoice_payment hook
@@ -25,8 +22,14 @@ pub(crate) async fn invoice_payment(
     let payment_details = GetPaymentDetailsQuery::ByLabel(String::from(payment.label.clone()))
         .execute(&mut tx)
         .await
-        .map_err(|x| InvoicePaymentError::Log(x.to_string()))? // Error quering in database
-        .ok_or_else(|| InvoicePaymentError::NotMine)?; // No value was found
+        .with_context(|| "Failed to execute 'get_payment_details_by_label'-query on database")?;
+
+    if payment_details.is_none() {
+        // The lsps1-plugin can ignore this payment
+        // This payment is unrelated
+        return Ok(InvoicePaymentHookResponse::Continue)
+    }
+    let payment_details = payment_details.unwrap();
 
     // Set the payment-state to hold in the database
     // The hook is called so we have received the HTLC
@@ -35,13 +38,9 @@ pub(crate) async fn invoice_payment(
         generation: payment_details.generation,
         label: payment.label.to_string(),
     }
-    .execute(&mut tx)
-    .await
-    .map_err(|x| InvoicePaymentError::Log(x.to_string()));
+    .execute(&mut tx).await?;
 
-    tx.commit()
-        .await
-        .map_err(|e| InvoicePaymentError::Log(e.to_string().into()))?;
+    tx.commit().await?;
 
     // Here we attempt to open the channel
     // This might take a while because we need to reach out
@@ -56,7 +55,7 @@ pub(crate) async fn invoice_payment(
         Err(_) => PaymentState::Refunded,
     };
 
-    let mut tx = db.begin().await.map_err(|e| InvoicePaymentError::Log(e.to_string().into()))?;
+    let mut tx = db.begin().await?;
 
     // Set the payment-state to hold in the database
     // The hook is called so we have received the HTLC
@@ -66,12 +65,11 @@ pub(crate) async fn invoice_payment(
         label: payment.label.to_string(),
     }
     .execute(&mut tx)
-    .await
-    .map_err(|x| InvoicePaymentError::Log(x.to_string()))?;
+    .await?;
 
-    tx.commit().await.map_err(|e| InvoicePaymentError::Log(e.to_string()))?;
+    tx.commit().await?;
 
-    Ok(())
+    return Ok(InvoicePaymentHookResponse::Continue)
 }
 
 async fn try_open_channel() -> Result<(), ()> {

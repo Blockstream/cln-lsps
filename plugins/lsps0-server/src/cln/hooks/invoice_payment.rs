@@ -1,3 +1,21 @@
+pub(crate) enum InvoicePaymentHookResponse {
+    Continue,
+    Reject,
+    FailureMessage(u16)
+}
+
+impl InvoicePaymentHookResponse {
+
+    // We don't use serde here because it is nice to have infallible serialization
+    pub(crate) fn serialize(&self) -> serde_json::Value {
+        match self {
+            Self::Continue => serde_json::json!({"result" : "continue"}),
+            Self::Reject => serde_json::json!({"result" : "reject"}),
+            Self::FailureMessage(x) => serde_json::json!({"result" : { "failure_message" : x}})
+        }
+    }
+}
+
 use serde::de::{Deserializer, Visitor};
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +66,7 @@ impl<'de> Deserialize<'de> for AmountMsat {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub(crate) struct PaymentHook {
+pub(crate) struct InvoicePaymentHookData {
     pub(crate) payment: Payment,
 }
 
@@ -57,18 +75,6 @@ pub(crate) struct Payment {
     pub(crate) label: String,
     pub(crate) preimage: String,
     pub(crate) msat: AmountMsat,
-}
-
-pub(crate) struct PaymentHookResponse;
-
-impl PaymentHookResponse {
-    pub(crate) fn r#continue() -> serde_json::Value {
-        serde_json::json!({"result" : "continue"})
-    }
-
-    pub(crate) fn reject() -> serde_json::Value {
-        serde_json::json!({"result" : "reject"})
-    }
 }
 
 #[cfg(test)]
