@@ -5,11 +5,10 @@ use lsp_primitives::methods;
 
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, SatAmount};
 use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
-use lsp_primitives::lsps1::schema::{
-    Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState, PaymentState,
-};
+use lsp_primitives::lsps1::schema::{Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState};
 
 use crate::custom_msg::context::CustomMsgContext;
+use crate::db::sqlite::queries::{GetOrderQuery, GetPaymentDetailsQuery, Lsps1CreateOrderQuery};
 use crate::error::CustomMsgError;
 use crate::lsps1::fee_calc::FixedFeeCalculator;
 use crate::lsps1::msg::{BuildLsps1Order, BuildUsingDbPayment};
@@ -94,21 +93,38 @@ pub(crate) async fn do_lsps1_create_order(
 
     // Write everything to the database
     let db = context.plugin.state().database.clone();
-    db.create_order(&lsps1_order, &payment)
-        .await
-        .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
+    let query = Lsps1CreateOrderQuery {
+        order: lsps1_order,
+        payment,
+    };
+
+    let mut tx = db.begin().await.map_err(|e| {
+        CustomMsgError::InternalError(
+            format!("Failed to start database transaction {:?}", e).into(),
+        )
+    })?;
+
+    let _ = query.execute(&mut tx).await.map_err(|e| {
+        CustomMsgError::InternalError(format!("Failed to add order to database: {:?}", e).into())
+    })?;
+
+    tx.commit().await.map_err(|e| {
+        CustomMsgError::InternalError(
+            format!("Failed to commit create_order query: {:?}", e).into(),
+        )
+    })?;
 
     // Construct the response that we will send to the user
     let payment = PaymentBuilder::new()
-        .fee_total_sat(payment.fee_total_sat)
-        .order_total_sat(payment.order_total_sat)
-        .bolt11_invoice(payment.bolt11_invoice)
-        .state(payment.state)
+        .fee_total_sat(query.payment.fee_total_sat)
+        .order_total_sat(query.payment.order_total_sat)
+        .bolt11_invoice(query.payment.bolt11_invoice)
+        .state(query.payment.state)
         .build()
         .map_err(|e| CustomMsgError::InternalError(e.to_string().into()))?;
 
     let response = Lsps1CreateOrderResponseBuilder::from_request(order)
-        .uuid(lsps1_order.uuid)
+        .uuid(query.order.uuid)
         .created_at(created_at)
         .expires_at(expires_at)
         .order_state(OrderState::Created)
@@ -132,18 +148,25 @@ pub(crate) async fn do_lsps1_get_order(
 
     let db = context.plugin.state().database.clone();
 
+    let mut tx = db.begin().await.map_err(|e| {
+        CustomMsgError::InternalError(format!("Failed to initiate transaction: {:?}", e).into())
+    })?;
+
     // TODO: Risk of PhantomData
     // Read both queries in a single transaction
-    let order = db
-        .get_order_by_uuid(&uuid_value)
+    let get_order_query = GetOrderQuery {
+        order_id: uuid_value,
+    };
+    let order = get_order_query
+        .execute(&mut tx)
         .await
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?
         .ok_or_else(|| CustomMsgError::NotFound("Order not found".into()))?;
 
     log::info!("Storing payment details in db");
 
-    let payment_details = db
-        .get_payment_details_by_uuid(uuid_value)
+    let payment_details = GetPaymentDetailsQuery::by_uuid(uuid_value)
+        .execute(&mut tx)
         .await
         .map_err(|x| CustomMsgError::InternalError(x.to_string().into()))?
         .ok_or_else(|| {

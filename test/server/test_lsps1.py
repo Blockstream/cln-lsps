@@ -115,8 +115,8 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
 
 
-def test_lsps1_order_is_marked_as_paid_after_payment(
-    lsps_client: LightningNode, lsps_server
+def test_lsps1_order_is_marked_as_hold(
+    lsps_client, lsps_server
 ):
     # Connect the client to server and open an initial channel
     logger.info("Connecting and opening a channel")
@@ -142,7 +142,7 @@ def test_lsps1_order_is_marked_as_paid_after_payment(
     order_id = response["result"]["order_id"]
     bolt11_invoice = response["result"]["payment"]["bolt11_invoice"]
 
-    # Client pays for the onchain invoice
+    # Client pays for the invoice using lightning
     logger.info("Pay order using bolt11_invoice")
     pay_result = lsps_client.rpc.pay(bolt11_invoice)
     logger.info(f"{pay_result}")
@@ -161,3 +161,5 @@ def test_lsps1_order_is_marked_as_paid_after_payment(
     )
 
     assert response["result"]["payment"]["state"] == "PAID"
+
+
