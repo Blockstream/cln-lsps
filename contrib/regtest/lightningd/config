@@ -1,7 +1,0 @@
-network=regtest
-
-# Configure connection to the bitcoin rpc
-bitcoin-rpcuser=btc
-bitcoin-rpcpassword=btc
-bitcoin-rpcconnect=bitcoind-regtest
-
