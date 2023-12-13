@@ -10,8 +10,8 @@ function _load_env() {
 
 	export LIGHTNING_CLI=$(which lightning-cli)
 	export LIGHTNINGD=$(which lightningd)
-	export BITCOIN_CLI=$(which bitcoin-cli)
-	export BITCOIND=$(which bitcoind)
+	export BITCOIN_CLI="$(which bitcoin-cli) -regtest"
+	export BITCOIND="$(which bitcoind) -regtest"
 
 	echo "lightning-cli = $LIGHTNING_CLI"
 	echo "lightningd = $LIGHTNINGD"
@@ -67,14 +67,46 @@ function _load_env() {
 		$LIGHTNING_CLI --lightning-dir=$SERVER_LIGHTNING_DIR stop
 	}
 
-	function start() {
+	function start_nodes() {
+		echo "Starting LSP-clients"
+		echo "- Start c1"
 		$LIGHTNINGD --lightning-dir=$CLIENT_LIGHTNING_DIR --daemon
+		echo "Starting LSP-servers"
+		echo "- Start s1"
 		$LIGHTNINGD --lightning-dir=$SERVER_LIGHTNING_DIR --daemon
+	}
+
+	# fund c1 0.2 
+	# 
+	# Fund node with 0.2 btc
+	function fund_node() {
+		node=$1
+		amount=$2
+		address=$($LIGHTNING_CLI --lightning-dir=/tmp/lsps_$node newaddr | jq -r .bech32)
+		echo "Funding $2 BTC to $1 on $address"
+		$BITCOIN_CLI sendtoaddress $address $amount
+		$BITCOIN_CLI -generate 7
+	}
+
+	function open_channel() {
+		FROM_NODE=$1
+		TO_NODE=$2
+		AMOUNT=$3
+
+		FROM_ID=$($LIGHTNING_CLI --lightning-dir=/tmp/lsps_$FROM_NODE getinfo | jq -r .id)
+		TO_ID=$($LIGHTNING_CLI --lightning-dir=/tmp/lsps_$TO_NODE getinfo | jq -r .id)
+
+		echo "Funding channel from $FROM_NODE to $TO_NODE of $AMOUNT sat"
+		$LIGHTNING_CLI --lightning-dir=/tmp/lsps_$FROM_NODE fundchannel $TO_ID $AMOUNT
+		$BITCOIN_CLI -generate 7
 	}
 
 	function load_ids() {
 		export S1_ID=$(s1-cli getinfo | jq .id)
 		export C1_ID=$(c1-cli getinfo | jq .id)
+
+		echo "Set S1_ID=$S1_ID"
+		echo "Set C1_ID=$C1_ID"
 	}
 	function delete_nodes() {
 		rm -rf $CLIENT_LIGHTNING_DIR
@@ -96,6 +128,8 @@ function load_env() {
 	fi
 
 	_load_env
+
+	load_ids
 
 }
 
@@ -139,12 +173,27 @@ function set_env() {
 	echo "addr=localhost:20401" >> $CLIENT_LIGHTNING_CONFIG
 	echo "alias=LSP-client" >> $CLIENT_LIGHTNING_CONFIG
 
-
-
 	echo "Starting LSP-client"
 	$LIGHTNINGD --lightning-dir=$CLIENT_LIGHTNING_DIR --daemon
 	echo "Starting LSP-server"
 	$LIGHTNINGD --lightning-dir=$SERVER_LIGHTNING_DIR --daemon
+
+	load_ids
+	connect
+	fund_node s1 10.0
+	fund_node c1 0.1
+
+        while ! "$LIGHTNING_CLI" -F --lightning-dir="/tmp/lsps_c1" listfunds | grep -q "outputs"
+        	do
+                        sleep 1
+                done
+
+        while ! "$LIGHTNING_CLI" -F --lightning-dir="/tmp/lsps_s1" listfunds | grep -q "outputs"
+        	do
+                        sleep 1
+                done
+
+	open_channel c1 s1 99999
 }
 
 
