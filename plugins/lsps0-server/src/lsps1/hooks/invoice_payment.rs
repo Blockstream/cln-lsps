@@ -3,8 +3,8 @@ use cln_plugin::Plugin;
 
 use lsp_primitives::lsps1::schema::PaymentState;
 
-use crate::cln::hooks::invoice_payment::Payment;
 use crate::cln::hooks::invoice_payment::InvoicePaymentHookResponse;
+use crate::cln::hooks::invoice_payment::Payment;
 use crate::db::sqlite::queries::{GetPaymentDetailsQuery, UpdatePaymentStateQuery};
 use crate::state::PluginState;
 
@@ -27,7 +27,7 @@ pub(crate) async fn invoice_payment(
     if payment_details.is_none() {
         // The lsps1-plugin can ignore this payment
         // This payment is unrelated
-        return Ok(InvoicePaymentHookResponse::Continue)
+        return Ok(InvoicePaymentHookResponse::Continue);
     }
     let payment_details = payment_details.unwrap();
 
@@ -38,7 +38,8 @@ pub(crate) async fn invoice_payment(
         generation: payment_details.generation,
         label: payment.label.to_string(),
     }
-    .execute(&mut tx).await?;
+    .execute(&mut tx)
+    .await?;
 
     tx.commit().await?;
 
@@ -69,7 +70,7 @@ pub(crate) async fn invoice_payment(
 
     tx.commit().await?;
 
-    return Ok(InvoicePaymentHookResponse::Continue)
+    return Ok(InvoicePaymentHookResponse::Continue);
 }
 
 async fn try_open_channel() -> Result<(), ()> {

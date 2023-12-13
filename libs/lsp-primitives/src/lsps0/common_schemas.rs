@@ -235,9 +235,9 @@ impl<'de> Deserialize<'de> for IsoDatetime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Copy)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Copy, Default)]
 pub struct SatAmount(u64);
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Copy)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Copy, Default)]
 pub struct MsatAmount(u64);
 
 impl std::fmt::Display for SatAmount {

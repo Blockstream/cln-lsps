@@ -1,3 +1,4 @@
+mod cln;
 mod custom_msg;
 mod db;
 mod error;
@@ -6,7 +7,6 @@ mod lsps1_utils;
 mod network;
 mod options;
 mod state;
-mod cln;
 
 use std::str::FromStr;
 
@@ -36,6 +36,7 @@ use crate::custom_msg::util::send_response;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteConnection};
 use sqlx::Connection;
 
+use crate::cln::hooks::invoice_payment::{InvoicePaymentHookData, InvoicePaymentHookResponse};
 use crate::db::sqlite::Database;
 use crate::error::CustomMsgError;
 use crate::lsps1::hooks::{
@@ -44,7 +45,6 @@ use crate::lsps1::hooks::{
 };
 use crate::network::parse_network;
 use crate::state::PluginState;
-use crate::cln::hooks::invoice_payment::{InvoicePaymentHookResponse, InvoicePaymentHookData};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -269,22 +269,20 @@ async fn handle_paid_invoice(
     plugin: Plugin<PluginState>,
     value: serde_json::Value,
 ) -> Result<serde_json::Value> {
-
     // Parse the incoming hook data
     // If we fail we log an error and continue
     let parsed = serde_json::from_value::<InvoicePaymentHookData>(value);
     let hook_data = if let Ok(hook_data) = parsed {
         hook_data
-    }
-    else {
+    } else {
         log::warn!("Error in parsing payment_hook");
-        return Ok(InvoicePaymentHookResponse::Continue.serialize())
+        return Ok(InvoicePaymentHookResponse::Continue.serialize());
     };
 
     // Handle the uinderlying plugin
     let result = lsps1_invoice_payment(plugin, &hook_data.payment).await;
     match result {
-        Ok(hook_response) =>  Ok(hook_response.serialize()),
+        Ok(hook_response) => Ok(hook_response.serialize()),
         Err(err) => {
             log::warn!("Error in processing payment_hook");
             log::warn!("{:?}", err);

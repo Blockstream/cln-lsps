@@ -228,18 +228,18 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn client_balance_sat(mut self, client_balance_sat: SatAmount) -> Self {
-        self.client_balance_sat = Some(client_balance_sat);
-        self
-    }
-
-    pub fn confirms_within_blocks(mut self, confirms_within_blocks: u8) -> Self {
-        self.confirms_within_blocks = Some(confirms_within_blocks);
-        self
-    }
-
     pub fn channel_expiry_blocks(mut self, channel_expiry_blocks: u32) -> Self {
         self.channel_expiry_blocks = Some(channel_expiry_blocks);
+        self
+    }
+
+    pub fn client_balance_sat(mut self, client_balance_sat: Option<SatAmount>) -> Self {
+        self.client_balance_sat = client_balance_sat;
+        self
+    }
+
+    pub fn confirms_within_blocks(mut self, confirms_within_blocks: Option<u8>) -> Self {
+        self.confirms_within_blocks = confirms_within_blocks;
         self
     }
 
@@ -256,8 +256,8 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn announce_channel(mut self, announce_channel: bool) -> Self {
-        self.announce_channel = Some(announce_channel);
+    pub fn announce_channel(mut self, announce_channel: Option<bool>) -> Self {
+        self.announce_channel = announce_channel;
         self
     }
 
@@ -269,6 +269,7 @@ impl Lsps1CreateOrderRequestBuilder {
         let channel_expiry_blocks = self
             .channel_expiry_blocks
             .context("Missing field 'channel_expirty_blocks' in Lsps1CreateOrderRequestBuilder")?;
+
         // Fields that allow for reasonable defaults
         let client_balance_sat = self.client_balance_sat.unwrap_or(SatAmount::new(0));
         let announce_channel = self.announce_channel.unwrap_or(false);

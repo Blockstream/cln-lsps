@@ -30,12 +30,12 @@ pub struct Lsps1GetInfoRequest {
 pub struct Lsps1CreateOrderRequest {
     pub peer_id: String,
     pub lsp_balance_sat: SatAmount,
-    pub client_balance_sat: SatAmount,
-    pub confirms_within_blocks: u8,
+    pub client_balance_sat: Option<SatAmount>,
+    pub confirms_within_blocks: Option<u8>,
     pub channel_expiry_blocks: u32,
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,
-    pub announce_channel: bool,
+    pub announce_channel: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

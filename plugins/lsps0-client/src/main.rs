@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
             )
             .rpcmethod(
                 "lsps1-get-order",
-                "Get info about an order",
+                "Get info about an order from the server",
                 lsps1_get_order,
             )
             .hook("custommsg", handle_custom_msg)
@@ -240,8 +240,7 @@ async fn lsps1_create_order(
         .token(request.token)
         .refund_onchain_address(request.refund_onchain_address)
         .announce_channel(request.announce_channel)
-        .build()
-        .unwrap();
+        .build()?;
 
     // Make the request to the LSP-server and return the result
     let response = client

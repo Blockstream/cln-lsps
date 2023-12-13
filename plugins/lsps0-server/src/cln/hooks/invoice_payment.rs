@@ -1,17 +1,16 @@
 pub(crate) enum InvoicePaymentHookResponse {
     Continue,
     Reject,
-    FailureMessage(u16)
+    FailureMessage(u16),
 }
 
 impl InvoicePaymentHookResponse {
-
     // We don't use serde here because it is nice to have infallible serialization
     pub(crate) fn serialize(&self) -> serde_json::Value {
         match self {
             Self::Continue => serde_json::json!({"result" : "continue"}),
             Self::Reject => serde_json::json!({"result" : "reject"}),
-            Self::FailureMessage(x) => serde_json::json!({"result" : { "failure_message" : x}})
+            Self::FailureMessage(x) => serde_json::json!({"result" : { "failure_message" : x}}),
         }
     }
 }
