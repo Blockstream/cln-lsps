@@ -62,7 +62,7 @@ function _load_env() {
 
 	}
 
-	function stop() {
+	function stop_nodes() {
 		$LIGHTNING_CLI --lightning-dir=$CLIENT_LIGHTNING_DIR stop
 		$LIGHTNING_CLI --lightning-dir=$SERVER_LIGHTNING_DIR stop
 	}
@@ -87,8 +87,6 @@ function load_env() {
 	export CLIENT_LIGHTNING_DIR=/tmp/lsps_c1
 	export SERVER_LIGHTNING_DIR=/tmp/lsps_s1
 
-
-	echo $CLIENT_LIGHTNING_DIR
 	if test ! -d $CLIENT_LIGHTNING_DIR; then
 		echo "No configuration for client yet. Try running set_env first"
 	fi
@@ -96,6 +94,8 @@ function load_env() {
 	if test ! -d $SERVER_LIGHTNING_DIR; then
 		echo "No configuration for server yet. Try running set_env first"
 	fi
+
+	_load_env
 
 }
 
