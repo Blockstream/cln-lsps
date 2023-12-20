@@ -186,7 +186,6 @@ mod test {
         let onchain = OnchainAddress::from_str("32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf").unwrap();
 
         let request = Lsps1CreateOrderRequest {
-            api_version: 1,
             lsp_balance_sat: SatAmount::new(100_000),
             client_balance_sat: SatAmount::new(1_000),
             confirms_within_blocks: 10,

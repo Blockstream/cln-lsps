@@ -129,14 +129,13 @@ mod tests {
 
     fn get_order_builder() -> Lsps1CreateOrderRequestBuilder {
         Lsps1CreateOrderRequestBuilder::new()
-            .api_version(1)
-            .client_balance_sat(SatAmount::new(0))
+            .client_balance_sat(Some(SatAmount::new(0)))
             .lsp_balance_sat(SatAmount::new(500_000))
-            .confirms_within_blocks(6)
+            .confirms_within_blocks(Some(6))
             .channel_expiry_blocks(1_000)
             .token(None)
             .refund_onchain_address(None)
-            .announce_channel(false)
+            .announce_channel(Some(false))
     }
 
     #[test]
@@ -181,12 +180,12 @@ mod tests {
             .unwrap();
 
         let order_1 = get_order_builder()
-            .client_balance_sat(SatAmount::new(0))
+            .client_balance_sat(Some(SatAmount::new(0)))
             .build()
             .unwrap();
 
         let order_2 = get_order_builder()
-            .client_balance_sat(SatAmount::new(999_999))
+            .client_balance_sat(Some(SatAmount::new(999_999)))
             .build()
             .unwrap();
 
@@ -210,13 +209,13 @@ mod tests {
             .unwrap();
 
         let order_1 = get_order_builder()
-            .client_balance_sat(SatAmount::new(1_000))
+            .client_balance_sat(Some(SatAmount::new(1_000)))
             .lsp_balance_sat(SatAmount::new(1_000))
             .build()
             .unwrap();
 
         let order_2 = get_order_builder()
-            .client_balance_sat(SatAmount::new(100_000))
+            .client_balance_sat(Some(SatAmount::new(100_000)))
             .lsp_balance_sat(SatAmount::new(100_000))
             .build()
             .unwrap();
