@@ -2,7 +2,6 @@ use serde::de::Error as DeError;
 use serde::{Deserialize, Serialize};
 
 use crate::error::map_json_rpc_error_code_to_str;
-use crate::json_rpc::MapErrorCode;
 use crate::lsps0::common_schemas::{IsoDatetime, MsatAmount, ShortChannelId};
 
 const MAX_PROMISE_LEN_BYTES: usize = 512;
@@ -64,19 +63,6 @@ pub struct Lsps2GetInfoResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Lsps2GetInfoError {}
-
-impl MapErrorCode for Lsps2GetInfoError {
-    fn get_code_str(code: i64) -> &'static str {
-        match code {
-            1 => "unsupported_version",
-            2 => "unrecognized_or_stale_token",
-            _ => map_json_rpc_error_code_to_str(code),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OpeningFeeParamsMenuItem {
     min_fee_msat: MsatAmount,
@@ -100,21 +86,6 @@ pub struct Lsps2BuyResponse {
     lsp_cltv_expiry_delta: u64,
     #[serde(default)]
     client_trusts_lsp: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Lsps2BuyError {}
-
-impl MapErrorCode for Lsps2BuyError {
-    fn get_code_str(code: i64) -> &'static str {
-        match code {
-            1 => "unsupported_version",
-            2 => "invalid_opening_fee_params",
-            3 => "payment_size_too_small",
-            4 => "payment_size_too_large",
-            _ => map_json_rpc_error_code_to_str(code),
-        }
-    }
 }
 
 #[cfg(test)]

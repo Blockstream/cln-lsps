@@ -23,7 +23,7 @@
 /// When JsonRpcMethodUnerased is used your user can decide which abstraction they want to use.
 use crate::json_rpc::{
     ErrorData, JsonRpcId, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse, JsonRpcResponseFailure,
-    JsonRpcResponseSuccess, MapErrorCode,
+    JsonRpcResponseSuccess
 };
 use serde::Serialize;
 
@@ -57,7 +57,7 @@ impl<'a, I, O, E> JsonRpcMethodErased<'a> for JsonRpcMethod<'_, I, O, E>
 where
     I: serde::de::DeserializeOwned + Serialize,
     O: serde::de::DeserializeOwned + Serialize,
-    E: serde::de::DeserializeOwned + Serialize + MapErrorCode,
+    E: serde::de::DeserializeOwned + Serialize,
 {
     fn name(&'a self) -> &str {
         self.method
@@ -92,7 +92,7 @@ impl<I, O, E> JsonRpcMethod<'static, I, O, E>
 where
     I: serde::de::DeserializeOwned + Serialize + 'static,
     O: serde::de::DeserializeOwned + Serialize + 'static,
-    E: serde::de::DeserializeOwned + Serialize + 'static + MapErrorCode,
+    E: serde::de::DeserializeOwned + Serialize + 'static,
 {
     pub fn erase_box(self) -> Box<dyn JsonRpcMethodErased<'static>> {
         Box::new(self)
@@ -140,7 +140,7 @@ pub trait JsonRpcMethodUnerased<'a, I, O, E> {
 impl<'a, I, O, E> JsonRpcMethodUnerased<'a, I, O, E> for JsonRpcMethod<'a, I, O, E>
 where
     O: serde::de::DeserializeOwned,
-    E: serde::de::DeserializeOwned + MapErrorCode,
+    E: serde::de::DeserializeOwned,
 {
     fn name(&self) -> &str {
         JsonRpcMethod::name(self)

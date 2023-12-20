@@ -2,7 +2,7 @@ use std::io::{Cursor, Write};
 
 use anyhow::{anyhow, Context, Result};
 use lsp_primitives::json_rpc::{
-    generate_random_rpc_id, JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode, NoParams,
+    generate_random_rpc_id, JsonRpcId, JsonRpcMethod, JsonRpcResponse, NoParams,
 };
 
 use lsp_primitives::lsps0;
@@ -64,7 +64,6 @@ pub trait LspClient {
         rpc_id: JsonRpcId,
     ) -> Result<JsonRpcResponse<O, E>>
     where
-        E: MapErrorCode,
         I: serde::Serialize + Send,
         O: serde::de::DeserializeOwned + Send,
         E: serde::de::DeserializeOwned + Send;
@@ -79,7 +78,6 @@ pub trait LspClient {
         param: I,
     ) -> Result<JsonRpcResponse<O, E>>
     where
-        E: MapErrorCode,
         I: serde::Serialize + Send,
         O: serde::de::DeserializeOwned + Send,
         E: serde::de::DeserializeOwned + Send,
@@ -143,7 +141,6 @@ pub fn rpc_request_to_data<I, O, E>(
     params: I,
 ) -> Result<String>
 where
-    E: MapErrorCode,
     I: serde::Serialize,
 {
     let request = method.create_request(params, json_rpc_id.clone());

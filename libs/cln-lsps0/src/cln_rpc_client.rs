@@ -1,6 +1,6 @@
 use crate::client::{rpc_request_to_data, LspClient, RequestId};
 use crate::transport::RequestResponseMatcher;
-use lsp_primitives::json_rpc::{JsonRpcId, JsonRpcMethod, JsonRpcResponse, MapErrorCode};
+use lsp_primitives::json_rpc::{JsonRpcId, JsonRpcMethod, JsonRpcResponse};
 use lsp_primitives::lsps0::common_schemas::PublicKey;
 use lsp_primitives::lsps0::util::{is_feature_bit_enabled, FeatureBitMap, LSP_SERVER_FEATURE_BIT};
 
@@ -43,7 +43,6 @@ impl LspClient for ClnRpcLspClient {
         json_rpc_id: JsonRpcId,
     ) -> Result<JsonRpcResponse<O, E>>
     where
-        E: MapErrorCode,
         I: serde::Serialize + Send,
         O: serde::de::DeserializeOwned + Send,
         E: serde::de::DeserializeOwned + Send,

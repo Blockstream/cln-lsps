@@ -64,19 +64,8 @@ pub fn generate_random_rpc_id() -> JsonRpcId {
 /// of the input I, output O and error-type E.
 ///
 /// The error-type can be serialized and deserialized
-/// but should also implement MapErrorCode.
-///
-/// The MapErrorCode trait is used to map error-codes
-/// to human readable strings.
-///
-/// By default the values in the jsonrpc 2.0-specification
-/// are used. However, it is possible to define additional
-/// error-codes for a method.
-///
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct JsonRpcMethod<'a, I, O, E>
-where
-    E: MapErrorCode,
 {
     pub method: &'a str,
     #[serde(skip_serializing)]
@@ -88,8 +77,6 @@ where
 }
 
 impl<'a, I, O, E> JsonRpcMethod<'a, I, O, E>
-where
-    E: MapErrorCode,
 {
     pub const fn new(method: &'a str) -> Self {
         Self {
@@ -145,8 +132,6 @@ where
 }
 
 impl<O, E> JsonRpcMethod<'_, NoParams, O, E>
-where
-    E: MapErrorCode,
 {
     pub fn create_request_no_params(&self, json_rpc_id: JsonRpcId) -> JsonRpcRequest<NoParams> {
         self.create_request(NoParams, json_rpc_id)
@@ -154,8 +139,6 @@ where
 }
 
 impl<'a, I, O, E> std::convert::From<&'a JsonRpcMethod<'a, I, O, E>> for String
-where
-    E: MapErrorCode,
 {
     fn from(value: &JsonRpcMethod<I, O, E>) -> Self {
         value.method.into()
@@ -165,7 +148,7 @@ where
 impl<'de, I, O, E> JsonRpcMethod<'de, I, O, E>
 where
     O: Deserialize<'de>,
-    E: Deserialize<'de> + MapErrorCode,
+    E: Deserialize<'de>,
 {
     pub fn parse_json_response_str(
         &self,
@@ -178,7 +161,7 @@ where
 impl<I, O, E> JsonRpcMethod<'_, I, O, E>
 where
     O: DeserializeOwned,
-    E: DeserializeOwned + MapErrorCode,
+    E: DeserializeOwned,
 {
     pub fn parse_json_response_value(
         &self,
@@ -200,8 +183,6 @@ pub struct JsonRpcRequest<I> {
 
 impl<I> JsonRpcRequest<I> {
     pub fn new<O, E>(method: JsonRpcMethod<I, O, E>, params: I) -> Self
-    where
-        E: MapErrorCode,
     {
         Self {
             jsonrpc: String::from("2.0"),
@@ -229,8 +210,6 @@ impl JsonRpcRequest<serde_json::Value> {
 
 impl JsonRpcRequest<NoParams> {
     pub fn new_no_params<O, E>(method: JsonRpcMethod<NoParams, O, E>) -> Self
-    where
-        E: MapErrorCode,
     {
         Self {
             jsonrpc: String::from("2.0"),
@@ -285,18 +264,9 @@ pub struct ErrorData<E> {
     pub data: Option<E>,
 }
 
-impl<E> ErrorData<E>
-where
-    E: MapErrorCode,
-{
-    pub fn code_str(&self) -> &str {
-        E::get_code_str(self.code)
-    }
-}
+
 
 impl<E> ErrorData<E>
-where
-    E: MapErrorCode,
 {
     pub fn into_response<O>(self, id: JsonRpcId) -> JsonRpcResponseFailure<E> {
         JsonRpcResponseFailure {
@@ -374,15 +344,6 @@ impl<O, E> JsonRpcResponse<O, E> {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DefaultError(pub serde_json::Value);
 
-pub trait MapErrorCode {
-    fn get_code_str(code: i64) -> &'static str;
-}
-
-impl MapErrorCode for DefaultError {
-    fn get_code_str(code: i64) -> &'static str {
-        map_json_rpc_error_code_to_str(code)
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -504,7 +465,6 @@ mod test {
                 assert_eq!(err.jsonrpc, "2.0");
 
                 assert_eq!(err.error.code, -32700);
-                assert_eq!(err.error.code_str(), "parsing_error");
 
                 assert_eq!(err.error.message, "Failed to parse response");
                 assert_eq!(err.id, JsonRpcId::String("request_id".to_string()));
