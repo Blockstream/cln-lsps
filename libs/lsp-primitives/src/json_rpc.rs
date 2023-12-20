@@ -1,10 +1,11 @@
 use base64::Engine as _;
-use serde::de::{DeserializeOwned, Deserializer, Visitor};
-use serde::ser::SerializeMap;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::error::map_json_rpc_error_code_to_str;
 use std::str::FromStr;
+
+pub use crate::no_params::NoParams;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
@@ -195,51 +196,7 @@ pub struct JsonRpcRequest<I> {
     pub params: I,
 }
 
-// LSPS0 specifies that the RPC-request must use a parameter-by-name structure.
-//
-// A JSONRpcRequest<(),()> will be serialized to a json where "params" : null
-// A JsonRpcRequest<NoParams, ()> will be serialized to "params" : {} which is compliant
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct NoParams;
 
-// Serde serializes NoParams to null by default
-// LSPS0 requires an empty dictionary in this situation
-impl Serialize for NoParams {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_map(Some(0))?.end()
-    }
-}
-
-impl<'de> Visitor<'de> for NoParams {
-    type Value = NoParams;
-
-    fn expecting(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        write!(fmt, "Expected NoParams to be serialized as '{{}}'")
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::MapAccess<'de>,
-    {
-        let maybe_entry = map.next_entry::<String, String>()?;
-        match maybe_entry {
-            Some(_) => Err(serde::de::Error::custom("Expected NoParams")),
-            None => Ok(NoParams),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for NoParams {
-    fn deserialize<D>(deserializer: D) -> Result<NoParams, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_map(NoParams)
-    }
-}
 
 impl<I> JsonRpcRequest<I> {
     pub fn new<O, E>(method: JsonRpcMethod<I, O, E>, params: I) -> Self
@@ -431,19 +388,6 @@ impl MapErrorCode for DefaultError {
 mod test {
 
     use super::*;
-
-    #[test]
-    fn serialize_no_params() {
-        let no_params = NoParams;
-        let json_str = serde_json::to_string(&no_params).unwrap();
-
-        assert_eq!(json_str, "{}")
-    }
-
-    #[test]
-    fn deserialize_no_params() {
-        let _: NoParams = serde_json::from_str("{}").unwrap();
-    }
 
     #[test]
     fn serialize_json_rpc_request() {
