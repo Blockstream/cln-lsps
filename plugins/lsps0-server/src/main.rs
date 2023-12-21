@@ -291,9 +291,11 @@ async fn handle_paid_invoice(
 }
 
 async fn do_list_protocols(
-    _method: methods::Lsps0ListProtocols,
-    _context: &mut CustomMsgContext<PluginState>,
+    method: methods::Lsps0ListProtocols,
+    context: &mut CustomMsgContext<PluginState>,
 ) -> Result<ListprotocolsResponse, ErrorData> {
+    method.into_typed_request(context.request.clone())?;
+
     ListprotocolsResponseBuilder::new()
         .protocols(vec![0, 1])
         .build()

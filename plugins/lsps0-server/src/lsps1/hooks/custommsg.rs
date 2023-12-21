@@ -19,10 +19,13 @@ use crate::lsps1_utils;
 use crate::PluginState;
 
 pub(crate) async fn do_lsps1_get_info(
-    _method: methods::Lsps1Info,
+    method: methods::Lsps1Info,
     context: &mut CustomMsgContext<PluginState>,
 ) -> Result<Lsps1InfoResponse, ErrorData> {
     log::debug!("lsps1_get_info");
+
+    method.into_typed_request(context.request.clone())?;
+
     lsps1_utils::info_response(context.plugin.options())
         .map_err(ErrorData::internalize)
 }
@@ -33,15 +36,13 @@ pub(crate) async fn do_lsps1_create_order(
 ) -> Result<Lsps1CreateOrderResponse, ErrorData> {
     log::debug!("lsps1_create_order");
 
+    let typed_request = method
+        .into_typed_request(context.request.clone())?;
+
     // Define the relevant timestamps
     let now = IsoDatetime::now();
     let created_at = now.clone();
     let expires_at = now.clone();
-
-    // Parse the request and return an invalid params if it fails
-    // TODO: The current error is not LSPS1-spec compliant
-    let typed_request = method
-        .into_typed_request(context.request.clone())?;
 
     let order = typed_request.params;
     order
