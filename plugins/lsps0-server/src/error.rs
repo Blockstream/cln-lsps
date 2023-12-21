@@ -17,12 +17,12 @@ impl TryFrom<CustomMsgError> for ErrorData<DefaultError> {
         match error {
             CustomMsgError::InternalError(_) => Ok(ErrorData::internal_error()),
             CustomMsgError::InvalidParams(params) => {
-                Ok(ErrorData::invalid_params(&Box::new(params)))
+                Ok(ErrorData::invalid_params(serde_json::json!({"message" : params})))
             }
             CustomMsgError::UnknownMethod(method) => Ok(ErrorData::unknown_method(&method)),
             CustomMsgError::Lsps1OptionMismatch(om) => ErrorData::try_from(om),
             CustomMsgError::NotFound(msg) => {
-                let default_error = DefaultError(serde_json::json!({"message" : msg}));
+                let default_error = serde_json::json!({"message" : msg});
                 Ok(ErrorData {
                     code: 404,
                     message: "Not Found".into(),

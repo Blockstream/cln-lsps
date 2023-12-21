@@ -17,7 +17,7 @@ impl TryFrom<Lsps1OptionMismatchError> for ErrorData<DefaultError> {
         Ok(ErrorData {
             code: 1000,
             message: "Option mismatch".into(),
-            data: Some(DefaultError(serde_json::to_value(error)?)),
+            data: Some(serde_json::to_value(error)?),
         })
     }
 }

@@ -298,18 +298,9 @@ impl ErrorData<DefaultError> {
         Self {
             code: -32601,
             message: String::from("unknown_method"),
-            data: Some(DefaultError(serde_json::json!({"method" : method}))),
+            data: Some(serde_json::json!({"method" : method})),
         }
     }
-
-    pub fn invalid_params(message: &str) -> Self {
-        Self {
-            code: -32602,
-            message: String::from("invalid_params"),
-            data: Some(DefaultError(serde_json::json!({"message" : message}))),
-        }
-    }
-
     pub fn internal_error() -> Self {
         Self {
             code: -32603,
@@ -318,6 +309,18 @@ impl ErrorData<DefaultError> {
         }
     }
 }
+
+impl<D> ErrorData<D> {
+    pub fn invalid_params(data : D) -> Self {
+        Self {
+            code: -32602,
+            message: String::from("invalid_params"),
+            data: Some(data),
+        }
+    }
+}
+
+
 
 impl<O, E> JsonRpcResponse<O, E> {
     pub fn success(id: JsonRpcId, output: O) -> Self {
@@ -341,9 +344,7 @@ impl<O, E> JsonRpcResponse<O, E> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DefaultError(pub serde_json::Value);
-
+pub type DefaultError = serde_json::Value;
 
 #[cfg(test)]
 mod test {

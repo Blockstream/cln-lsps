@@ -1,22 +1,64 @@
-//! Implements parameter validation for LSP-servers.
+//! Parameter validation for LSP-servers.
 //! 
+//! Some functionality to deserialize requests and
+//! get custom error-types.
 //! 
-//! 
+//! These error-types can be easily converted to LSPS0-compliant
+//! error data.
 
 use serde::{Serialize, Deserialize};
 use serde_json::{Map, Value};
+use crate::json_rpc::ErrorData;
 
+/// 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+#[serde(rename_all = "snake_case")]
 pub enum ParamValidationError {
-    IsNotPassByArgument,
+    Custom(Custom),
     Unrecognized(Unrecognized),
     InvalidParam(InvalidParam)
 }
 
-pub struct Unrecognized {
+impl ParamValidationError {
 
+    pub fn custom(message : String) -> Self {
+        Self::Custom(Custom { message })
+    }
+
+    pub fn unrecognized(unrecognized : Vec<String>) -> Self {
+        Self::Unrecognized(Unrecognized { unrecognized })
+    }
+
+    pub fn invalid_params(property : String, message : String) -> Self {
+        Self::InvalidParam(
+            InvalidParam { property, message}
+        )
+    }
+}
+
+impl From<ParamValidationError> for ErrorData<serde_json::Value> {
+
+    fn from(err: ParamValidationError) -> Self {
+        let result_ser = serde_json::to_value(err);
+        match result_ser {
+            Ok(data) => ErrorData::invalid_params(data),
+            Err(_) => { ErrorData::internal_error() }
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Custom {
+    message : String
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Unrecognized {
     unrecognized : Vec<String>
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InvalidParam {
     property : String,
     message : String
@@ -26,12 +68,13 @@ pub trait ExpectedFields {
     fn expected_fields() -> Vec<String>;
 }
 
+/// Parses a request from a json_value
 pub fn from_value<'de, T : Deserialize<'de> + ExpectedFields>(value : serde_json::Value) -> Result<T, ParamValidationError> {
 
     let value = match value {
         Value::Object(_) => value,
         Value::Null => Value::Null,
-        _ => return Err(ParamValidationError::IsNotPassByArgument)
+        _ => return Err(ParamValidationError::Custom(Custom {message : "Arguments should be passed by name".to_string()}))
     };
 
     // Find unreconginsed arguments
@@ -51,6 +94,7 @@ pub fn from_value<'de, T : Deserialize<'de> + ExpectedFields>(value : serde_json
         ))
 }
 
+/// Computes a list of unrecognized fields
 fn list_unrecogninzed_fields(
     expected_arguments : &[&str],
     json_value : &serde_json::Value
@@ -109,7 +153,8 @@ fn list_unrecognized_fields_impl(
 
 #[cfg(test)]
 mod test {
-    use super::list_unrecogninzed_fields;
+    use crate::lsps0::parameter_validation::ParamValidationError;
+    use super::*;
     use serde_json::json;
 
     #[test]
@@ -162,5 +207,48 @@ mod test {
             assert_eq!(result, case.expected_result);
 
         }
+    }
+
+    #[test]
+    fn serialize_error_data() {
+
+        assert_eq!(
+            serde_json::to_value(ParamValidationError::Custom(Custom{message : "arg by name".to_string()})).unwrap(),
+            json!({"type" : "custom", "message" : "arg by name"})
+        );
+
+        assert_eq!(
+            serde_json::to_value(
+                ParamValidationError::InvalidParam(
+                    InvalidParam {
+                        property : "param_a".to_string(),
+                        message : "Not an integer".to_string()
+                    }
+                )
+            ).unwrap(),
+            json!({"type" : "invalid_param", "property" : "param_a", "message" : "Not an integer"})
+        );
+
+        assert_eq!(
+            serde_json::to_value(
+                ParamValidationError::Unrecognized(
+                    Unrecognized { unrecognized : vec!["param_a".to_string()]}),
+            ).unwrap(),
+            json!({"type" : "unrecognized", "unrecognized" : ["param_a"] })
+        )
+    }
+
+    #[test]
+    fn convert_invalid_params_to_error_data() {
+        let error = ParamValidationError::unrecognized(vec!["param_a".to_string()]);
+        let error_data : ErrorData<serde_json::Value> = error.into();
+
+        assert_eq!(
+            error_data.code, -32602
+        );
+        assert_eq!(
+            error_data.data.expect("is not None").get("unrecognized").expect("unrecognized field exists")[0],
+            "param_a"
+        );
     }
 }
