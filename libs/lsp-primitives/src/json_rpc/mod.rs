@@ -1,8 +1,11 @@
+pub mod error;
+
 use base64::Engine as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
+pub use crate::json_rpc::error::{ErrorData, DefaultError};
 use crate::lsps0::parameter_validation;
 pub use crate::no_params::NoParams;
 
@@ -251,82 +254,6 @@ impl<E, O> JsonRpcResponse<E, O> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ErrorData<E = DefaultError> {
-    pub code: i64,
-    pub message: String,
-    pub data: Option<E>,
-}
-
-impl<E> ErrorData<E> {
-    pub fn into_response<O>(self, id: JsonRpcId) -> JsonRpcResponseFailure<E> {
-        JsonRpcResponseFailure {
-            id,
-            jsonrpc: String::from("2.0"),
-            error: self,
-        }
-    }
-}
-
-impl ErrorData<DefaultError> {
-    pub fn parse_error(_message: String) -> Self {
-        Self {
-            code: -32700,
-            message: String::from("parse_error"),
-            data: None,
-        }
-    }
-
-    pub fn invalid_request(_message: String) -> Self {
-        Self {
-            code: -32600,
-            message: String::from("invalid_request"),
-            data: None,
-        }
-    }
-
-    pub fn unknown_method(method: &str) -> Self {
-        Self {
-            code: -32601,
-            message: String::from("unknown_method"),
-            data: Some(serde_json::json!({"method" : method})),
-        }
-    }
-
-    pub fn not_found() -> Self {
-        Self {
-            code: 404,
-            message: String::from("Not Found"),
-            data: None,
-        }
-    }
-}
-
-impl<E> ErrorData<E> {
-    pub fn invalid_params(data: E) -> Self {
-        Self {
-            code: -32602,
-            message: String::from("invalid_params"),
-            data: Some(data),
-        }
-    }
-}
-
-impl<E> ErrorData<E> {
-    pub fn internal_error(data: E) -> Self {
-        Self {
-            code: -32603,
-            message: String::from("error_data"),
-            data: Some(data),
-        }
-    }
-}
-
-impl ErrorData<DefaultError> {
-    pub fn internalize<T: core::fmt::Debug>(err: T) -> Self {
-        Self::internal_error(serde_json::Value::String(format!("{:?}", err)))
-    }
-}
 
 impl<O, E> JsonRpcResponse<O, E> {
     pub fn success(id: JsonRpcId, output: O) -> Self {
@@ -349,8 +276,6 @@ impl<O, E> JsonRpcResponse<O, E> {
         JsonRpcResponse::Error(error)
     }
 }
-
-pub type DefaultError = serde_json::Value;
 
 #[cfg(test)]
 mod test {

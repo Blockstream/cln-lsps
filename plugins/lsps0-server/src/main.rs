@@ -201,7 +201,7 @@ async fn handle_custom_msg(
     let method = match method {
         Ok(m) => m,
         Err(_) => {
-            let error = ErrorData::unknown_method(&method_str);
+            let error = ErrorData::method_not_found(&method_str);
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
             send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
             return do_continue();
