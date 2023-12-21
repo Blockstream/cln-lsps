@@ -38,7 +38,6 @@ use sqlx::Connection;
 
 use crate::cln::hooks::invoice_payment::{InvoicePaymentHookData, InvoicePaymentHookResponse};
 use crate::db::sqlite::Database;
-use crate::error::CustomMsgError;
 use crate::lsps1::hooks::{
     do_lsps1_create_order, do_lsps1_get_info, do_lsps1_get_order,
     invoice_payment as lsps1_invoice_payment,
@@ -294,11 +293,9 @@ async fn handle_paid_invoice(
 async fn do_list_protocols(
     _method: methods::Lsps0ListProtocols,
     _context: &mut CustomMsgContext<PluginState>,
-) -> Result<ListprotocolsResponse, CustomMsgError> {
+) -> Result<ListprotocolsResponse, ErrorData> {
     ListprotocolsResponseBuilder::new()
         .protocols(vec![0, 1])
         .build()
-        .map_err(|_| {
-            CustomMsgError::InternalError("Failed to construct ListprotocolsResponse".into())
-        })
+        .map_err(ErrorData::internalize)
 }

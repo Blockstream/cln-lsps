@@ -1,7 +1,9 @@
-use serde::{
-    Serialize, 
-    Deserialize, ser::{Serializer, SerializeMap}, de::{Deserializer, Visitor}};
 use crate::lsps0::parameter_validation::ExpectedFields;
+use serde::{
+    de::{Deserializer, Visitor},
+    ser::{SerializeMap, Serializer},
+    Deserialize, Serialize,
+};
 
 // LSPS0 specifies that the RPC-request must use a parameter-by-name structure.
 //
@@ -40,16 +42,15 @@ impl<'de> Visitor<'de> for NoParams {
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E>
-        where
-            E: serde::de::Error, {
-       Ok(NoParams) 
-    }
-
-    fn visit_none<E>(self) -> Result<Self::Value, E> 
+    where
+        E: serde::de::Error,
     {
         Ok(NoParams)
     }
 
+    fn visit_none<E>(self) -> Result<Self::Value, E> {
+        Ok(NoParams)
+    }
 }
 
 impl<'de> Deserialize<'de> for NoParams {

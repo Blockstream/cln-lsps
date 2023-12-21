@@ -1,10 +1,9 @@
 use base64::Engine as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-
-use crate::error::map_json_rpc_error_code_to_str;
 use std::str::FromStr;
 
+use crate::lsps0::parameter_validation;
 pub use crate::no_params::NoParams;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -65,8 +64,7 @@ pub fn generate_random_rpc_id() -> JsonRpcId {
 ///
 /// The error-type can be serialized and deserialized
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
-pub struct JsonRpcMethod<'a, I, O, E>
-{
+pub struct JsonRpcMethod<'a, I, O, E> {
     pub method: &'a str,
     #[serde(skip_serializing)]
     request: std::marker::PhantomData<I>,
@@ -76,8 +74,7 @@ pub struct JsonRpcMethod<'a, I, O, E>
     error_type: std::marker::PhantomData<E>,
 }
 
-impl<'a, I, O, E> JsonRpcMethod<'a, I, O, E>
-{
+impl<'a, I, O, E> JsonRpcMethod<'a, I, O, E> {
     pub const fn new(method: &'a str) -> Self {
         Self {
             method,
@@ -116,30 +113,31 @@ impl<'a, I, O, E> JsonRpcMethod<'a, I, O, E>
     pub fn into_typed_request(
         &self,
         request: JsonRpcRequest<serde_json::Value>,
-    ) -> Result<JsonRpcRequest<I>, serde_json::Error>
+    ) -> Result<JsonRpcRequest<I>, ErrorData>
     where
-        I: DeserializeOwned,
+        I: DeserializeOwned + parameter_validation::ExpectedFields,
     {
+        let params = request.params;
+        let params: I = parameter_validation::from_value(params)?;
+
         let request = JsonRpcRequest::<I> {
             id: request.id,
             jsonrpc: request.jsonrpc,
             method: request.method,
-            params: serde_json::from_value(request.params)?,
+            params: params,
         };
 
         Ok(request)
     }
 }
 
-impl<O, E> JsonRpcMethod<'_, NoParams, O, E>
-{
+impl<O, E> JsonRpcMethod<'_, NoParams, O, E> {
     pub fn create_request_no_params(&self, json_rpc_id: JsonRpcId) -> JsonRpcRequest<NoParams> {
         self.create_request(NoParams, json_rpc_id)
     }
 }
 
-impl<'a, I, O, E> std::convert::From<&'a JsonRpcMethod<'a, I, O, E>> for String
-{
+impl<'a, I, O, E> std::convert::From<&'a JsonRpcMethod<'a, I, O, E>> for String {
     fn from(value: &JsonRpcMethod<I, O, E>) -> Self {
         value.method.into()
     }
@@ -179,11 +177,8 @@ pub struct JsonRpcRequest<I> {
     pub params: I,
 }
 
-
-
 impl<I> JsonRpcRequest<I> {
-    pub fn new<O, E>(method: JsonRpcMethod<I, O, E>, params: I) -> Self
-    {
+    pub fn new<O, E>(method: JsonRpcMethod<I, O, E>, params: I) -> Self {
         Self {
             jsonrpc: String::from("2.0"),
             id: generate_random_rpc_id(),
@@ -209,8 +204,7 @@ impl JsonRpcRequest<serde_json::Value> {
 }
 
 impl JsonRpcRequest<NoParams> {
-    pub fn new_no_params<O, E>(method: JsonRpcMethod<NoParams, O, E>) -> Self
-    {
+    pub fn new_no_params<O, E>(method: JsonRpcMethod<NoParams, O, E>) -> Self {
         Self {
             jsonrpc: String::from("2.0"),
             id: generate_random_rpc_id(),
@@ -258,16 +252,13 @@ impl<E, O> JsonRpcResponse<E, O> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ErrorData<E> {
+pub struct ErrorData<E = DefaultError> {
     pub code: i64,
     pub message: String,
     pub data: Option<E>,
 }
 
-
-
-impl<E> ErrorData<E>
-{
+impl<E> ErrorData<E> {
     pub fn into_response<O>(self, id: JsonRpcId) -> JsonRpcResponseFailure<E> {
         JsonRpcResponseFailure {
             id,
@@ -301,17 +292,18 @@ impl ErrorData<DefaultError> {
             data: Some(serde_json::json!({"method" : method})),
         }
     }
-    pub fn internal_error() -> Self {
+
+    pub fn not_found() -> Self {
         Self {
-            code: -32603,
-            message: String::from("internal_error"),
+            code: 404,
+            message: String::from("Not Found"),
             data: None,
         }
     }
 }
 
-impl<D> ErrorData<D> {
-    pub fn invalid_params(data : D) -> Self {
+impl<E> ErrorData<E> {
+    pub fn invalid_params(data: E) -> Self {
         Self {
             code: -32602,
             message: String::from("invalid_params"),
@@ -320,7 +312,21 @@ impl<D> ErrorData<D> {
     }
 }
 
+impl<E> ErrorData<E> {
+    pub fn internal_error(data: E) -> Self {
+        Self {
+            code: -32603,
+            message: String::from("error_data"),
+            data: Some(data),
+        }
+    }
+}
 
+impl ErrorData<DefaultError> {
+    pub fn internalize<T: core::fmt::Debug>(err: T) -> Self {
+        Self::internal_error(serde_json::Value::String(format!("{:?}", err)))
+    }
+}
 
 impl<O, E> JsonRpcResponse<O, E> {
     pub fn success(id: JsonRpcId, output: O) -> Self {

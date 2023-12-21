@@ -50,7 +50,6 @@ pub struct Lsps1CreateOrderRequest {
 }
 
 impl ExpectedFields for Lsps1CreateOrderRequest {
-
     fn expected_fields() -> Vec<String> {
         vec![
             "lsp_balance_sat".to_string(),
@@ -59,10 +58,9 @@ impl ExpectedFields for Lsps1CreateOrderRequest {
             "channel_expiry_blocks".to_string(),
             "token".to_string(),
             "refund_ochain_address".to_string(),
-            "announceChannel".to_string()
+            "announceChannel".to_string(),
         ]
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -143,7 +141,6 @@ pub struct Lsps1GetOrderRequest {
 }
 
 impl ExpectedFields for Lsps1GetOrderRequest {
-
     fn expected_fields() -> Vec<String> {
         vec!["order_id".to_string()]
     }

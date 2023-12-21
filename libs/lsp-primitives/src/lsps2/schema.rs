@@ -1,7 +1,6 @@
 use serde::de::Error as DeError;
 use serde::{Deserialize, Serialize};
 
-use crate::error::map_json_rpc_error_code_to_str;
 use crate::lsps0::common_schemas::{IsoDatetime, MsatAmount, ShortChannelId};
 
 const MAX_PROMISE_LEN_BYTES: usize = 512;

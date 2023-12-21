@@ -23,7 +23,7 @@
 /// When JsonRpcMethodUnerased is used your user can decide which abstraction they want to use.
 use crate::json_rpc::{
     ErrorData, JsonRpcId, JsonRpcMethod, JsonRpcRequest, JsonRpcResponse, JsonRpcResponseFailure,
-    JsonRpcResponseSuccess
+    JsonRpcResponseSuccess,
 };
 use serde::Serialize;
 
