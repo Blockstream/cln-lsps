@@ -1,5 +1,6 @@
 use crate::json_rpc::NoParams;
 use crate::lsps0::common_schemas::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
+use crate::lsps0::parameter_validation::ExpectedFields;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -46,6 +47,22 @@ pub struct Lsps1CreateOrderRequest {
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
     #[serde(skip_serializing, default)]
     pub(crate) _private: (),
+}
+
+impl ExpectedFields for Lsps1CreateOrderRequest {
+
+    fn expected_fields() -> Vec<String> {
+        vec![
+            "lsp_balance_sat".to_string(),
+            "client_balance_sat".to_string(),
+            "confirms_within_blocks".to_string(),
+            "channel_expiry_blocks".to_string(),
+            "token".to_string(),
+            "refund_ochain_address".to_string(),
+            "announceChannel".to_string()
+        ]
+    }
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -123,6 +140,13 @@ pub struct Lsps1GetOrderRequest {
     pub order_id: String,
     #[serde(skip_serializing, default)]
     pub(crate) _private: (),
+}
+
+impl ExpectedFields for Lsps1GetOrderRequest {
+
+    fn expected_fields() -> Vec<String> {
+        vec!["order_id".to_string()]
+    }
 }
 
 pub type Lsps1GetOrderResponse = Lsps1CreateOrderResponse;

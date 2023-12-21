@@ -1,6 +1,7 @@
 use serde::{
     Serialize, 
     Deserialize, ser::{Serializer, SerializeMap}, de::{Deserializer, Visitor}};
+use crate::lsps0::parameter_validation::ExpectedFields;
 
 // LSPS0 specifies that the RPC-request must use a parameter-by-name structure.
 //
@@ -57,6 +58,12 @@ impl<'de> Deserialize<'de> for NoParams {
         D: Deserializer<'de>,
     {
         deserializer.deserialize_any(NoParams)
+    }
+}
+
+impl ExpectedFields for NoParams {
+    fn expected_fields() -> Vec<String> {
+        vec![]
     }
 }
 
