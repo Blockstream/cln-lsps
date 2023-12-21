@@ -194,4 +194,4 @@ def test_create_order_detects_invalid_param(lsps_server, lsps_client):
         })
     )
 
-    response["error"]["data"]["property"] == "lsp_balance_sat"
+    assert response["error"]["data"]["property"] == "lsp_balance_sat"
