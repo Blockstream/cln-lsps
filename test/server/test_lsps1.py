@@ -163,3 +163,35 @@ def test_lsps1_order_is_marked_as_hold(
     assert response["result"]["payment"]["state"] == "PAID"
 
 
+def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
+    """Server responds with Invalid Params and list unrecognized arguments"""
+    lsps_client.connect(lsps_server)
+
+    methods = ["lsps1.info", "lsps1.create_order", "lsps1.get_order"]
+
+
+    for method in methods:
+        logger.info("Checking method %s", method)
+        response = lsps_client.rpc.lsps0_send_request(
+            peer_id = lsps_server.info["id"],
+            method = method,
+            params = json.dumps({
+                "param_a" : "a"
+            })
+        )
+
+        assert response["error"]["data"]["unrecognized"] == ["param_a"]
+
+def test_create_order_detects_invalid_param(lsps_server, lsps_client):
+
+    lsps_client.connect(lsps_server)
+
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id = lsps_server.info["id"],
+        method = "lsps1.create_order",
+        params = json.dumps({
+            "lsp_balance_sat" : 100
+        })
+    )
+
+    response["error"]["data"]["property"] == "lsp_balance_sat"
