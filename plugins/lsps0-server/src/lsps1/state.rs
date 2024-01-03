@@ -54,19 +54,6 @@ fn parse_bool(value: cln_plugin::options::Value, name: &str) -> Result<bool> {
     }
 }
 
-fn parse_str(value: cln_plugin::options::Value, name: &str) -> Result<String> {
-    let v = value.as_str();
-
-    match v {
-        Some(v) => Ok(v.to_string()),
-        None => Err(anyhow!(
-            "Invalid configuration {}: Expected number but was {:?}",
-            name,
-            value
-        )),
-    }
-}
-
 fn parse_num<T>(value: cln_plugin::options::Value, name: &str) -> Result<T>
 where
     T: TryFrom<i64>,

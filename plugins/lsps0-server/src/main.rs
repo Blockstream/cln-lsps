@@ -1,7 +1,6 @@
 mod cln;
 mod custom_msg;
 mod db;
-mod error;
 mod lsps1;
 mod network;
 mod options;
@@ -46,11 +45,6 @@ use crate::state::PluginState;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    log::warn!("Do not use this implementation in any production context!!");
-    log::warn!(
-        "This implementation is developped for testing the corresponding LSP-client implementation"
-    );
-
     let configured_plugin =
         match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
             .option(options::lsp_server_database_url())
@@ -80,6 +74,11 @@ async fn main() -> Result<()> {
             Some(p) => p,
             None => return Ok(()),
         };
+
+    log::warn!("Do not use this implementation in any production context!!");
+    log::warn!(
+        "This implementation is developped for testing the corresponding LSP-client implementation"
+    );
 
     let lsps1_info = match crate::lsps1::state::get_state(&configured_plugin) {
         Ok(info) => {
@@ -272,7 +271,7 @@ async fn handle_custom_msg(
                 send_response(&mut context.cln_rpc, *peer_id, json_rpc_response).await?;
             } else {
                 log::debug!("Ignored message {:?}.{:?}", peer_id, id);
-                log::debug!("Reason {:?}", error_data.unwrap_err());
+                log::debug!("Reason {:?}", error_data);
             }
         }
     };

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use lsp_primitives::lsps0::parameter_validation::InvalidParam;
 use uuid::Uuid;
 
 use lsp_primitives::methods;

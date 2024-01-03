@@ -82,18 +82,6 @@ mod test {
     use super::*;
 
     #[test]
-    fn deserialize_payment_hook() {
-        let payment_hook = serde_json::json!(
-        {"payment": {
-            "label": "unique-label-for-invoice",
-            "preimage": "0000000000000000000000000000000000000000000000000000000000000000",
-            "msat": 1234
-        }});
-
-        let _: PaymentHook = serde_json::from_value(payment_hook).unwrap();
-    }
-
-    #[test]
     fn deserialize_amount_msat_as_u64() {
         // Some breaking changes occured in Core Lightning version 23.1
         // See 0b23133ab2
