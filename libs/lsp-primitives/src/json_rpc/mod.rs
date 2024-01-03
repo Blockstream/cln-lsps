@@ -5,7 +5,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-pub use crate::json_rpc::error::{ErrorData, DefaultError};
+pub use crate::json_rpc::error::{DefaultError, ErrorData};
 use crate::lsps0::parameter_validation;
 pub use crate::no_params::NoParams;
 
@@ -253,7 +253,6 @@ impl<E, O> JsonRpcResponse<E, O> {
         }
     }
 }
-
 
 impl<O, E> JsonRpcResponse<O, E> {
     pub fn success(id: JsonRpcId, output: O) -> Self {

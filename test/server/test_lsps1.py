@@ -16,6 +16,8 @@ def test_lsps1_get_info(lsps_server, lsps_client):
     )
 
     # Returned an rpc response
+
+    assert "result" in response, f"Error: {response}"
     result = response["result"]
 
     assert "options" in result
@@ -42,7 +44,7 @@ def test_lsps1_create_order_violate_options(lsps_server, lsps_client):
         params=json.dumps(params),
     )
 
-    assert "error" in response
+    assert "error" in response, "Should be optiom mismatch but returned result"
     error = response["error"]
 
     assert error["code"] == 1000
@@ -67,6 +69,7 @@ def test_lsps1_create_order(lsps_server, lsps_client):
         params=json.dumps(params),
     )
 
+    assert "result" in response, f"Error in response: {response}"
     result = response["result"]
 
     assert result["lsp_balance_sat"] == "500000"
@@ -103,6 +106,7 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
         peer_id=lsps_server.info["id"], method="lsps1.get_order", params=params
     )
 
+    assert "result" in response, f"Error in response: {response}"
     result = response["result"]
 
     assert result["lsp_balance_sat"] == "500000"
@@ -115,9 +119,7 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
 
 
-def test_lsps1_order_is_marked_as_hold(
-    lsps_client, lsps_server
-):
+def test_lsps1_order_is_marked_as_hold(lsps_client, lsps_server):
     # Connect the client to server and open an initial channel
     logger.info("Connecting and opening a channel")
     lsps_client.connect(lsps_server)
@@ -138,6 +140,8 @@ def test_lsps1_order_is_marked_as_hold(
         method="lsps1.create_order",
         params=json.dumps(params),
     )
+
+    assert "result" in response, f"Error: {response}"
 
     order_id = response["result"]["order_id"]
     bolt11_invoice = response["result"]["payment"]["bolt11_invoice"]
@@ -160,6 +164,7 @@ def test_lsps1_order_is_marked_as_hold(
         params=json.dumps(params),
     )
 
+    assert "result" in response, f"Error in response: {response}"
     assert response["result"]["payment"]["state"] == "PAID"
 
 
@@ -169,29 +174,24 @@ def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
 
     methods = ["lsps1.info", "lsps1.create_order", "lsps1.get_order"]
 
-
     for method in methods:
         logger.info("Checking method %s", method)
         response = lsps_client.rpc.lsps0_send_request(
-            peer_id = lsps_server.info["id"],
-            method = method,
-            params = json.dumps({
-                "param_a" : "a"
-            })
+            peer_id=lsps_server.info["id"],
+            method=method,
+            params=json.dumps({"param_a": "a"}),
         )
 
         assert response["error"]["data"]["unrecognized"] == ["param_a"]
 
-def test_create_order_detects_invalid_param(lsps_server, lsps_client):
 
+def test_create_order_detects_invalid_param(lsps_server, lsps_client):
     lsps_client.connect(lsps_server)
 
     response = lsps_client.rpc.lsps0_send_request(
-        peer_id = lsps_server.info["id"],
-        method = "lsps1.create_order",
-        params = json.dumps({
-            "lsp_balance_sat" : 100
-        })
+        peer_id=lsps_server.info["id"],
+        method="lsps1.create_order",
+        params=json.dumps({"lsp_balance_sat": 100}),
     )
 
     assert response["error"]["data"]["property"] == "lsp_balance_sat"

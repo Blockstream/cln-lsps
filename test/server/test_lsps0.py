@@ -19,7 +19,7 @@ def test_server_responds_to_unknown_method(lsps_server, lsps_client):
     )
 
     assert response["error"]["code"] == -32601
-    assert response["error"]["message"] == "unknown_method"
+    assert response["error"]["message"] == "Method not found"
 
 
 def test_server_responds_to_lsps0_list_protocols(lsps_server, lsps_client):
@@ -31,16 +31,15 @@ def test_server_responds_to_lsps0_list_protocols(lsps_server, lsps_client):
 
     assert response["result"]["protocols"] == [0, 1]
 
+
 def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
     """Server responds with Invalid Params and list unrecognized arguments"""
     lsps_client.connect(lsps_server)
 
     response = lsps_client.rpc.lsps0_send_request(
-        peer_id = lsps_server.info["id"],
-        method = "lsps0.list_protocols",
-        params = json.dumps({
-            "param_a" : "a"
-        })
+        peer_id=lsps_server.info["id"],
+        method="lsps0.list_protocols",
+        params=json.dumps({"param_a": "a"}),
     )
 
     assert response["error"]["data"]["unrecognized"] == ["param_a"]

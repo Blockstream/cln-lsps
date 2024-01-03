@@ -3,7 +3,6 @@ mod custom_msg;
 mod db;
 mod error;
 mod lsps1;
-mod lsps1_utils;
 mod network;
 mod options;
 mod state;
@@ -54,19 +53,24 @@ async fn main() -> Result<()> {
 
     let configured_plugin =
         match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
+            .option(options::lsp_server_database_url())
+            .option(options::lsps1_enable())
             .option(options::lsps1_info_website())
             .option(options::lsps1_minimum_channel_confirmations())
             .option(options::lsps1_minimum_onchain_payment_confirmations())
             .option(options::lsps1_supports_zero_channel_reserve())
             .option(options::lsps1_max_channel_expiry_blocks())
             .option(options::lsps1_min_onchain_payment_size_sat())
-            .option(options::lsps1_min_capacity())
-            .option(options::lsps1_max_capacity())
             .option(options::lsps1_fee_computation_base_fee_sat())
             .option(options::lsps1_fee_computation_onchain_ppm())
             .option(options::lsps1_fee_computation_liquidity_ppb())
             .option(options::lsps1_order_lifetime_seconds())
-            .option(options::lsp_server_database_url())
+            .option(options::lsps1_min_initial_client_balance_sat())
+            .option(options::lsps1_max_initial_client_balance_sat())
+            .option(options::lsps1_min_initial_lsp_balance_sat())
+            .option(options::lsps1_max_initial_lsp_balance_sat())
+            .option(options::lsps1_min_channel_balance_sat())
+            .option(options::lsps1_max_channel_balance_sat())
             .hook("custommsg", handle_custom_msg)
             .hook("invoice_payment", handle_paid_invoice)
             .dynamic()
@@ -77,7 +81,17 @@ async fn main() -> Result<()> {
             None => return Ok(()),
         };
 
-    let x = configured_plugin.configuration();
+    let lsps1_info = match crate::lsps1::state::get_state(&configured_plugin) {
+        Ok(info) => {
+            log::info!("{:?}", info);
+            info
+        }
+        Err(err) => {
+            log::warn!("Failed to read configuration for LSPS1");
+            log::warn!("{:?}", err);
+            return Err(err);
+        }
+    };
 
     // Connect to the database and run migration scripts
     let connection_string = match configured_plugin.option("lsp_server_database_url") {
@@ -106,10 +120,13 @@ async fn main() -> Result<()> {
     log::info!("Running database migration scripts");
     sqlx::migrate!().run(&mut connection).await?;
     log::info!("Successfully executed migrations");
+    log::warn!("Trying database connection");
 
-    let database = Database::connect_with_options(options).await.unwrap();
+    let database = Database::connect_with_options(options).await?;
 
-    let plugin = configured_plugin.start(PluginState::new(database)).await?;
+    let plugin = configured_plugin
+        .start(PluginState::new(database, lsps1_info))
+        .await?;
 
     plugin.join().await.unwrap();
 

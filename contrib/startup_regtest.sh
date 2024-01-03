@@ -26,7 +26,7 @@ function _load_env() {
 	alias s1-lightningd="$LIGHTNINGD --lightning-dir=$SERVER_LIGHTNING_DIR --daemon"
 	alias s1-cli="$LIGHTNING_CLI --lightning-dir=$SERVER_LIGHTNING_DIR"
 	alias s1-log="less $SERVER_LIGHTNING_DIR/log"
-	alias s1-restart="s1-cli stop s1er-lightningd"
+	alias s1-restart="s1-cli stop & s1-lightningd"
 
 	alias c1-lightningd="$LIGHTNINGD --lightning-dir=$CLIENT_LIGHTNING_DIR --daemon"
 	alias c1-cli="$LIGHTNING_CLI --lightning-dir=$CLIENT_LIGHTNING_DIR"
@@ -162,8 +162,13 @@ function set_env() {
 	echo "plugin=$GIT_ROOT/build/plugins/lsps0-server/lsps0-server" >> $SERVER_LIGHTNING_CONFIG
 	echo "addr=localhost:20202" >> $SERVER_LIGHTNING_CONFIG
 	echo "alias=LSP-server" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_min_capacity=0" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_max_capacity=100000000" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_enable=true" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_min_initial_client_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_max_initial_client_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_min_initial_lsp_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_max_initial_lsp_balance_sat=100000000" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_min_channel_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1_max_channel_balance_sat=100000000" >> $SERVER_LIGHTNING_CONFIG
 
 	echo "regtest" > $CLIENT_LIGHTNING_CONFIG
 	echo "disable-plugin=clnrest" >> $CLIENT_LIGHTNING_CONFIG

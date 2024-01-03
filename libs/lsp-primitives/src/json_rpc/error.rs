@@ -1,30 +1,30 @@
-use serde::{Serialize, Deserialize};
 use crate::json_rpc::{JsonRpcId, JsonRpcResponseFailure};
+use serde::{Deserialize, Serialize};
 
 pub mod codes {
-    pub const PARSE_ERROR_CODE : i64 = -32700;
-    pub const PARSE_ERROR_MSG : &str = "Parse Error";
+    pub const PARSE_ERROR_CODE: i64 = -32700;
+    pub const PARSE_ERROR_MSG: &str = "Parse Error";
 
-    pub const INVALID_REQUEST_CODE : i64 = -36200;
-    pub const INVALID_REQUEST_MSG : &str = "Invalid Request";
+    pub const INVALID_REQUEST_CODE: i64 = -36200;
+    pub const INVALID_REQUEST_MSG: &str = "Invalid Request";
 
-    pub const METHOD_NOT_FOUND_CODE : i64 = -36201;
-    pub const METHOD_NOT_FOUND_MSG : &str = "Method not found";
+    pub const METHOD_NOT_FOUND_CODE: i64 = -32601;
+    pub const METHOD_NOT_FOUND_MSG: &str = "Method not found";
 
-    pub const INVALID_PARAMS_CODE : i64 = -36202;
-    pub const INVALID_PARAMS_MSG : &str = "Invalid Params";
+    pub const INVALID_PARAMS_CODE: i64 = -32602;
+    pub const INVALID_PARAMS_MSG: &str = "Invalid Params";
 
-    pub const INTERNAL_ERROR_CODE : i64 = -32603;
-    pub const INTERNAL_ERROR_MSG : &str = "Internal Error";
+    pub const INTERNAL_ERROR_CODE: i64 = -32603;
+    pub const INTERNAL_ERROR_MSG: &str = "Internal Error";
 
-    pub const NOT_FOUND_CODE : i64 = 404;
-    pub const NOT_FOUND_MSG : &str = "Not Found";
+    pub const NOT_FOUND_CODE: i64 = 404;
+    pub const NOT_FOUND_MSG: &str = "Not Found";
 
-    pub const OPTIONS_MISMATCH_CODE : i64 = 1000;
-    pub const OPTIONS_MISMATCH_MSG : &str = "Options mismatch";
+    pub const OPTIONS_MISMATCH_CODE: i64 = 1000;
+    pub const OPTIONS_MISMATCH_MSG: &str = "Options mismatch";
 
-    pub const CLIENT_REJECTED_CODE : i64 = 1001;
-    pub const CLIENT_REJECTED_MSG : &str = "Client rejected";
+    pub const CLIENT_REJECTED_CODE: i64 = 1001;
+    pub const CLIENT_REJECTED_MSG: &str = "Client rejected";
 }
 
 pub type DefaultError = serde_json::Value;

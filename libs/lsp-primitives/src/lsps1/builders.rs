@@ -61,17 +61,17 @@ impl Lsps1InfoResponseBuilder {
 
 #[derive(Default, Debug)]
 pub struct Lsps1OptionsBuilder {
-    minimum_channel_confirmations: Option<u8>,
-    minimum_onchain_payment_confirmations: Option<u8>,
-    supports_zero_channel_reserve: Option<bool>,
-    min_onchain_payment_size_sat: Option<SatAmount>,
-    max_channel_expiry_blocks: Option<u32>,
-    min_initial_client_balance_sat: Option<SatAmount>,
-    max_initial_client_balance_sat: Option<SatAmount>,
-    min_initial_lsp_balance_sat: Option<SatAmount>,
-    max_initial_lsp_balance_sat: Option<SatAmount>,
-    min_channel_balance_sat: Option<SatAmount>,
-    max_channel_balance_sat: Option<SatAmount>,
+    pub minimum_channel_confirmations: Option<u8>,
+    pub minimum_onchain_payment_confirmations: Option<u8>,
+    pub supports_zero_channel_reserve: Option<bool>,
+    pub min_onchain_payment_size_sat: Option<SatAmount>,
+    pub max_channel_expiry_blocks: Option<u32>,
+    pub min_initial_client_balance_sat: Option<SatAmount>,
+    pub max_initial_client_balance_sat: Option<SatAmount>,
+    pub min_initial_lsp_balance_sat: Option<SatAmount>,
+    pub max_initial_lsp_balance_sat: Option<SatAmount>,
+    pub min_channel_balance_sat: Option<SatAmount>,
+    pub max_channel_balance_sat: Option<SatAmount>,
 }
 
 impl Lsps1OptionsBuilder {

@@ -5,8 +5,8 @@ use uuid::Uuid;
 use lsp_primitives::methods;
 
 use lsp_primitives::json_rpc::ErrorData;
-use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, SatAmount};
+use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
 use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
 use lsp_primitives::lsps1::schema::{Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState};
 
@@ -15,7 +15,6 @@ use crate::db::sqlite::queries::{GetOrderQuery, GetPaymentDetailsQuery, Lsps1Cre
 use crate::lsps1::fee_calc::FixedFeeCalculator;
 use crate::lsps1::msg::{BuildLsps1Order, BuildUsingDbPayment};
 use crate::lsps1::payment_calc::PaymentCalc;
-use crate::lsps1_utils;
 use crate::PluginState;
 
 pub(crate) async fn do_lsps1_get_info(
@@ -25,9 +24,9 @@ pub(crate) async fn do_lsps1_get_info(
     log::debug!("lsps1_get_info");
 
     method.into_typed_request(context.request.clone())?;
-
-    lsps1_utils::info_response(context.plugin.options())
-        .map_err(ErrorData::internalize)
+    let state = context.plugin.state();
+    let info_response = state.lsps1_info.as_ref().clone();
+    info_response.ok_or_else(|| ErrorData::method_not_found(method.name()))
 }
 
 pub(crate) async fn do_lsps1_create_order(
@@ -36,8 +35,9 @@ pub(crate) async fn do_lsps1_create_order(
 ) -> Result<Lsps1CreateOrderResponse, ErrorData> {
     log::debug!("lsps1_create_order");
 
-    let typed_request = method
-        .into_typed_request(context.request.clone())?;
+    let typed_request = method.into_typed_request(context.request.clone())?;
+
+    let state = context.plugin.state();
 
     // Define the relevant timestamps
     let now = IsoDatetime::now();
@@ -48,18 +48,22 @@ pub(crate) async fn do_lsps1_create_order(
     order
         .refund_onchain_address
         .require_network(&context.network)
-        .map_err(|e| ParamValidationError::invalid_params(
-            "order.refund_onchain_address".to_string(),
-             e.to_string()))?;
+        .map_err(|e| {
+            ParamValidationError::invalid_params(
+                "order.refund_onchain_address".to_string(),
+                e.to_string(),
+            )
+        })?;
 
     // TODO: find a nicer way to get the options
-    let info_response = lsps1_utils::info_response(context.plugin.options())
-        .map_err(ErrorData::internalize)?;
-    let options = info_response.options;
+    let info_response = state
+        .lsps1_info
+        .as_ref()
+        .clone()
+        .ok_or_else(|| ErrorData::method_not_found(method.name()))?;
 
     // Return an error if the order is invalid
-    order
-        .validate_options(&options)?;
+    order.validate_options(&info_response.options)?;
 
     // Construct the database order object
     let lsps1_order = crate::db::schema::Lsps1OrderBuilder::new()
@@ -90,15 +94,13 @@ pub(crate) async fn do_lsps1_create_order(
         payment,
     };
 
-    let mut tx = db.begin().await
-        .map_err(ErrorData::internalize)?;
-    let _ = query.execute(&mut tx)
+    let mut tx = db.begin().await.map_err(ErrorData::internalize)?;
+    let _ = query
+        .execute(&mut tx)
         .await
         .map_err(ErrorData::internalize)?;
 
-    tx.commit()
-        .await
-        .map_err(ErrorData::internalize)?;
+    tx.commit().await.map_err(ErrorData::internalize)?;
 
     // Construct the response that we will send to the user
     let payment = PaymentBuilder::new()
@@ -125,17 +127,14 @@ pub(crate) async fn do_lsps1_get_order(
     method: methods::Lsps1GetOrder,
     context: &mut CustomMsgContext<PluginState>,
 ) -> Result<Lsps1CreateOrderResponse, ErrorData> {
+    let typed_request = method.into_typed_request(context.request.clone())?;
 
-    let typed_request = method
-        .into_typed_request(context.request.clone())?;
-
-    let uuid_value = Uuid::parse_str(&typed_request.params.order_id)
-        .map_err(ErrorData::internalize)?;
+    let uuid_value =
+        Uuid::parse_str(&typed_request.params.order_id).map_err(ErrorData::internalize)?;
 
     let db = context.plugin.state().database.clone();
 
-    let mut tx = db.begin().await
-        .map_err(ErrorData::internalize)?;
+    let mut tx = db.begin().await.map_err(ErrorData::internalize)?;
 
     // TODO: Risk of PhantomData
     // Read both queries in a single transaction
@@ -146,7 +145,7 @@ pub(crate) async fn do_lsps1_get_order(
         .execute(&mut tx)
         .await
         .map_err(ErrorData::internalize)?
-        .ok_or_else(ErrorData::not_found )?;
+        .ok_or_else(ErrorData::not_found)?;
 
     log::info!("Storing payment details in db");
 
