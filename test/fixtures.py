@@ -6,7 +6,7 @@ from pyln.testing.utils import NodeFactory, LightningNode
 
 import pytest
 
-from test.util.options import lsps1_server_options
+from test.util.options import lsps1_server_options, developer_options
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,8 @@ def get_client_plugin_path() -> str:
 def lsps_server(node_factory: NodeFactory) -> LightningNode:
     logger.debug("Starting LSPS-server")
     server_plugin = get_server_plugin_path()
-    options = lsps1_server_options()
     lsps_server: LightningNode = node_factory.get_node(
-        options={"plugin": server_plugin, **options}
+        options={"plugin": server_plugin, **lsps1_server_options(), **developer_options()}
     )
     return lsps_server
 
@@ -43,5 +42,5 @@ def lsps_client(node_factory: NodeFactory) -> LightningNode:
     logger.debug("Starting LSPS-client")
 
     client_plugin = get_client_plugin_path()
-    lsps_client = node_factory.get_node(options={"plugin": client_plugin})
+    lsps_client = node_factory.get_node(options={"plugin": client_plugin, **developer_options()})
     return lsps_client

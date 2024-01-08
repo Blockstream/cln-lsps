@@ -119,7 +119,7 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
 
 
-def test_lsps1_order_is_marked_as_hold(lsps_client, lsps_server):
+def test_pay_lsps1_order(lsps_client, lsps_server):
     # Connect the client to server and open an initial channel
     logger.info("Connecting and opening a channel")
     lsps_client.connect(lsps_server)
@@ -156,7 +156,7 @@ def test_lsps1_order_is_marked_as_hold(lsps_client, lsps_server):
     logger.info(f"{list_pay_result}")
 
     # Client does lsps1.get_order
-    logger.info("lsps1.get_order and check if it is marked as Paid")
+    logger.info("retrieve lsps1.get_order")
     params = dict(order_id=order_id)
     response = lsps_client.rpc.lsps0_send_request(
         peer_id=lsps_server.info["id"],
@@ -165,7 +165,13 @@ def test_lsps1_order_is_marked_as_hold(lsps_client, lsps_server):
     )
 
     assert "result" in response, f"Error in response: {response}"
+    # Check if the order is considered paid
     assert response["result"]["payment"]["state"] == "PAID"
+
+    # Check if a corresponding channel is created
+    breakpoint()
+    assert False
+
 
 
 def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
