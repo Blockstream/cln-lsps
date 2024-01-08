@@ -29,6 +29,6 @@ where
         msg: rpc_msg.payload,
     };
 
-    let _result = cln_rpc.call_typed(send_custom_msg_request).await?;
+    let _result = cln_rpc.call_typed(&send_custom_msg_request).await?;
     Ok(())
 }

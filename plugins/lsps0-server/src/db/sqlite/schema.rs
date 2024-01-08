@@ -1,3 +1,4 @@
+use anyhow::Context;
 use uuid::Uuid;
 
 use crate::db::schema::{
@@ -26,6 +27,7 @@ pub struct Lsps1Order {
 
 #[derive(sqlx::FromRow)]
 pub struct Lsps1PaymentDetails {
+    pub(crate) order_uuid: String,
     pub(crate) fee_total_sat: i64,
     pub(crate) order_total_sat: i64,
     pub(crate) bolt11_invoice: String,
@@ -53,6 +55,7 @@ impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
             .transpose()?;
 
         Ok(Self {
+            order_uuid: payment.order_uuid.to_string(),
             fee_total_sat: i64::try_from(payment.fee_total_sat.sat_value())?,
             order_total_sat: i64::try_from(payment.order_total_sat.sat_value())?,
             bolt11_invoice: payment.bolt11_invoice.clone(),
@@ -81,6 +84,8 @@ impl TryFrom<&Lsps1PaymentDetails> for Lsps1PaymentDetailsBase {
             .transpose()?;
 
         Ok(Self {
+            order_uuid: Uuid::parse_str(&payment.order_uuid)
+                .context("order_uuid is not a valid uuid")?,
             fee_total_sat: SatAmount::from_sqlite_integer(payment.fee_total_sat)?,
             order_total_sat: SatAmount::from_sqlite_integer(payment.fee_total_sat)?,
             bolt11_invoice: payment.bolt11_invoice.clone(),

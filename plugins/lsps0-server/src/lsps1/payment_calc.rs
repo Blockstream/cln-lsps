@@ -54,6 +54,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
         let channel_capacity = SatAmount::new(
             order.lsp_balance_sat.sat_value() + order.client_balance_sat.sat_value(),
         );
+
         let channel_expiry_blocks = order.channel_expiry_blocks;
         let description = format!(
             "LSPS1: Request channel with capacity {} for {} blocks",
@@ -72,7 +73,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
             preimage: None,
         };
 
-        let invoice_response = cln_rpc.call_typed(invoice_request).await?;
+        let invoice_response = cln_rpc.call_typed(&invoice_request).await?;
 
         return Ok(invoice_response.bolt11);
     }

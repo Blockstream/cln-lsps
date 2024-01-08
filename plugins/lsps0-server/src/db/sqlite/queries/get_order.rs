@@ -17,9 +17,9 @@ impl GetOrderQuery {
 }
 
 impl GetOrderQuery {
-    pub async fn execute(
+    pub async fn execute<'b>(
         &self,
-        tx: &mut Transaction<'static, Sqlite>,
+        tx: &'b mut Transaction<'static, Sqlite>,
     ) -> Result<Option<Lsps1Order>> {
         let uuid_string = self.order_id.to_string();
         let result = sqlx::query_as!(

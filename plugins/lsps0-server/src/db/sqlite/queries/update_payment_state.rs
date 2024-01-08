@@ -7,6 +7,7 @@ use lsp_primitives::lsps0::common_schemas::IsoDatetime;
 use lsp_primitives::lsps1::schema::PaymentState;
 
 use crate::db::sqlite::conversion::IntoSqliteInteger;
+use crate::db::sqlite::schema::Lsps1PaymentDetails;
 
 pub struct UpdatePaymentStateQuery {
     pub(crate) state: PaymentState,
@@ -15,7 +16,7 @@ pub struct UpdatePaymentStateQuery {
 }
 
 impl UpdatePaymentStateQuery {
-    pub(crate) async fn execute(&self, tx: &mut Transaction<'_, Sqlite>) -> Result<()> {
+    pub(crate) async fn execute<'b>(&self, tx: &'b mut Transaction<'_, Sqlite>) -> Result<()> {
         log::debug!(
             "Update payment_state label={} to {:?}",
             self.label,

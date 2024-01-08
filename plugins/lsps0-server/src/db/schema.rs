@@ -39,6 +39,7 @@ pub struct Lsps1OrderBuilder {
 
 #[derive(Debug, Clone)]
 pub struct Lsps1PaymentDetails {
+    pub(crate) order_uuid: Uuid,
     pub(crate) fee_total_sat: SatAmount,
     pub(crate) order_total_sat: SatAmount,
     pub(crate) bolt11_invoice: String,
@@ -52,6 +53,7 @@ pub struct Lsps1PaymentDetails {
 
 #[derive(Default)]
 pub struct Lsps1PaymentDetailsBuilder {
+    pub(crate) order_uuid: Option<Uuid>,
     pub(crate) fee_total_sat: Option<SatAmount>,
     pub(crate) order_total_sat: Option<SatAmount>,
     pub(crate) bolt11_invoice: Option<String>,
@@ -203,6 +205,11 @@ impl Lsps1PaymentDetailsBuilder {
         Self::default()
     }
 
+    pub fn order_uuid(mut self, order_uuid: Uuid) -> Self {
+        self.order_uuid = Some(order_uuid);
+        self
+    }
+
     pub fn fee_total_sat(mut self, fee_total_sat: SatAmount) -> Self {
         self.fee_total_sat = Some(fee_total_sat);
         self
@@ -251,6 +258,7 @@ impl Lsps1PaymentDetailsBuilder {
 
     pub fn build(self) -> Result<Lsps1PaymentDetails> {
         Ok(Lsps1PaymentDetails {
+            order_uuid: self.order_uuid.context("Missing field 'order_uuid'")?,
             fee_total_sat: self
                 .fee_total_sat
                 .context("Missing field 'fee_total_sat'")?,

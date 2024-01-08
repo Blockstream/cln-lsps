@@ -1,3 +1,4 @@
+mod channel_open;
 mod cln;
 mod custom_msg;
 mod db;

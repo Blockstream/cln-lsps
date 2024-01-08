@@ -16,15 +16,16 @@ impl GetPaymentDetailsQuery {
         Self::ByUuid(uuid)
     }
 
+    #[allow(dead_code)]
     pub fn by_label(label: String) -> Self {
         Self::ByLabel(label)
     }
 }
 
 impl GetPaymentDetailsQuery {
-    pub async fn execute(
+    pub async fn execute<'q>(
         &self,
-        tx: &mut Transaction<'static, Sqlite>,
+        tx: &'q mut Transaction<'static, Sqlite>,
     ) -> Result<Option<Lsps1PaymentDetails>> {
         match &self {
             Self::ByUuid(uuid) => Self::execute_by_uuid(uuid, tx).await,
@@ -41,6 +42,7 @@ impl GetPaymentDetailsQuery {
         let result = sqlx::query_as!(
             Lsps1PaymentDetailsSqlite,
             r#"SELECT
+               o.uuid as order_uuid,
                p.fee_total_sat,
                p.order_total_sat,
                p.bolt11_invoice,
@@ -81,6 +83,7 @@ impl GetPaymentDetailsQuery {
             Lsps1PaymentDetailsSqlite,
             r#"
             SELECT 
+                od.uuid as order_uuid,
                 fee_total_sat, order_total_sat, bolt11_invoice, 
                 bolt11_invoice_label, minimum_fee_for_0conf, 
                 onchain_address, onchain_block_confirmations_required,
@@ -89,6 +92,8 @@ impl GetPaymentDetailsQuery {
             FROM lsps1_payment_details AS pd
             JOIN lsps1_payment_state AS ps
             ON pd.id = ps.payment_details_id
+            JOIN lsps1_order as od
+            ON od.id = pd.order_id
             WHERE pd.bolt11_invoice_label = ?1
             ORDER by ps.generation DESC
             LIMIT 1
