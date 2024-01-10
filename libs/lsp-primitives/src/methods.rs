@@ -6,7 +6,7 @@ use crate::json_rpc::{DefaultError, JsonRpcMethod, NoParams};
 pub use crate::lsps0::schema::ListprotocolsResponse;
 pub use crate::lsps1::schema::{
     Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest, Lsps1GetOrderResponse,
-    Lsps1InfoRequest, Lsps1InfoResponse,
+    Lsps1InfoRequest, Lsps1GetInfoResponse,
 };
 pub use crate::lsps2::schema::{
     Lsps2BuyRequest, Lsps2BuyResponse, Lsps2GetInfoRequest, Lsps2GetInfoResponse,
@@ -38,7 +38,7 @@ use anyhow::{anyhow, Result};
 // 3. Add it to the ref_erase function
 pub type Lsps0ListProtocols = JsonRpcMethod<'static, NoParams, ListprotocolsResponse, DefaultError>;
 
-pub type Lsps1Info = JsonRpcMethod<'static, Lsps1InfoRequest, Lsps1InfoResponse, DefaultError>;
+pub type Lsps1GetInfo = JsonRpcMethod<'static, Lsps1InfoRequest, Lsps1GetInfoResponse, DefaultError>;
 pub type Lsps1CreateOrder =
     JsonRpcMethod<'static, Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, DefaultError>;
 
@@ -50,13 +50,13 @@ pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
     Lsps0ListProtocols::new("lsps0.list_protocols");
 
 // LSPS1: Buy Channels
-pub const LSPS1_GETINFO: Lsps1Info = Lsps1Info::new("lsps1.info");
+pub const LSPS1_GETINFO: Lsps1GetInfo = Lsps1GetInfo::new("lsps1.get_info");
 pub const LSPS1_CREATE_ORDER: Lsps1CreateOrder = Lsps1CreateOrder::new("lsps1.create_order");
 pub const LSPS1_GET_ORDER: Lsps1GetOrder = Lsps1GetOrder::new("lsps1.get_order");
 
 pub enum JsonRpcMethodEnum {
     Lsps0ListProtocols(Lsps0ListProtocols),
-    Lsps1Info(Lsps1Info),
+    Lsps1Info(Lsps1GetInfo),
     Lsps1CreateOrder(Lsps1CreateOrder),
     Lsps1GetOrder(Lsps1GetOrder),
 }

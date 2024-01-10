@@ -104,7 +104,7 @@ pub trait LspClient {
     async fn lsps1_get_info(
         &mut self,
         peer_id: &PublicKey,
-    ) -> Result<lsps1::schema::Lsps1InfoResponse> {
+    ) -> Result<lsps1::schema::Lsps1GetInfoResponse> {
         let response = self
             .request(peer_id, methods::LSPS1_GETINFO, NoParams)
             .await?;

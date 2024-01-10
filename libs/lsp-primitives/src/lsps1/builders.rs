@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::lsps0::schema::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
 use crate::lsps1::schema::{
     Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest, Lsps1InfoRequest,
-    Lsps1InfoResponse, Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
+    Lsps1GetInfoResponse, Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
 };
 
 #[derive(Default, Debug)]
@@ -41,7 +41,7 @@ impl Lsps1InfoResponseBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Lsps1InfoResponse> {
+    pub fn build(self) -> Result<Lsps1GetInfoResponse> {
         let options = self
             .options
             .context("Missing field 'options' in Lsps1InfoResponseBuilder")?;
@@ -49,7 +49,7 @@ impl Lsps1InfoResponseBuilder {
         // Optional fields
         let website = self.website;
 
-        let result = Lsps1InfoResponse {
+        let result = Lsps1GetInfoResponse {
             website,
             options,
             _private: (),

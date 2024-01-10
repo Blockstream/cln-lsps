@@ -7,7 +7,7 @@ use uuid::Uuid;
 pub type Lsps1InfoRequest = NoParams;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Lsps1InfoResponse {
+pub struct Lsps1GetInfoResponse {
     pub website: Option<String>,
     pub options: Lsps1Options,
     // Prevents struct initialization. Use Lsps1InfoResponseBuilder instead
@@ -198,7 +198,7 @@ mod test {
         }
         );
 
-        serde_json::from_value::<Lsps1InfoResponse>(json_data).unwrap();
+        serde_json::from_value::<Lsps1GetInfoResponse>(json_data).unwrap();
     }
 
     #[test]

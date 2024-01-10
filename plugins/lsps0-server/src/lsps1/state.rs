@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use lsp_primitives::lsps1::schema::Lsps1Options;
-use lsp_primitives::methods::Lsps1InfoResponse;
+use lsp_primitives::methods::Lsps1GetInfoResponse;
 use std::convert::TryFrom;
 
 use cln_plugin::options::Value;
@@ -237,7 +237,7 @@ where
     .build()
 }
 
-pub fn get_info<I, O>(plugin: &ConfiguredPlugin<PluginState, I, O>) -> Result<Lsps1InfoResponse>
+pub fn get_info<I, O>(plugin: &ConfiguredPlugin<PluginState, I, O>) -> Result<Lsps1GetInfoResponse>
 where
     I: AsyncRead + Send + Unpin + 'static,
     O: AsyncWrite,
@@ -259,7 +259,7 @@ where
 
 pub fn get_state<I, O>(
     plugin: &ConfiguredPlugin<PluginState, I, O>,
-) -> Result<Option<Lsps1InfoResponse>>
+) -> Result<Option<Lsps1GetInfoResponse>>
 where
     I: AsyncRead + Send + Unpin + 'static,
     O: AsyncWrite,

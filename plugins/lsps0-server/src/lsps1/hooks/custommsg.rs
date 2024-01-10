@@ -7,7 +7,7 @@ use lsp_primitives::json_rpc::ErrorData;
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, SatAmount};
 use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
 use lsp_primitives::lsps1::builders::{PaymentBuilder, Lsps1CreateOrderResponseBuilder};
-use lsp_primitives::lsps1::schema::{Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState};
+use lsp_primitives::lsps1::schema::{Lsps1CreateOrderResponse, Lsps1GetInfoResponse, OrderState};
 
 use crate::custom_msg::context::CustomMsgContext;
 use crate::db::schema::Lsps1Order;
@@ -18,9 +18,9 @@ use crate::lsps1::payment_calc::PaymentCalc;
 use crate::PluginState;
 
 pub(crate) async fn do_lsps1_get_info(
-    method: methods::Lsps1Info,
+    method: methods::Lsps1GetInfo,
     context: &mut CustomMsgContext<PluginState>,
-) -> Result<Lsps1InfoResponse, ErrorData> {
+) -> Result<Lsps1GetInfoResponse, ErrorData> {
     log::debug!("lsps1_get_info");
 
     method.into_typed_request(context.request.clone())?;
