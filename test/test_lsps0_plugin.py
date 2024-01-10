@@ -119,7 +119,7 @@ def test_lsps0_list_protocols(node_factory: NodeFactory):
     assert 1 in protocols
 
 
-def test_lsps0_get_info(node_factory: NodeFactory):
+def test_lsps1_get_info(node_factory: NodeFactory):
     """
     Calls lsps0.get_info to get pricing information
     """

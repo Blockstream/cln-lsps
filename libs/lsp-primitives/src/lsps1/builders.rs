@@ -191,8 +191,8 @@ impl Lsps1OptionsBuilder {
         }
 
         Ok(Lsps1Options {
-            minimum_channel_confirmations,
-            minimum_onchain_payment_confirmations,
+            min_channel_confirmations: minimum_channel_confirmations,
+            min_onchain_payment_confirmations: minimum_onchain_payment_confirmations,
             supports_zero_channel_reserve,
             min_onchain_payment_size_sat,
             max_channel_expiry_blocks,
@@ -586,8 +586,8 @@ impl PaymentBuilder {
             order_total_sat,
             bolt11_invoice,
             onchain_address,
-            required_onchain_block_confirmations,
-            minimum_fee_for_0conf,
+            min_onchain_payment_confirmations: required_onchain_block_confirmations,
+            min_fee_for_0conf: minimum_fee_for_0conf,
             onchain_payment,
             _private: (),
         };
@@ -627,8 +627,8 @@ mod tests {
             .build()
             .unwrap();
 
-        assert_eq!(lsps1_options.minimum_channel_confirmations, 6);
-        assert_eq!(lsps1_options.minimum_onchain_payment_confirmations, Some(6));
+        assert_eq!(lsps1_options.min_channel_confirmations, 6);
+        assert_eq!(lsps1_options.min_onchain_payment_confirmations, Some(6));
         assert!(!lsps1_options.supports_zero_channel_reserve);
         assert_eq!(lsps1_options.max_channel_expiry_blocks, 5);
         assert_eq!(
@@ -673,7 +673,7 @@ mod tests {
             .build()
             .unwrap();
 
-        assert_eq!(lsps1_options.minimum_onchain_payment_confirmations, None);
+        assert_eq!(lsps1_options.min_onchain_payment_confirmations, None);
         assert_eq!(lsps1_options.min_onchain_payment_size_sat, None);
     }
 

@@ -46,8 +46,7 @@ pub type Lsps1GetOrder =
     JsonRpcMethod<'static, Lsps1GetOrderRequest, Lsps1GetOrderResponse, DefaultError>;
 
 // LSPS0: Transport layer
-pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols =
-    Lsps0ListProtocols::new("lsps0.list_protocols");
+pub const LSPS0_LIST_PROTOCOLS: Lsps0ListProtocols = Lsps0ListProtocols::new("lsps0.list_protocols");
 
 // LSPS1: Buy Channels
 pub const LSPS1_GETINFO: Lsps1GetInfo = Lsps1GetInfo::new("lsps1.get_info");
@@ -101,7 +100,7 @@ impl JsonRpcMethodEnum {
     pub fn from_method_name(value: &str) -> Result<JsonRpcMethodEnum> {
         match value {
             "lsps0.list_protocols" => Ok(Self::Lsps0ListProtocols(LSPS0_LIST_PROTOCOLS)),
-            "lsps1.info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
+            "lsps1.get_info" => Ok(Self::Lsps1Info(LSPS1_GETINFO)),
             "lsps1.create_order" => Ok(Self::Lsps1CreateOrder(LSPS1_CREATE_ORDER)),
             "lsps1.get_order" => Ok(Self::Lsps1GetOrder(LSPS1_GET_ORDER)),
             default => Err(anyhow!("Unknown method '{}'", default)),

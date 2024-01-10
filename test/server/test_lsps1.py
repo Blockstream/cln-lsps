@@ -12,7 +12,7 @@ def test_lsps1_get_info(lsps_server, lsps_client):
     lsps_client.connect(lsps_server)
 
     response = lsps_client.rpc.lsps0_send_request(
-        peer_id=lsps_server.info["id"], method="lsps1.info", params="{}"
+        peer_id=lsps_server.info["id"], method="lsps1.get_info", params="{}"
     )
 
     # Returned an rpc response
@@ -175,7 +175,7 @@ def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
     """Server responds with Invalid Params and list unrecognized arguments"""
     lsps_client.connect(lsps_server)
 
-    methods = ["lsps1.info", "lsps1.create_order", "lsps1.get_order"]
+    methods = ["lsps1.get_info", "lsps1.create_order", "lsps1.get_order"]
 
     for method in methods:
         logger.info("Checking method %s", method)

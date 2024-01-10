@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
             .rpcmethod(
                 "lsps1-get-info",
                 "Get info and pricing to purchase a channel from an LSP",
-                lsps0_get_info,
+                lsps1_get_info,
             )
             .rpcmethod(
                 "lsps1-create-order",
@@ -193,15 +193,16 @@ async fn lsps0_send_request(
     Ok(serde_json::to_value(response)?)
 }
 
-async fn lsps0_get_info(
+async fn lsps1_get_info(
     plugin: Plugin<PluginState>,
     request: serde_json::Value,
 ) -> Result<serde_json::Value, Error> {
-    // Create an LSP-client from the plugin-state
-    let mut client = create_lsp_client_from_plugin(plugin).await?;
-
+    log::info!("Retrieve lsps1.get_info");
     let request: plugin_rpc::Lsps1GetInfoRequest = serde_json::from_value(request)?;
     let pubkey = PublicKey::from_hex(&request.peer_id)?;
+
+    // Create an LSP-client from the plugin-state
+    let mut client = create_lsp_client_from_plugin(plugin).await?;
 
     // Make the request to the LSP-server and return the result
     let response = client

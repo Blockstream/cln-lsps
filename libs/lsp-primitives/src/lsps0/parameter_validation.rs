@@ -163,7 +163,7 @@ mod test {
             value: serde_json::Value,
             expected_arguments: &'a [&'a str],
             expected_result: Vec<String>,
-        };
+        }
 
         let cases = vec![
             Case {

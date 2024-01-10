@@ -18,8 +18,8 @@ pub struct Lsps1GetInfoResponse {
 /// Options returned when calling lsps1.info
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1Options {
-    pub minimum_channel_confirmations: u8,
-    pub minimum_onchain_payment_confirmations: Option<u8>,
+    pub min_channel_confirmations: u8,
+    pub min_onchain_payment_confirmations: Option<u8>,
     pub supports_zero_channel_reserve: bool,
     pub min_onchain_payment_size_sat: Option<SatAmount>,
     pub max_channel_expiry_blocks: u32,
@@ -123,9 +123,9 @@ pub struct Payment {
 
     pub bolt11_invoice: String,
     pub onchain_address: Option<OnchainAddress>,
-    pub required_onchain_block_confirmations: Option<u8>,
+    pub min_onchain_payment_confirmations: Option<u8>,
 
-    pub minimum_fee_for_0conf: Option<FeeRate>,
+    pub min_fee_for_0conf: Option<FeeRate>,
     pub onchain_payment: Option<OnchainPayment>,
 
     // Prevents struct initialization. Use PaymentBuilder instead
@@ -158,8 +158,8 @@ mod test {
         // Example is copie pasted from the spec
         let json_data = serde_json::json!(
         {
-            "minimum_channel_confirmations": 0,
-            "minimum_onchain_payment_confirmations": 1,
+            "min_channel_confirmations": 0,
+            "min_onchain_payment_confirmations": 1,
             "supports_zero_channel_reserve": true,
             "min_onchain_payment_size_sat": null,
             "max_channel_expiry_blocks": 20160,
@@ -183,8 +183,8 @@ mod test {
          "supported_versions": [1],
          "website": "http://example.com/contact",
          "options": {
-             "minimum_channel_confirmations": 0,
-             "minimum_onchain_payment_confirmations": 1,
+             "min_channel_confirmations": 0,
+             "min_onchain_payment_confirmations": 1,
              "supports_zero_channel_reserve": true,
              "min_onchain_payment_size_sat": null,
              "max_channel_expiry_blocks": 20160,
