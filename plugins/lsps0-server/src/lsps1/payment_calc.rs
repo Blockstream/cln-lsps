@@ -10,7 +10,7 @@ use crate::custom_msg::context::CustomMsgContext;
 use crate::lsps1::fee_calc::FeeCalculator;
 use crate::PluginState;
 
-use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails, Lsps1PaymentDetailsBuilder};
+use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails};
 
 pub struct PaymentCalc<T: FeeCalculator> {
     pub(crate) fee_calc: T,
@@ -22,6 +22,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
         context: &mut CustomMsgContext<PluginState>,
         order: &Lsps1Order,
     ) -> Result<Lsps1PaymentDetails> {
+        log::debug!("Computing payment details for order {}", order.uuid);
         // Compute the fee-rate and the bolt11-invoice
         let fee = self.fee_calc.calculate_fee(context, order.clone())?;
         let bolt_11_invoice_label = format!("lsps1_{}", order.uuid);
@@ -31,13 +32,18 @@ impl<T: FeeCalculator> PaymentCalc<T> {
 
         // We do not support onchain payments.
         // This allows us to be lazy here
-        Lsps1PaymentDetailsBuilder::new()
-            .fee_total_sat(fee.fee_total_sat)
-            .order_total_sat(fee.order_total_sat)
-            .bolt11_invoice(bolt11_invoice)
-            .bolt11_invoice_label(bolt_11_invoice_label)
-            .state(PaymentState::ExpectPayment)
-            .build()
+        Ok(Lsps1PaymentDetails {
+            fee_total_sat : fee.fee_total_sat,
+            order_total_sat : fee.order_total_sat,
+            bolt11_invoice : bolt11_invoice,
+            bolt11_invoice_label : bolt_11_invoice_label,
+            state : PaymentState::ExpectPayment,
+            generation : 0,
+            minimum_fee_for_0conf : None,
+            onchain_address : None,
+            onchain_block_confirmations_required : None,
+            order_uuid : order.uuid
+        })
     }
 
     async fn construct_bolt11_invoice(
@@ -49,7 +55,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
     ) -> Result<String> {
         // cln_rpc
         let cln_rpc = &mut context.cln_rpc;
-
+        log::debug!("Constructing a BOLT-11 invoice for order {}", order.uuid);
         // Construct the description
         let channel_capacity = SatAmount::new(
             order.lsp_balance_sat.sat_value() + order.client_balance_sat.sat_value(),
@@ -74,7 +80,6 @@ impl<T: FeeCalculator> PaymentCalc<T> {
         };
 
         let invoice_response = cln_rpc.call_typed(&invoice_request).await?;
-
         return Ok(invoice_response.bolt11);
     }
 }

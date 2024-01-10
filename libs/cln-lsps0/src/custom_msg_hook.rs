@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use lsp_primitives::lsps0::common_schemas::PublicKey;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RpcCustomMsgMessage {
     pub peer_id: PublicKey,
     pub payload: String,
@@ -17,6 +17,7 @@ impl RpcCustomMsgMessage {
     }
 }
 
+#[derive(Debug)]
 pub struct RawCustomMsgMessage {
     peer_id: PublicKey,
     // bolt-8 message id appended by the message content

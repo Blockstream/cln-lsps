@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use cln_plugin::Plugin;
 use cln_rpc::ClnRpc;
 
@@ -36,7 +36,7 @@ pub(crate) async fn invoice_payment(
         // This payment is unrelated
         return Ok(InvoicePaymentHookResponse::Continue);
     }
-    let payment_details = payment_details.unwrap();
+    let payment_details = payment_details.ok_or_else(|| anyhow!("No payment details"))?;
 
     // Set the payment-state to hold in the database
     // The hook is called so we have received the HTLC
@@ -67,29 +67,36 @@ pub(crate) async fn invoice_payment(
     //
     // This op should be cancellable
     let rpc_path = plugin.configuration().rpc_file;
-    let mut rpc = ClnRpc::new(rpc_path).await.unwrap();
+    log::debug!("Attempt to connect to rpc-interface '{}'", rpc_path);
+    let mut rpc = ClnRpc::new(rpc_path).await?;
+
     let timeout = std::time::Duration::from_secs(60);
-    let channel_details = ChannelDetails {
-        peer_id: order_details.client_node_id,
-        amount: order_details
+    let amount = order_details
             .client_balance_sat
             .checked_add(&order_details.lsp_balance_sat)
-            .context("Overflow when computing channel capacity")?,
-        mindepth: Some(
+            .context("Overflow when computing channel capacity")?;
+
+    let mindepth = Some(
             order_details
                 .confirms_within_blocks
                 .checked_sub(6)
                 .unwrap_or(0),
-        ),
+        );
+
+    let channel_details = ChannelDetails {
+        peer_id: order_details.client_node_id,
+        amount: amount,
+        mindepth : mindepth,
         push_msat: Some(order_details.client_balance_sat),
         reserve: Some(SatAmount::new(0)),
         close_to: None,
         feerate: None,
     };
 
+    log::debug!("Atempting to open channel ");
     let channel_result = fundchannel_fallible(&mut rpc, &channel_details, timeout).await;
 
-    let mut tx = db.begin().await.unwrap();
+    let mut tx = db.begin().await?;
     match channel_result {
         Ok(()) => {
             log::info!(
@@ -103,9 +110,11 @@ pub(crate) async fn invoice_payment(
             }
             .execute(&mut tx)
             .await?;
+            tx.commit().await?;
             return Ok(InvoicePaymentHookResponse::Continue);
         }
         Err(err) => {
+            log::info!("Refund payment for LSPS1-channel. Channel open failed");
             UpdatePaymentStateQuery {
                 state: PaymentState::Refunded,
                 generation: payment_details.generation + 1,
@@ -113,6 +122,7 @@ pub(crate) async fn invoice_payment(
             }
             .execute(&mut tx)
             .await?;
+            tx.commit().await?;
             return Ok(InvoicePaymentHookResponse::Reject);
         }
     }

@@ -6,13 +6,14 @@ use lsp_primitives::methods;
 use lsp_primitives::json_rpc::ErrorData;
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, SatAmount};
 use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
-use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
+use lsp_primitives::lsps1::builders::{PaymentBuilder, Lsps1CreateOrderResponseBuilder};
 use lsp_primitives::lsps1::schema::{Lsps1CreateOrderResponse, Lsps1InfoResponse, OrderState};
 
 use crate::custom_msg::context::CustomMsgContext;
+use crate::db::schema::Lsps1Order;
 use crate::db::sqlite::queries::{GetOrderQuery, GetPaymentDetailsQuery, Lsps1CreateOrderQuery};
 use crate::lsps1::fee_calc::FixedFeeCalculator;
-use crate::lsps1::msg::{BuildLsps1Order, BuildUsingDbPayment};
+use crate::lsps1::msg::{BuildUsingDbPayment, BuildLsps1Order};
 use crate::lsps1::payment_calc::PaymentCalc;
 use crate::PluginState;
 
@@ -32,7 +33,7 @@ pub(crate) async fn do_lsps1_create_order(
     method: methods::Lsps1CreateOrder,
     context: &mut CustomMsgContext<PluginState>,
 ) -> Result<Lsps1CreateOrderResponse, ErrorData> {
-    log::debug!("lsps1_create_order");
+    log::debug!("Handling lsps1.create_order from peer={:?}", context.peer_id);
 
     let typed_request = method.into_typed_request(context.request.clone())?;
 
@@ -65,14 +66,21 @@ pub(crate) async fn do_lsps1_create_order(
     order.validate_options(&info_response.options)?;
 
     // Construct the database order object
-    let lsps1_order = crate::db::schema::Lsps1OrderBuilder::new()
-        .order_request(&order)
-        .client_node_id(context.peer_id)
-        .created_at(created_at)
-        .expires_at(expires_at)
-        .order_state(OrderState::Created)
-        .build()
-        .map_err(ErrorData::internalize)?;
+    let lsps1_order = Lsps1Order {
+        uuid : Uuid::new_v4(),
+        client_node_id : context.peer_id,
+        announce_channel : order.announce_channel,
+        created_at : created_at,
+        expires_at : expires_at,
+        lsp_balance_sat : order.lsp_balance_sat,
+        client_balance_sat : order.client_balance_sat,
+        confirms_within_blocks : order.confirms_within_blocks,
+        channel_expiry_blocks : order.channel_expiry_blocks,
+        token : order.token.clone(),
+        refund_onchain_address : order.refund_onchain_address.as_ref().map(|x| x.to_string()),
+        order_state : OrderState::Created,
+        generation : 0
+    };
 
     // Compute the fee and cgeneratioionstruct all order details
     // TODO: Implement an actual mechanism to compute the fee

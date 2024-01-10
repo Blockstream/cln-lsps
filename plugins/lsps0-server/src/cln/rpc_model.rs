@@ -12,18 +12,23 @@ use serde::{Deserialize, Serialize};
 pub struct FundChannelStartRequest {
     pub id: rpc_primitives::PublicKey,
     pub amount: rpc_primitives::Amount,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub feerate: Option<rpc_primitives::Feerate>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub close_to: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub push_msat: Option<rpc_primitives::Amount>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mindepth: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reserve: Option<rpc_primitives::Amount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FundChannelStartResponse {
     pub funding_address: String,
-    pub script_pubkey: String,
-    pub close_to: String,
+    pub script_pubkey: Option<String>,
+    pub close_to: Option<String>,
 }
 
 impl TypedRequest for FundChannelStartRequest {
@@ -43,7 +48,7 @@ pub struct FundChannelCompleteRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FundChannelCompleteResponse {
     pub channel_id: String,
-    pub commitment_secured: bool,
+    pub commitments_secured: bool,
 }
 
 impl TypedRequest for FundChannelCompleteRequest {

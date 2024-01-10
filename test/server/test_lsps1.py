@@ -125,6 +125,9 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
     lsps_client.connect(lsps_server)
     lsps_client.openchannel(lsps_server)
 
+    # Provide the lsp-server with 10 BTC so they can open a channel
+    lsps_server.fundwallet(100_000_000*10)
+
     # Client requests a channel of 500_000 sats to the server
     logger.info("lsps1.create_order")
     params = dict(
@@ -167,12 +170,6 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
     assert "result" in response, f"Error in response: {response}"
     # Check if the order is considered paid
     assert response["result"]["payment"]["state"] == "PAID"
-
-    # Check if a corresponding channel is created
-    breakpoint()
-    assert False
-
-
 
 def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
     """Server responds with Invalid Params and list unrecognized arguments"""

@@ -149,6 +149,9 @@ async fn handle_custom_msg(
     let rpc_path = plugin.configuration().rpc_file;
     let mut cln_rpc = cln_rpc::ClnRpc::new(rpc_path).await?;
 
+    let info_request = cln_rpc::model::requests::GetinfoRequest{};
+    let test = cln_rpc.call_typed(&info_request).await.unwrap();
+
     // Parsing the customMsgHook
     // Struct of peer_id and payload
     let rpc_message = serde_json::from_value::<RpcCustomMsgMessage>(request)

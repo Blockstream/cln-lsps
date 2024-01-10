@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use cln_rpc::model::requests::{TxdiscardRequest, TxprepareRequest, TxsendRequest};
-use cln_rpc::model::responses::{TxprepareResponse, TxsendResponse};
+use cln_rpc::model::requests::{TxdiscardRequest, TxprepareRequest, TxsendRequest, GetinfoRequest};
 use cln_rpc::primitives as rpc_primitives;
 use cln_rpc::ClnRpc;
 use lsp_primitives::lsps0::common_schemas::{FeeRate, PublicKey, SatAmount};
@@ -8,7 +7,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use crate::cln::rpc_model::{
-    FundChannelCancelRequest, FundChannelCancelResponse, FundChannelCompleteRequest,
+    FundChannelCancelRequest, FundChannelCompleteRequest,
     FundChannelCompleteResponse, FundChannelStartRequest, FundChannelStartResponse,
 };
 
@@ -94,8 +93,10 @@ pub async fn fundchannel_fallible(
         Err(channel_open_error) => {
             log::warn!(
                 "Failed to open channel to peer {:?}. fundchannel will be cancelled",
-                channel_details.peer_id
+                channel_details.peer_id,
+                
             );
+            log::warn!("Error: {:?}", channel_open_error.error);
 
             if let Some(txid) = channel_open_error.data.txid {
                 log::debug!("Discard funding transaction {:?}", txid);
@@ -134,14 +135,16 @@ async fn fundchannel_without_publishing_funding_transaction(
         .map_err(|_| error_data.wrap(anyhow!("peer_id is not a valid ECDSA public key").into()))?;
     let amount = rpc_primitives::Amount::from_sat(channel_details.amount.sat_value());
 
+    let feerate = channel_details
+            .feerate
+            .clone()
+            .map(|x| rpc_primitives::Feerate::PerKw(x.to_sats_per_kwu().try_into().unwrap()));
+
     // Do fundchannel_request
     let fundchannel_request: FundChannelStartRequest = FundChannelStartRequest {
         id: rpc_id,
         amount,
-        feerate: channel_details
-            .feerate
-            .clone()
-            .map(|x| rpc_primitives::Feerate::PerKw(x.to_sats_per_kwu().try_into().unwrap())),
+        feerate: feerate,
         close_to: channel_details.close_to.clone(),
         push_msat: channel_details
             .push_msat
@@ -157,6 +160,8 @@ async fn fundchannel_without_publishing_funding_transaction(
     let timeout = timeout_time
         .checked_duration_since(std::time::Instant::now())
         .ok_or(error_data.wrap(anyhow!("Timeout in channel open").into()))?;
+
+    log::debug!("Call fundchannel_start with a timeout of {} sec", timeout.as_secs());
     let fundchannel_response: FundChannelStartResponse = tokio::time::timeout(timeout, future)
         .await
         .map_err(|_| error_data.wrap(anyhow!("Time-out in RPC-command: fundchannel_start").into()))?
@@ -168,6 +173,7 @@ async fn fundchannel_without_publishing_funding_transaction(
     // Create the funding transaction
     // It is an unsigned psbt
     let address = fundchannel_response.funding_address;
+    log::debug!("Constructing the funding transaction");
     let txprepare_request: TxprepareRequest = TxprepareRequest {
         outputs: vec![rpc_primitives::OutputDesc {
             address: address,
@@ -180,6 +186,7 @@ async fn fundchannel_without_publishing_funding_transaction(
     let timeout = timeout_time
         .checked_duration_since(std::time::Instant::now())
         .ok_or(error_data.wrap(anyhow!("Timeout in channel open").into()))?;
+    log::debug!("Call txprepare with a timeout of {} sec", timeout.as_secs());
     let txprepare_response: cln_rpc::model::responses::TxprepareResponse =
         tokio::time::timeout(timeout, rpc.call_typed(&txprepare_request))
             .await
@@ -189,6 +196,7 @@ async fn fundchannel_without_publishing_funding_transaction(
     error_data.txid = Some(txprepare_response.txid.clone());
 
     // Get the commitment transaction from the peer
+    log::debug!("Securing the commitment transaction from peer");
     let fundchannelcomplete_request = FundChannelCompleteRequest {
         id: rpc_id,
         psbt: txprepare_response.psbt,
@@ -196,6 +204,7 @@ async fn fundchannel_without_publishing_funding_transaction(
     let timeout = timeout_time
         .checked_duration_since(std::time::Instant::now())
         .ok_or(error_data.wrap(anyhow!("Timeout in channel open").into()))?;
+    log::debug!("Call 'fundchannel_complete with a timeout of {} sec", timeout.as_secs());
     let fundchannelcomplete_response: FundChannelCompleteResponse =
         tokio::time::timeout(timeout, rpc.call_typed(&fundchannelcomplete_request))
             .await
@@ -204,7 +213,7 @@ async fn fundchannel_without_publishing_funding_transaction(
             })?
             .map_err(|e| error_data.wrap(Box::new(e)))?;
 
-    if !fundchannelcomplete_response.commitment_secured {
+    if !fundchannelcomplete_response.commitments_secured {
         return Err(error_data.wrap(
             anyhow!(
                 "Unexpected error: fundchannel_complete failed to secure commitment transaction"

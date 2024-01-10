@@ -18,9 +18,10 @@ pub struct UpdatePaymentStateQuery {
 impl UpdatePaymentStateQuery {
     pub(crate) async fn execute<'b>(&self, tx: &'b mut Transaction<'_, Sqlite>) -> Result<()> {
         log::debug!(
-            "Update payment_state label={} to {:?}",
+            "Update payment_state label={} to {:?} at generation {}",
             self.label,
-            self.state
+            self.state,
+            self.generation
         );
         let state = self.state.into_sqlite_integer()?;
         let created_at = IsoDatetime::now().into_sqlite_integer()?;

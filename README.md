@@ -30,14 +30,20 @@ However, I welcome any contribution that helps to make it production ready.
     The semantic meaning of `Option::Value::OptString` vs `Option::Value::String` 
     is different when defining the option from when we are reading the value.
     Can we fix this without introducing breaking changes?
+**cln_rpc** 
+   - [ ] Cannot be used with external structs (See https://github.com/ElementsProject/lightning/pull/6954) 
+   - [ ] Assumes responses arrive in order. I don't think we should care because we usually 
+         create a new socket. VERIFY and document
 - **lsps0**
   - [ ] Provide a nice type for BOLT-11 invoices
 - **lsps1**
   - **server**
     - [ ] Implement onchain payments
-    - [ ] Implement lightning payments
-    - [ ] Open the channel after payment
-    - [ ] Store the channels, orders, etc...
+    - [x] Implement lightning payments
+    - [x] Open the channel after payment
+    - [x] Store the channels, orders, etc...
+    - [ ] Test refund on channel payment time-out
+    - [ ] Perform renames in LSPS1
   - **client**
     - [ ] Use the data-store to store orders and channels
     - [ ] Track violations
