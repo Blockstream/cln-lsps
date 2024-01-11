@@ -3,8 +3,9 @@ use uuid::Uuid;
 
 use crate::lsps0::schema::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
 use crate::lsps1::schema::{
-    Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetOrderRequest, Lsps1InfoRequest,
-    Lsps1GetInfoResponse, Lsps1Options, OnchainPayment, OrderState, Payment, PaymentState,
+    Channel, Lsps1CreateOrderRequest, Lsps1CreateOrderResponse, Lsps1GetInfoResponse,
+    Lsps1GetOrderRequest, Lsps1InfoRequest, Lsps1Options, OnchainPayment, OrderState, Payment,
+    PaymentState,
 };
 
 #[derive(Default, Debug)]
@@ -307,6 +308,7 @@ pub struct Lsps1CreateOrderResponseBuilder {
     expires_at: Option<IsoDatetime>,
     order_state: Option<OrderState>,
     payment: Option<Payment>,
+    channel: Option<Channel>,
 }
 
 impl Lsps1CreateOrderResponseBuilder {
@@ -369,6 +371,10 @@ impl Lsps1CreateOrderResponseBuilder {
         self.payment = Some(payment);
         self
     }
+    pub fn channel(mut self, channel: Option<Channel>) -> Self {
+        self.channel = channel;
+        self
+    }
 
     pub fn build(self) -> Result<Lsps1CreateOrderResponse> {
         //required variables
@@ -403,6 +409,7 @@ impl Lsps1CreateOrderResponseBuilder {
         let payment = self
             .payment
             .context("Missing field 'payment' in Lsps1CreateOrderRequestBuilder")?;
+        let channel = self.channel;
 
         let request = Lsps1CreateOrderResponse {
             order_id,
@@ -416,6 +423,7 @@ impl Lsps1CreateOrderResponseBuilder {
             expires_at,
             order_state,
             payment,
+            channel,
             _private: (),
         };
 
