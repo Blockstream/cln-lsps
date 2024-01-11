@@ -3,7 +3,9 @@ use anyhow::{anyhow, Result};
 use sqlx::Sqlite;
 use sqlx::Transaction;
 
-use crate::db::schema::Lsps1Channel;
+use std::convert::TryFrom;
+use crate::db::schema::Lsps1Channel as Lsps1ChannelBase;
+use crate::db::sqlite::schema::Lsps1Channel;
 use uuid::Uuid;
 
 pub(crate) struct GetChannelQuery {
@@ -20,13 +22,13 @@ impl GetChannelQuery {
     pub async fn execute(
         &self,
         tx: &mut Transaction<'static, Sqlite>,
-    ) -> Result<Lsps1Channel, anyhow::Error> {
+    ) -> Result<Lsps1ChannelBase, anyhow::Error> {
         let order_str = self.order_uuid.to_string();
 
         sqlx::query_as!(
             Lsps1Channel,
             r#"
-             SELECT c.channel_id FROM lsps1_channel as c
+             SELECT c.funding_tx, c.outnum FROM lsps1_channel as c
              JOIN lsps1_order as od
               ON c.order_id = od.id
               WHERE od.uuid = ?1
@@ -42,5 +44,6 @@ impl GetChannelQuery {
                 self.order_uuid
             )
         })
+        .and_then(|channel| Lsps1ChannelBase::try_from(&channel))
     }
 }

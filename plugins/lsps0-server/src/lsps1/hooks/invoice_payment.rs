@@ -3,13 +3,14 @@ use cln_plugin::Plugin;
 use cln_rpc::ClnRpc;
 
 use lsp_primitives::lsps0::common_schemas::SatAmount;
-use lsp_primitives::lsps1::schema::PaymentState;
+use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 
 use crate::channel_open::{fundchannel_fallible, ChannelDetails};
 use crate::cln::hooks::invoice_payment::InvoicePaymentHookResponse;
 use crate::cln::hooks::invoice_payment::Payment;
-use crate::db::sqlite::queries::GetOrderQuery;
-use crate::db::sqlite::queries::{GetPaymentDetailsQuery, UpdatePaymentStateQuery};
+use crate::db::schema::Lsps1Channel;
+use crate::db::sqlite::queries::{GetOrderQuery, UpdateOrderStateQuery, CreateChannelQuery};
+use crate::db::sqlite::queries::{GetPaymentDetailsQuery, UpdatePaymentStateQuery, };
 use crate::state::PluginState;
 
 pub(crate) async fn invoice_payment(
@@ -40,7 +41,7 @@ pub(crate) async fn invoice_payment(
 
     // Set the payment-state to hold in the database
     // The hook is called so we have received the HTLC
-    let update_payment = UpdatePaymentStateQuery {
+    UpdatePaymentStateQuery {
         state: PaymentState::Hold,
         generation: payment_details.generation,
         label: payment.label.to_string(),
@@ -98,11 +99,12 @@ pub(crate) async fn invoice_payment(
 
     let mut tx = db.begin().await?;
     match channel_result {
-        Ok(()) => {
+        Ok(channelopen_response) => {
             log::info!(
                 "Successfully opened channel to {:?} and received payment",
                 peer_id
             );
+
             UpdatePaymentStateQuery {
                 state: PaymentState::Paid,
                 generation: payment_details.generation + 1,
@@ -110,11 +112,19 @@ pub(crate) async fn invoice_payment(
             }
             .execute(&mut tx)
             .await?;
+
+            UpdateOrderStateQuery {
+                order_uuid : order_details.uuid,
+                state : OrderState::Completed,
+            }.execute(&mut tx)
+            .await?;
+
             tx.commit().await?;
             return Ok(InvoicePaymentHookResponse::Continue);
         }
         Err(err) => {
             log::info!("Refund payment for LSPS1-channel. Channel open failed");
+            log::warn!("Error: {}", err);
             UpdatePaymentStateQuery {
                 state: PaymentState::Refunded,
                 generation: payment_details.generation + 1,
@@ -122,6 +132,13 @@ pub(crate) async fn invoice_payment(
             }
             .execute(&mut tx)
             .await?;
+
+            UpdateOrderStateQuery {
+                order_uuid : order_details.uuid,
+                state : OrderState::Failed,
+            }.execute(&mut tx)
+            .await?;
+
             tx.commit().await?;
             return Ok(InvoicePaymentHookResponse::Reject);
         }

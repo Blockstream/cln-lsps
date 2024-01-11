@@ -2,7 +2,9 @@ use anyhow::Context;
 use uuid::Uuid;
 
 use crate::db::schema::{
-    Lsps1Order as Lsps1OrderBase, Lsps1PaymentDetails as Lsps1PaymentDetailsBase,
+    Lsps1Order as Lsps1OrderBase,
+    Lsps1PaymentDetails as Lsps1PaymentDetailsBase,
+    Lsps1Channel as Lsps1ChannelBase
 };
 use crate::db::sqlite::conversion::{FromSqliteInteger, IntoSqliteInteger};
 use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
@@ -37,6 +39,12 @@ pub struct Lsps1PaymentDetails {
     pub(crate) minimum_fee_for_0conf: Option<i64>,
     pub(crate) state: i64,
     pub(crate) generation: i64,
+}
+
+#[derive(sqlx::FromRow)]
+pub struct Lsps1Channel {
+    pub(crate) funding_tx : String,
+    pub(crate) outnum : i64
 }
 
 impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
@@ -139,6 +147,28 @@ impl TryFrom<&Lsps1OrderBase> for Lsps1Order {
             expires_at: order.expires_at.unix_timestamp(),
             order_state: order.order_state.into_sqlite_integer()?,
             generation: order.generation.into_sqlite_integer()?,
+        })
+    }
+}
+
+impl TryFrom<&Lsps1Channel> for Lsps1ChannelBase {
+    type Error = anyhow::Error;
+
+    fn try_from(channel: &Lsps1Channel) -> Result<Self, Self::Error> {
+        Ok(Self {
+            funding_tx : channel.funding_tx.clone(),
+            outnum : u32::from_sqlite_integer(channel.outnum)?
+        })
+    }
+}
+
+impl TryFrom<&Lsps1ChannelBase> for Lsps1Channel {
+    type Error = anyhow::Error;
+
+    fn try_from(channel: &Lsps1ChannelBase) -> Result<Self, Self::Error> {
+        Ok(Self {
+            funding_tx : channel.funding_tx.clone(),
+            outnum : channel.outnum.into_sqlite_integer()?
         })
     }
 }

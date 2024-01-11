@@ -143,8 +143,6 @@ pub(crate) async fn do_lsps1_get_order(
 
     let mut tx = db.begin().await.map_err(ErrorData::internalize)?;
 
-    // TODO: Risk of PhantomData
-    // Read both queries in a single transaction
     let get_order_query = GetOrderQuery {
         order_id: uuid_value,
     };
@@ -155,7 +153,6 @@ pub(crate) async fn do_lsps1_get_order(
         .ok_or_else(ErrorData::not_found)?;
 
     log::info!("Storing payment details in db");
-
     let payment_details = GetPaymentDetailsQuery::by_uuid(uuid_value)
         .execute(&mut tx)
         .await
@@ -167,11 +164,11 @@ pub(crate) async fn do_lsps1_get_order(
         .db_payment_details(payment_details)
         .build()
         .map_err(ErrorData::internalize)?;
+    tx.commit().await.map_err(ErrorData::internalize)?;
 
     Lsps1CreateOrderResponseBuilder::new()
         .db_order(order)
         .payment(payment)
-        .order_state(OrderState::Created)
         .build()
         .map_err(ErrorData::internalize)
 }

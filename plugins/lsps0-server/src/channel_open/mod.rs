@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use cln_rpc::model::requests::{TxdiscardRequest, TxprepareRequest, TxsendRequest, GetinfoRequest};
+use cln_rpc::model::requests::{TxdiscardRequest, TxprepareRequest, TxsendRequest};
 use cln_rpc::primitives as rpc_primitives;
 use cln_rpc::ClnRpc;
 use lsp_primitives::lsps0::common_schemas::{FeeRate, PublicKey, SatAmount};
@@ -10,6 +10,7 @@ use crate::cln::rpc_model::{
     FundChannelCancelRequest, FundChannelCompleteRequest,
     FundChannelCompleteResponse, FundChannelStartRequest, FundChannelStartResponse,
 };
+use crate::db::schema::Lsps1Channel;
 
 pub struct ChannelDetails {
     pub(crate) peer_id: PublicKey,
@@ -76,7 +77,7 @@ pub async fn fundchannel_fallible(
     rpc: &mut ClnRpc,
     channel_details: &ChannelDetails,
     timeout: Duration,
-) -> Result<()> {
+) -> Result<Lsps1Channel> {
     let rpc_id = rpc_primitives::PublicKey::from_str(&channel_details.peer_id.to_hex())
         .context("Invalid peer_id")?;
 
@@ -84,17 +85,16 @@ pub async fn fundchannel_fallible(
         fundchannel_without_publishing_funding_transaction(rpc, channel_details, timeout).await;
 
     match result {
-        Ok(txid) => {
+        Ok(channelopen_response) => {
             // Broadcast the funding transaction
-            let txsend = TxsendRequest { txid: txid };
+            let txsend = TxsendRequest { txid:  channelopen_response.funding_tx.clone()};
             let _ = rpc.call_typed(&txsend).await?;
-            Ok(())
+            Ok(channelopen_response)
         }
         Err(channel_open_error) => {
             log::warn!(
                 "Failed to open channel to peer {:?}. fundchannel will be cancelled",
                 channel_details.peer_id,
-                
             );
             log::warn!("Error: {:?}", channel_open_error.error);
 
@@ -122,7 +122,7 @@ async fn fundchannel_without_publishing_funding_transaction(
     rpc: &mut ClnRpc,
     channel_details: &ChannelDetails,
     timeout: Duration,
-) -> Result<String, ChannelOpenError> {
+) -> Result<Lsps1Channel, ChannelOpenError> {
     // Calculate when we should time-out
     let current_time = std::time::Instant::now();
     let timeout_time = current_time + timeout;
@@ -167,12 +167,13 @@ async fn fundchannel_without_publishing_funding_transaction(
         .map_err(|_| error_data.wrap(anyhow!("Time-out in RPC-command: fundchannel_start").into()))?
         .map_err(|e| error_data.wrap(Box::new(e)))?;
 
+    let funding_address= fundchannel_response.funding_address.clone();
     error_data.peer_id = Some(channel_details.peer_id.clone());
-    error_data.funding_address = Some(fundchannel_response.funding_address.clone());
+    error_data.funding_address = Some(funding_address.clone());
 
     // Create the funding transaction
     // It is an unsigned psbt
-    let address = fundchannel_response.funding_address;
+    let address = funding_address;
     log::debug!("Constructing the funding transaction");
     let txprepare_request: TxprepareRequest = TxprepareRequest {
         outputs: vec![rpc_primitives::OutputDesc {
@@ -222,5 +223,15 @@ async fn fundchannel_without_publishing_funding_transaction(
         ));
     }
 
-    Ok(txprepare_response.txid)
+
+    let outnum = txprepare_request.outputs.iter().position(|x| x.address == fundchannel_response.funding_address)
+        .ok_or_else(|| error_data.wrap(anyhow!("Failed to find matching output in funding transaction").into()))?
+        .try_into()
+        .map_err(|e| error_data.wrap(anyhow!("Error in type-conversion of outnum: {}", e).into()))?;
+
+
+    Ok(Lsps1Channel {
+        funding_tx : txprepare_response.txid,
+        outnum : outnum
+    })
 }

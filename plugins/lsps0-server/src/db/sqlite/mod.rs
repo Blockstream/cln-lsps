@@ -45,14 +45,14 @@ mod test {
         Lsps1CreateOrderQuery, UpdatePaymentStateQuery,
     };
 
-    async fn get_db() -> Database {
+    pub async fn get_db() -> Database {
         let options = SqliteConnectOptions::default()
             .filename("./data/lsp_server.db")
             .create_if_missing(true);
         Database::connect_with_options(options).await.unwrap()
     }
 
-    fn create_test_order() -> Lsps1Order {
+    pub fn create_test_order() -> Lsps1Order {
         // Create the order_uuid
         let uuid = Uuid::new_v4();
 
@@ -80,8 +80,9 @@ mod test {
         }
     }
 
-    fn create_test_payment(order: &Lsps1Order) -> Lsps1PaymentDetails {
+    pub fn create_test_payment(order: &Lsps1Order) -> Lsps1PaymentDetails {
         Lsps1PaymentDetails {
+            order_uuid : order.uuid,
             fee_total_sat: SatAmount::new(500),
             order_total_sat: SatAmount::new(500),
             bolt11_invoice: format!("bolt11_invoice.{}", order.uuid),
@@ -94,7 +95,7 @@ mod test {
         }
     }
 
-    fn create_order_query() -> Lsps1CreateOrderQuery {
+    pub fn create_order_query() -> Lsps1CreateOrderQuery {
         let order = create_test_order();
         let payment = create_test_payment(&order);
 
@@ -148,89 +149,4 @@ mod test {
         assert_eq!(order.announce_channel, false);
     }
 
-    #[tokio::test]
-    async fn update_order_payment_state() {
-        // Create a database connection
-        let db = get_db().await;
-
-        // Create the order query
-        let query = create_order_query();
-        let uuid = query.order.uuid;
-        let initial_payment = query.payment.clone();
-        let initial_order = query.order.clone();
-
-        // Execute the query
-        let mut tx = db.pool.begin().await.unwrap();
-        query.execute(&mut tx).await.unwrap();
-
-        println!("Attempting to update the payment state");
-        let query = UpdatePaymentStateQuery {
-            generation: initial_payment.generation,
-            label: initial_payment.bolt11_invoice_label.clone(),
-            state: PaymentState::Hold,
-        };
-
-        query.execute(&mut tx).await.unwrap();
-
-        let result_label =
-            GetPaymentDetailsQuery::by_label(initial_payment.bolt11_invoice_label.to_string())
-                .execute(&mut tx)
-                .await
-                .unwrap()
-                .unwrap();
-        let result_uuid = GetPaymentDetailsQuery::by_uuid(uuid)
-            .execute(&mut tx)
-            .await
-            .unwrap()
-            .unwrap();
-
-        tx.commit().await.unwrap();
-
-        assert_eq!(
-            result_uuid.state,
-            PaymentState::Hold,
-            "Bad state using uuid"
-        );
-
-        assert_eq!(
-            result_label.state,
-            PaymentState::Hold,
-            "Bad state using label"
-        );
-    }
-
-    #[tokio::test]
-    async fn store_channel_in_database() {
-        // Create a database connection
-        let db = get_db().await;
-
-        // Create the order query
-        let query = create_order_query();
-        let uuid = query.order.uuid;
-        let initial_order = query.order.clone();
-
-        // Execute the query
-        let mut tx = db.pool.begin().await.unwrap();
-        query.execute(&mut tx).await.unwrap();
-
-        // Store the channel in the database
-        let channel_id = format!("channel.{}", initial_order.uuid);
-        let channel = Lsps1Channel {
-            channel_id: channel_id.clone(),
-        };
-
-        CreateChannelQuery::new(uuid, channel.channel_id.clone())
-            .execute(&mut tx)
-            .await
-            .unwrap();
-
-        // Get the channel form the database(
-        let returned_channel = GetChannelQuery::by_order_id(initial_order.uuid.clone())
-            .execute(&mut tx)
-            .await
-            .unwrap();
-
-        tx.commit().await.unwrap();
-        assert_eq!(channel_id, returned_channel.channel_id);
-    }
 }

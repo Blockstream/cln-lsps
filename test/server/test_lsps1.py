@@ -156,7 +156,7 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
 
     # Assert that core lightning has actually paid the invoice
     list_pay_result = lsps_client.rpc.listpays(bolt11_invoice)
-    logger.info(f"{list_pay_result}")
+    assert list_pay_result["pays"][0]["status"] == "complete"
 
     # Client does lsps1.get_order
     logger.info("retrieve lsps1.get_order")
@@ -170,6 +170,7 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
     assert "result" in response, f"Error in response: {response}"
     # Check if the order is considered paid
     assert response["result"]["payment"]["state"] == "PAID"
+    assert response["result"]["order_state"] == "COMPLETED"
 
 def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
     """Server responds with Invalid Params and list unrecognized arguments"""

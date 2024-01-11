@@ -3,42 +3,43 @@ use anyhow::{anyhow, Result};
 use sqlx::sqlite::SqliteQueryResult;
 use sqlx::{Sqlite, Transaction};
 
+use uuid::Uuid;
 use lsp_primitives::lsps0::common_schemas::IsoDatetime;
-use lsp_primitives::lsps1::schema::PaymentState;
+use lsp_primitives::lsps1::schema::OrderState;
 
 use crate::db::sqlite::conversion::IntoSqliteInteger;
 
-pub struct UpdatePaymentStateQuery {
-    pub(crate) state: PaymentState,
-    pub(crate) generation: u64,
-    pub(crate) label: String,
+pub struct UpdateOrderStateQuery {
+    pub(crate) order_uuid : Uuid,
+    pub(crate) state: OrderState,
 }
 
-impl UpdatePaymentStateQuery {
+impl UpdateOrderStateQuery {
     pub(crate) async fn execute<'b>(&self, tx: &'b mut Transaction<'_, Sqlite>) -> Result<()> {
         log::debug!(
-            "Update payment_state label={} to {:?} at generation {}",
-            self.label,
+            "Update order_state order={} to {:?}",
+            self.order_uuid,
             self.state,
-            self.generation
         );
         let state = self.state.into_sqlite_integer()?;
         let created_at = IsoDatetime::now().into_sqlite_integer()?;
-        let generation = self.generation.into_sqlite_integer()?;
-        let new_generation = generation + 1;
+        let order_uuid = self.order_uuid.to_string();
 
         let result: SqliteQueryResult = sqlx::query!(
             r#"
-            INSERT INTO lsps1_payment_state 
-                (payment_details_id, payment_state, created_at, generation)
-            SELECT id, ?1, ?2, ?3
-                FROM lsps1_payment_details
-                WHERE bolt11_invoice_label = ?4
+            INSERT INTO lsps1_order_state
+                (order_id, order_state_enum_id, created_at, generation)
+            SELECT o.id, ?1, ?2, os.generation+1
+                FROM lsps1_order as o
+                JOIN lsps1_order_state as os
+                ON o.id = os.order_id
+                WHERE o.uuid = ?3
+                ORDER BY os.generation DESC
+                LIMIT 1
             "#,
             state,
             created_at,
-            new_generation,
-            self.label
+            order_uuid
         )
         .execute(&mut **tx)
         .await?;
@@ -57,7 +58,10 @@ impl UpdatePaymentStateQuery {
 #[cfg(test)]
 mod test {
 
+    use sqlx::query::Query;
+
     use crate::db::sqlite::queries::GetPaymentDetailsQuery;
+    use crate::db::sqlite::queries::GetOrderQuery;
     use crate::db::sqlite::test::{get_db, create_order_query};
     use super::*;
 
@@ -70,27 +74,21 @@ mod test {
         let query = create_order_query();
         let uuid = query.order.uuid;
         let initial_payment = query.payment.clone();
+        let initial_order = query.order.clone();
 
         // Execute the query
         let mut tx = db.pool.begin().await.unwrap();
         query.execute(&mut tx).await.unwrap();
 
         println!("Attempting to update the payment state");
-        let query = UpdatePaymentStateQuery {
-            generation: initial_payment.generation,
-            label: initial_payment.bolt11_invoice_label.clone(),
-            state: PaymentState::Hold,
+        let query = UpdateOrderStateQuery {
+            order_uuid : uuid,
+            state : OrderState::Completed
         };
 
         query.execute(&mut tx).await.unwrap();
 
-        let result_label =
-            GetPaymentDetailsQuery::by_label(initial_payment.bolt11_invoice_label.to_string())
-                .execute(&mut tx)
-                .await
-                .unwrap()
-                .unwrap();
-        let result_uuid = GetPaymentDetailsQuery::by_uuid(uuid)
+        let order = GetOrderQuery::by_uuid(uuid)
             .execute(&mut tx)
             .await
             .unwrap()
@@ -99,15 +97,32 @@ mod test {
         tx.commit().await.unwrap();
 
         assert_eq!(
-            result_uuid.state,
-            PaymentState::Hold,
-            "Bad state using uuid"
+            order.order_state,
+            OrderState::Completed,
+            "Failed to update state"
         );
 
+        println!("Attempting to update to payment state again");
+        let mut tx = db.pool.begin().await.unwrap();
+        let query = UpdateOrderStateQuery {
+            order_uuid : uuid,
+            state : OrderState::Failed
+        }.execute(&mut tx).await.unwrap();
+
+        let order = GetOrderQuery::by_uuid(uuid)
+            .execute(&mut tx).await.unwrap().unwrap();
+
         assert_eq!(
-            result_label.state,
-            PaymentState::Hold,
-            "Bad state using label"
+            order.order_state,
+            OrderState::Failed,
+            "Failed to update state"
         );
+
+        tx.commit().await.unwrap();
+
+
+
+
     }
 }
+

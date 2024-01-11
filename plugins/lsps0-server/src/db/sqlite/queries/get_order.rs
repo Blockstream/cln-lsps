@@ -33,7 +33,7 @@ impl GetOrderQuery {
             FROM lsps1_order AS ord
             JOIN lsps1_order_state AS os ON ord.id = os.order_id
             WHERE uuid = ?
-            ORDER BY os.generation
+            ORDER BY os.generation DESC
             LIMIT 1;"#,
             uuid_string
         )

@@ -3,7 +3,7 @@
 -- The current_state is the row for which `created_at` is the highest
 create TABLE lsps1_order_state(
   id INTEGER PRIMARY KEY NOT NULL,
-  order_id INTEGER UNIQUE NOT NULL,
+  order_id INTEGER NOT NULL,
   order_state_enum_id INTEGER NOT NULL,
   created_at INTEGER NOT NULL,
   generation INTEGER NOT NULL,
