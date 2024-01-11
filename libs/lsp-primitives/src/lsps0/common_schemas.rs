@@ -404,6 +404,138 @@ impl FeeRate {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransactionId([u8; 32]);
+
+impl TransactionId {
+    pub fn from_slice(data: &[u8]) -> Result<Self> {
+        let txid: [u8; 32] = data.try_into().context("Invalid transaction Id")?;
+        Ok(Self(txid))
+    }
+}
+
+impl Serialize for TransactionId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let str_value = self.to_string();
+        serializer.serialize_str(&str_value)
+    }
+}
+
+impl<'de> Deserialize<'de> for TransactionId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct TransactionIdVisitor;
+
+        impl<'de> Visitor<'de> for TransactionIdVisitor {
+            type Value = TransactionId;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(formatter, "Valid TransactionId")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: SeError,
+            {
+                Self::Value::from_str(v).map_err(|e| E::custom(e.to_string()))
+            }
+        }
+
+        let visitor = TransactionIdVisitor;
+        deserializer.deserialize_str(visitor)
+    }
+}
+
+impl FromStr for TransactionId {
+    type Err = anyhow::Error;
+
+    fn from_str(txid: &str) -> Result<Self> {
+        let txid = hex::decode(txid).context("txid is not valid hex")?;
+        Self::from_slice(&txid)
+    }
+}
+
+impl Display for TransactionId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let txid_hex = hex::encode(self.0);
+        write!(f, "{}", txid_hex)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Outpoint {
+    txid: TransactionId,
+    outnum: u32,
+}
+
+impl Display for Outpoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.txid, self.outnum)
+    }
+}
+
+impl FromStr for Outpoint {
+    type Err = anyhow::Error;
+
+    fn from_str(v: &str) -> Result<Self, Self::Err> {
+        let split: Vec<&str> = v.split(":").collect();
+
+        if split.len() != 2 {
+            return Err(anyhow!("Invalid outpoint. Should be a txid and outnum. e.g: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b:0'"));
+        }
+
+        let txid = split[0];
+        let outnum = split[1];
+
+        let txid = TransactionId::from_str(txid).context("Invalid outpoint (txid)")?;
+        let outnum = u32::from_str(outnum).context("Invalid outpoint (outnum)")?;
+
+        Ok(Self { txid, outnum })
+    }
+}
+
+impl Serialize for Outpoint {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let outnum_str = self.to_string();
+        serializer.serialize_str(&outnum_str)
+    }
+}
+
+impl<'de> Deserialize<'de> for Outpoint {
+    fn deserialize<D>(deserializer: D) -> std::prelude::v1::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OutnumVisitor;
+
+        impl<'de> Visitor<'de> for OutnumVisitor {
+            type Value = Outpoint;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(formatter, "A valid outpoint")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: SeError,
+            {
+                Self::Value::from_str(v).map_err(|e| E::custom(e.to_string()))
+            }
+        }
+
+        let visitor = OutnumVisitor;
+        deserializer.deserialize_str(visitor)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -580,5 +712,39 @@ mod test {
         let json_value = serde_json::to_value(min_fee).unwrap();
 
         assert_eq!(json_value, serde_json::json!(253));
+    }
+
+    #[test]
+    fn serialize_txid_type() {
+        let txid_str = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b";
+        let tx = TransactionId::from_str(txid_str).unwrap();
+        assert_eq!(tx.to_string(), txid_str);
+
+        let tx_deserialized: TransactionId =
+            serde_json::from_value(serde_json::json!(txid_str)).unwrap();
+        assert_eq!(
+            tx, tx_deserialized,
+            "Failed to deserialize transaction correctly"
+        );
+
+        let tx_serialized = serde_json::to_value(&tx).unwrap();
+        assert_eq!(tx_serialized, serde_json::json!(txid_str));
+    }
+
+    #[test]
+    fn serialize_outpoint() {
+        let outpoint_str = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b:0";
+        let outpoint = Outpoint::from_str(outpoint_str).unwrap();
+        assert_eq!(outpoint.to_string(), outpoint_str);
+
+        let outpoint_deserialized: Outpoint =
+            serde_json::from_value(serde_json::json!(outpoint_str)).unwrap();
+        assert_eq!(
+            outpoint, outpoint_deserialized,
+            "Failed to deserialize transaction correctly"
+        );
+
+        let outpoint_serialized = serde_json::to_value(&outpoint).unwrap();
+        assert_eq!(outpoint_serialized, serde_json::json!(outpoint_str));
     }
 }

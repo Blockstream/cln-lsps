@@ -1,5 +1,7 @@
 use crate::json_rpc::NoParams;
-use crate::lsps0::common_schemas::{FeeRate, IsoDatetime, OnchainAddress, SatAmount};
+use crate::lsps0::common_schemas::{
+    FeeRate, IsoDatetime, OnchainAddress, Outpoint, SatAmount, TransactionId,
+};
 use crate::lsps0::parameter_validation::ExpectedFields;
 use crate::lsps0::schema::ShortChannelId;
 use serde::{Deserialize, Serialize};
@@ -139,10 +141,10 @@ pub struct Payment {
 pub struct Channel {
     state: ChannelState,
     funded_at: IsoDatetime,
-    funding_outpoint: String,
+    funding_outpoint: Outpoint,
     scid: Option<ShortChannelId>,
     expires_at: IsoDatetime,
-    closing_transaction: Option<String>,
+    closing_transaction: Option<TransactionId>,
     closed_at: Option<IsoDatetime>,
 }
 
