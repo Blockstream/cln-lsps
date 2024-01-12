@@ -1,13 +1,15 @@
 use anyhow::Context;
+use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::db::schema::{
-    Lsps1Order as Lsps1OrderBase,
+    Lsps1Channel as Lsps1ChannelBase, Lsps1Order as Lsps1OrderBase,
     Lsps1PaymentDetails as Lsps1PaymentDetailsBase,
-    Lsps1Channel as Lsps1ChannelBase
 };
 use crate::db::sqlite::conversion::{FromSqliteInteger, IntoSqliteInteger};
-use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
+use lsp_primitives::lsps0::common_schemas::{
+    FeeRate, IsoDatetime, PublicKey, SatAmount, TransactionId,
+};
 use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 
 #[derive(sqlx::FromRow)]
@@ -43,8 +45,9 @@ pub struct Lsps1PaymentDetails {
 
 #[derive(sqlx::FromRow)]
 pub struct Lsps1Channel {
-    pub(crate) funding_tx : String,
-    pub(crate) outnum : i64
+    pub(crate) funding_txid: String,
+    pub(crate) outnum: i64,
+    pub(crate) funded_at: i64,
 }
 
 impl TryFrom<&Lsps1PaymentDetailsBase> for Lsps1PaymentDetails {
@@ -156,8 +159,9 @@ impl TryFrom<&Lsps1Channel> for Lsps1ChannelBase {
 
     fn try_from(channel: &Lsps1Channel) -> Result<Self, Self::Error> {
         Ok(Self {
-            funding_tx : channel.funding_tx.clone(),
-            outnum : u32::from_sqlite_integer(channel.outnum)?
+            funding_txid: TransactionId::from_str(&channel.funding_txid)?,
+            outnum: u32::from_sqlite_integer(channel.outnum)?,
+            funded_at: IsoDatetime::from_sqlite_integer(channel.funded_at)?,
         })
     }
 }
@@ -167,8 +171,9 @@ impl TryFrom<&Lsps1ChannelBase> for Lsps1Channel {
 
     fn try_from(channel: &Lsps1ChannelBase) -> Result<Self, Self::Error> {
         Ok(Self {
-            funding_tx : channel.funding_tx.clone(),
-            outnum : channel.outnum.into_sqlite_integer()?
+            funding_txid: channel.funding_txid.to_string(),
+            outnum: channel.outnum.into_sqlite_integer()?,
+            funded_at: channel.funded_at.into_sqlite_integer()?,
         })
     }
 }

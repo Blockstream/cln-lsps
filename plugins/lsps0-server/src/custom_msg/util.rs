@@ -23,7 +23,11 @@ where
     let bolt8_msg_id = LSPS_MESSAGE_ID;
     let raw_msg = RawCustomMsgMessage::create(peer_id.clone(), &bolt8_msg_id, &data)?;
     let rpc_msg = raw_msg.to_rpc()?;
-    log::debug!("Sending response to peer={:?} data={}", rpc_msg.peer_id, rpc_msg.payload);
+    log::debug!(
+        "Sending response to peer={:?} data={}",
+        rpc_msg.peer_id,
+        rpc_msg.payload
+    );
 
     let send_custom_msg_request = SendcustommsgRequest {
         node_id: cln_rpc::primitives::PublicKey::from_slice(&rpc_msg.peer_id.inner().serialize())?,

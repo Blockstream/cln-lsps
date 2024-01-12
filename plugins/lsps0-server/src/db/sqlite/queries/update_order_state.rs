@@ -3,14 +3,14 @@ use anyhow::{anyhow, Result};
 use sqlx::sqlite::SqliteQueryResult;
 use sqlx::{Sqlite, Transaction};
 
-use uuid::Uuid;
 use lsp_primitives::lsps0::common_schemas::IsoDatetime;
 use lsp_primitives::lsps1::schema::OrderState;
+use uuid::Uuid;
 
 use crate::db::sqlite::conversion::IntoSqliteInteger;
 
 pub struct UpdateOrderStateQuery {
-    pub(crate) order_uuid : Uuid,
+    pub(crate) order_uuid: Uuid,
     pub(crate) state: OrderState,
 }
 
@@ -58,12 +58,9 @@ impl UpdateOrderStateQuery {
 #[cfg(test)]
 mod test {
 
-    use sqlx::query::Query;
-
-    use crate::db::sqlite::queries::GetPaymentDetailsQuery;
-    use crate::db::sqlite::queries::GetOrderQuery;
-    use crate::db::sqlite::test::{get_db, create_order_query};
     use super::*;
+    use crate::db::sqlite::queries::GetOrderQuery;
+    use crate::db::sqlite::test::{create_order_query, get_db};
 
     #[tokio::test]
     async fn update_payment_state() {
@@ -73,8 +70,6 @@ mod test {
         // Create the order query
         let query = create_order_query();
         let uuid = query.order.uuid;
-        let initial_payment = query.payment.clone();
-        let initial_order = query.order.clone();
 
         // Execute the query
         let mut tx = db.pool.begin().await.unwrap();
@@ -82,8 +77,8 @@ mod test {
 
         println!("Attempting to update the payment state");
         let query = UpdateOrderStateQuery {
-            order_uuid : uuid,
-            state : OrderState::Completed
+            order_uuid: uuid,
+            state: OrderState::Completed,
         };
 
         query.execute(&mut tx).await.unwrap();
@@ -104,13 +99,19 @@ mod test {
 
         println!("Attempting to update to payment state again");
         let mut tx = db.pool.begin().await.unwrap();
-        let query = UpdateOrderStateQuery {
-            order_uuid : uuid,
-            state : OrderState::Failed
-        }.execute(&mut tx).await.unwrap();
+        UpdateOrderStateQuery {
+            order_uuid: uuid,
+            state: OrderState::Failed,
+        }
+        .execute(&mut tx)
+        .await
+        .unwrap();
 
         let order = GetOrderQuery::by_uuid(uuid)
-            .execute(&mut tx).await.unwrap().unwrap();
+            .execute(&mut tx)
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(
             order.order_state,
@@ -119,10 +120,5 @@ mod test {
         );
 
         tx.commit().await.unwrap();
-
-
-
-
     }
 }
-

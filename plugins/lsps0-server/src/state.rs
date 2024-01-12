@@ -1,4 +1,4 @@
-use lsp_primitives::{lsps1, methods::Lsps1GetInfoResponse};
+use lsp_primitives::methods::Lsps1GetInfoResponse;
 
 use crate::db::sqlite::Database;
 use std::sync::Arc;

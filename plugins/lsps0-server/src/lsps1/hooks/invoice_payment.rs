@@ -8,9 +8,8 @@ use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 use crate::channel_open::{fundchannel_fallible, ChannelDetails};
 use crate::cln::hooks::invoice_payment::InvoicePaymentHookResponse;
 use crate::cln::hooks::invoice_payment::Payment;
-use crate::db::schema::Lsps1Channel;
-use crate::db::sqlite::queries::{GetOrderQuery, UpdateOrderStateQuery, CreateChannelQuery};
-use crate::db::sqlite::queries::{GetPaymentDetailsQuery, UpdatePaymentStateQuery, };
+use crate::db::sqlite::queries::{CreateChannelQuery, GetOrderQuery, UpdateOrderStateQuery};
+use crate::db::sqlite::queries::{GetPaymentDetailsQuery, UpdatePaymentStateQuery};
 use crate::state::PluginState;
 
 pub(crate) async fn invoice_payment(
@@ -73,25 +72,26 @@ pub(crate) async fn invoice_payment(
 
     let timeout = std::time::Duration::from_secs(60);
     let amount = order_details
-            .client_balance_sat
-            .checked_add(&order_details.lsp_balance_sat)
-            .context("Overflow when computing channel capacity")?;
+        .client_balance_sat
+        .checked_add(&order_details.lsp_balance_sat)
+        .context("Overflow when computing channel capacity")?;
 
     let mindepth = Some(
-            order_details
-                .confirms_within_blocks
-                .checked_sub(6)
-                .unwrap_or(0),
-        );
+        order_details
+            .confirms_within_blocks
+            .checked_sub(6)
+            .unwrap_or(0),
+    );
 
     let channel_details = ChannelDetails {
         peer_id: order_details.client_node_id,
         amount: amount,
-        mindepth : mindepth,
+        feerate: None,
+        announce: Some(order_details.announce_channel),
+        mindepth: mindepth,
         push_msat: Some(order_details.client_balance_sat),
         reserve: Some(SatAmount::new(0)),
         close_to: None,
-        feerate: None,
     };
 
     log::debug!("Atempting to open channel ");
@@ -105,6 +105,10 @@ pub(crate) async fn invoice_payment(
                 peer_id
             );
 
+            CreateChannelQuery::new(order_details.uuid, channelopen_response)
+                .execute(&mut tx)
+                .await?;
+
             UpdatePaymentStateQuery {
                 state: PaymentState::Paid,
                 generation: payment_details.generation + 1,
@@ -114,9 +118,10 @@ pub(crate) async fn invoice_payment(
             .await?;
 
             UpdateOrderStateQuery {
-                order_uuid : order_details.uuid,
-                state : OrderState::Completed,
-            }.execute(&mut tx)
+                order_uuid: order_details.uuid,
+                state: OrderState::Completed,
+            }
+            .execute(&mut tx)
             .await?;
 
             tx.commit().await?;
@@ -134,9 +139,10 @@ pub(crate) async fn invoice_payment(
             .await?;
 
             UpdateOrderStateQuery {
-                order_uuid : order_details.uuid,
-                state : OrderState::Failed,
-            }.execute(&mut tx)
+                order_uuid: order_details.uuid,
+                state: OrderState::Failed,
+            }
+            .execute(&mut tx)
             .await?;
 
             tx.commit().await?;

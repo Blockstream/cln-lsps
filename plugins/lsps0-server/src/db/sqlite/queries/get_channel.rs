@@ -3,9 +3,9 @@ use anyhow::{anyhow, Result};
 use sqlx::Sqlite;
 use sqlx::Transaction;
 
+use crate::db::schema::Lsps1Channel;
+use crate::db::sqlite::schema::Lsps1Channel as Lsps1ChannelSqlite;
 use std::convert::TryFrom;
-use crate::db::schema::Lsps1Channel as Lsps1ChannelBase;
-use crate::db::sqlite::schema::Lsps1Channel;
 use uuid::Uuid;
 
 pub(crate) struct GetChannelQuery {
@@ -22,13 +22,13 @@ impl GetChannelQuery {
     pub async fn execute(
         &self,
         tx: &mut Transaction<'static, Sqlite>,
-    ) -> Result<Lsps1ChannelBase, anyhow::Error> {
+    ) -> Result<Option<Lsps1Channel>, anyhow::Error> {
         let order_str = self.order_uuid.to_string();
 
-        sqlx::query_as!(
-            Lsps1Channel,
+        let channel = sqlx::query_as!(
+            Lsps1ChannelSqlite,
             r#"
-             SELECT c.funding_tx, c.outnum FROM lsps1_channel as c
+             SELECT c.funding_txid, c.outnum, c.funded_at FROM lsps1_channel as c
              JOIN lsps1_order as od
               ON c.order_id = od.id
               WHERE od.uuid = ?1
@@ -37,13 +37,11 @@ impl GetChannelQuery {
         )
         .fetch_optional(&mut **tx)
         .await
-        .map_err(|e| anyhow!("db.get_channel Failed: {}", e))?
-        .ok_or_else(|| {
-            anyhow!(
-                "Failed to find order '{}' and could not create channel",
-                self.order_uuid
-            )
-        })
-        .and_then(|channel| Lsps1ChannelBase::try_from(&channel))
+        .map_err(|e| anyhow!("db.get_channel Failed: {}", e))?;
+
+        match channel {
+            None => Ok(None),
+            Some(channel) => Ok(Some(Lsps1Channel::try_from(&channel)?)),
+        }
     }
 }

@@ -1,4 +1,6 @@
-use lsp_primitives::lsps0::common_schemas::{FeeRate, IsoDatetime, PublicKey, SatAmount};
+use lsp_primitives::lsps0::common_schemas::{
+    FeeRate, IsoDatetime, PublicKey, SatAmount, TransactionId,
+};
 use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 use uuid::Uuid;
 
@@ -35,6 +37,7 @@ pub struct Lsps1PaymentDetails {
 
 #[derive(Debug, Clone)]
 pub struct Lsps1Channel {
-    pub(crate) funding_tx : String,
-    pub(crate) outnum : u32
+    pub(crate) funding_txid: TransactionId,
+    pub(crate) outnum: u32,
+    pub(crate) funded_at: IsoDatetime,
 }

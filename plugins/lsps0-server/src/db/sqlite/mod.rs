@@ -39,11 +39,8 @@ mod test {
     use lsp_primitives::lsps0::common_schemas::{IsoDatetime, PublicKey, SatAmount};
     use lsp_primitives::lsps1::schema::{OrderState, PaymentState};
 
-    use crate::db::schema::{Lsps1Channel, Lsps1Order, Lsps1PaymentDetails};
-    use crate::db::sqlite::queries::{
-        CreateChannelQuery, GetChannelQuery, GetOrderQuery, GetPaymentDetailsQuery,
-        Lsps1CreateOrderQuery, UpdatePaymentStateQuery,
-    };
+    use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails};
+    use crate::db::sqlite::queries::{GetOrderQuery, Lsps1CreateOrderQuery};
 
     pub async fn get_db() -> Database {
         let options = SqliteConnectOptions::default()
@@ -82,7 +79,7 @@ mod test {
 
     pub fn create_test_payment(order: &Lsps1Order) -> Lsps1PaymentDetails {
         Lsps1PaymentDetails {
-            order_uuid : order.uuid,
+            order_uuid: order.uuid,
             fee_total_sat: SatAmount::new(500),
             order_total_sat: SatAmount::new(500),
             bolt11_invoice: format!("bolt11_invoice.{}", order.uuid),
@@ -148,5 +145,4 @@ mod test {
         assert_eq!(order.channel_expiry_blocks, 6 * 24 * 30);
         assert_eq!(order.announce_channel, false);
     }
-
 }

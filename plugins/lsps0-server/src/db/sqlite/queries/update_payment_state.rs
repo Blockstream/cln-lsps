@@ -57,9 +57,9 @@ impl UpdatePaymentStateQuery {
 #[cfg(test)]
 mod test {
 
-    use crate::db::sqlite::queries::GetPaymentDetailsQuery;
-    use crate::db::sqlite::test::{get_db, create_order_query};
     use super::*;
+    use crate::db::sqlite::queries::GetPaymentDetailsQuery;
+    use crate::db::sqlite::test::{create_order_query, get_db};
 
     #[tokio::test]
     async fn update_payment_state() {

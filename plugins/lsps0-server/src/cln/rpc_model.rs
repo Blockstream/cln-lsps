@@ -15,6 +15,8 @@ pub struct FundChannelStartRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub feerate: Option<rpc_primitives::Feerate>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub announce: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub close_to: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub push_msat: Option<rpc_primitives::Amount>,

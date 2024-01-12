@@ -33,16 +33,16 @@ impl<T: FeeCalculator> PaymentCalc<T> {
         // We do not support onchain payments.
         // This allows us to be lazy here
         Ok(Lsps1PaymentDetails {
-            fee_total_sat : fee.fee_total_sat,
-            order_total_sat : fee.order_total_sat,
-            bolt11_invoice : bolt11_invoice,
-            bolt11_invoice_label : bolt_11_invoice_label,
-            state : PaymentState::ExpectPayment,
-            generation : 0,
-            minimum_fee_for_0conf : None,
-            onchain_address : None,
-            onchain_block_confirmations_required : None,
-            order_uuid : order.uuid
+            fee_total_sat: fee.fee_total_sat,
+            order_total_sat: fee.order_total_sat,
+            bolt11_invoice: bolt11_invoice,
+            bolt11_invoice_label: bolt_11_invoice_label,
+            state: PaymentState::ExpectPayment,
+            generation: 0,
+            minimum_fee_for_0conf: None,
+            onchain_address: None,
+            onchain_block_confirmations_required: None,
+            order_uuid: order.uuid,
         })
     }
 

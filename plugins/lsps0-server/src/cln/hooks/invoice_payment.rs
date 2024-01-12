@@ -1,6 +1,7 @@
 pub(crate) enum InvoicePaymentHookResponse {
     Continue,
     Reject,
+    #[allow(dead_code)]
     FailureMessage(u16),
 }
 
@@ -72,7 +73,9 @@ pub(crate) struct InvoicePaymentHookData {
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Payment {
     pub(crate) label: String,
+    #[allow(dead_code)]
     pub(crate) preimage: String,
+    #[allow(dead_code)]
     pub(crate) msat: AmountMsat,
 }
 
