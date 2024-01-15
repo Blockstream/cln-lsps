@@ -1,11 +1,11 @@
 from pyln.testing.fixtures import *
+from pyln.client.lightning import Millisatoshi
 from test.fixtures import lsps_server, lsps_client
 import logging
 
 import json
 
 logger = logging.getLogger(__name__)
-
 
 def test_lsps1_get_info(lsps_server, lsps_client):
     """Server responds correctly to lsps1.get_info"""
@@ -131,7 +131,7 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
     # Client requests a channel of 500_000 sats to the server
     logger.info("lsps1.create_order")
     params = dict(
-        lsp_balance_sat="500000",
+        lsp_balance_sat="123456",
         client_balance_sat="0",
         confirms_within_blocks=1,
         channel_expiry_blocks=144,
@@ -171,6 +171,26 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
     # Check if the order is considered paid
     assert response["result"]["payment"]["state"] == "PAID"
     assert response["result"]["order_state"] == "COMPLETED"
+
+    peer_channels = lsps_client.rpc.listpeerchannels(lsps_server.info["id"])
+    lsps_outpoint = response["result"]["channel"]["funding_outpoint"]
+
+    # Find the cnannel with the matching outpoint
+    channel = None
+    for c in peer_channels["channels"]:
+        c_outnum = c["funding_outnum"]
+        c_funding_txid = c["funding_txid"]
+        c_outpoint = f"{c_funding_txid}:{c_outnum}"
+        if c_outpoint == lsps_outpoint:
+            channel = c
+            break
+
+    if channel is None:
+        assert False, "Failed to find channel with matching outpoint in listpeerchannels"
+
+    assert channel["private"], "The channel should not be announced"
+    assert channel["total_msat"] == Millisatoshi(123456000)
+    assert channel["to_us_msat"] == Millisatoshi(0)
 
 def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
     """Server responds with Invalid Params and list unrecognized arguments"""

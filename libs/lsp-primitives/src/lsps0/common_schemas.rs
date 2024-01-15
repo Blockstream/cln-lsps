@@ -469,8 +469,8 @@ impl Display for TransactionId {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Outpoint {
-    txid: TransactionId,
-    outnum: u32,
+    pub txid: TransactionId,
+    pub outnum: u32,
 }
 
 impl Display for Outpoint {

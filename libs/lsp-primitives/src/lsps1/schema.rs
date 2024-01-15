@@ -1,9 +1,8 @@
 use crate::json_rpc::NoParams;
 use crate::lsps0::common_schemas::{
-    FeeRate, IsoDatetime, OnchainAddress, Outpoint, SatAmount, TransactionId,
+    FeeRate, IsoDatetime, OnchainAddress, Outpoint, SatAmount
 };
 use crate::lsps0::parameter_validation::ExpectedFields;
-use crate::lsps0::schema::ShortChannelId;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -139,24 +138,11 @@ pub struct Payment {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Channel {
-    state: ChannelState,
-    funded_at: IsoDatetime,
-    funding_outpoint: Outpoint,
-    scid: Option<ShortChannelId>,
-    expires_at: IsoDatetime,
-    closing_transaction: Option<TransactionId>,
-    closed_at: Option<IsoDatetime>,
+    pub funded_at: IsoDatetime,
+    pub funding_outpoint: Outpoint,
+    pub expires_at: IsoDatetime,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum ChannelState {
-    #[serde(rename = "OPENING")]
-    Opening,
-    #[serde(rename = "OPENED")]
-    Opened,
-    #[serde(rename = "Closed")]
-    Closed,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lsps1GetOrderRequest {
