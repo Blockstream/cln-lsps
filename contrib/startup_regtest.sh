@@ -170,14 +170,15 @@ function set_env() {
 	echo "lsps1_min_channel_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
 	echo "lsps1_max_channel_balance_sat=100000000" >> $SERVER_LIGHTNING_CONFIG
 
+	# Configuring the LSP-client
 	echo "regtest" > $CLIENT_LIGHTNING_CONFIG
 	echo "disable-plugin=clnrest" >> $CLIENT_LIGHTNING_CONFIG
 	echo "daemon" >> $CLIENT_LIGHTNING_CONFIG
 	echo "log-file=$CLIENT_LIGHTNING_DIR/log" >> $CLIENT_LIGHTNING_CONFIG
 	echo "plugin=$GIT_ROOT/build/plugins/lsps0-client/lsps0-client" >> $CLIENT_LIGHTNING_CONFIG
+	echo "plugin=$GIT_ROOT/test/plugins/accept_channel_slowly.py" >> $CLIENT_LIGHTNING_CONFIG
 	echo "addr=localhost:20401" >> $CLIENT_LIGHTNING_CONFIG
 	echo "alias=LSP-client" >> $CLIENT_LIGHTNING_CONFIG
-
 	echo "Starting LSP-client"
 	$LIGHTNINGD --lightning-dir=$CLIENT_LIGHTNING_DIR --daemon
 	echo "Starting LSP-server"
@@ -201,4 +202,7 @@ function set_env() {
 	open_channel c1 s1 99999
 }
 
-
+function stop_all() {
+	c1-cli stop
+	s1-cli stop
+}

@@ -14,6 +14,7 @@ It helps us to assert that
 - channel_opens are aborted and payments are refunded 
   if the channel is not accepted in a reasonable time-frame
 """
+import time
 from pyln.client import Plugin
 
 plugin = Plugin(dynamic=True)
@@ -35,6 +36,8 @@ plugin.add_option(
 
 @plugin.hook("openchannel")
 def openchannel(**kwargs):
+    plugin.log("Peer attempts to open channel")
+
     must_reject = plugin.get_option("test-reject-incoming-channel")
     if must_reject:
         return {"result": "reject"}
@@ -42,6 +45,7 @@ def openchannel(**kwargs):
     sleep_time = plugin.get_option("test-wait-incoming-channel")
     sleep_time = int(sleep_time)
     plugin.log(f"Sleep {sleep_time} seconds before accepting the channel")
+    time.sleep(sleep_time)
     return {"result": "continue"}
 
 
