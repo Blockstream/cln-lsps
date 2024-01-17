@@ -251,7 +251,7 @@ async fn lsps1_create_order(
     match response {
         JsonRpcResponse::Ok(ok) => return Ok(json!(ok.result)),
         JsonRpcResponse::Error(err) => {
-            return Err(anyhow!("{} : {}", err.error.code, err.error.message))
+            return Err(anyhow!("Code {}-{} \t {}", err.error.code, err.error.message, err.error.data.unwrap_or_default().to_string()))
         }
     }
 }
