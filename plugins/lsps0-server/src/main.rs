@@ -313,8 +313,18 @@ async fn do_list_protocols(
 ) -> Result<ListprotocolsResponse, ErrorData> {
     method.into_typed_request(context.request.clone())?;
 
+    let lsps1_enabled = if let Some(cln_plugin::options::Value::Boolean(value)) =
+        context.plugin.option(options::LSPS1_ENABLE)
+    {
+        value
+    } else {
+        false
+    };
+
+    let protocols = if lsps1_enabled { vec![0, 1] } else { vec![0] };
+
     ListprotocolsResponseBuilder::new()
-        .protocols(vec![0, 1])
+        .protocols(protocols)
         .build()
         .map_err(ErrorData::internalize)
 }

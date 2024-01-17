@@ -1,11 +1,52 @@
 from pyln.testing.fixtures import *
 from pyln.client.lightning import Millisatoshi
-from test.fixtures import lsps_server, lsps_client
+from test.fixtures import (
+    lsps_server,
+    lsps_client,
+    get_server_plugin_path,
+    developer_options,
+)
 import logging
 
 import json
 
 logger = logging.getLogger(__name__)
+
+
+def test_lsps1_disabled(node_factory, lsps_client):
+    """Server provides correct info in lsps0.list_protocols"""
+
+    logger.debug("Starting LSPS-server")
+    server_plugin = get_server_plugin_path()
+    logger.debug(f"server-plugin: {server_plugin}")
+    lsps_server: LightningNode = node_factory.get_node(
+        options={"plugin": server_plugin, **developer_options()}
+    )
+
+    lsps_client.connect(lsps_server)
+
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"], method="lsps0.list_protocols", params="{}"
+    )
+
+    assert response["result"] == {"protocols": [0]}
+
+    # Check that lsps1.get_info is disabled
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"], method="lsps1.create_order", params="{}"
+    )
+    assert response["error"]["code"] == -32601
+    # Check that lsps1.create_order is disabled
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"], method="lsps1.create_order", params="{}"
+    )
+    assert response["error"]["code"] == -32601
+    # Check that lsps1.get_order is disabled
+    response = lsps_client.rpc.lsps0_send_request(
+        peer_id=lsps_server.info["id"], method="lsps1.get_order", params="{}"
+    )
+    assert response["error"]["code"] == -32601
+
 
 def test_lsps1_get_info(lsps_server, lsps_client):
     """Server responds correctly to lsps1.get_info"""
@@ -126,7 +167,7 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
     lsps_client.openchannel(lsps_server)
 
     # Provide the lsp-server with 10 BTC so they can open a channel
-    lsps_server.fundwallet(100_000_000*10)
+    lsps_server.fundwallet(100_000_000 * 10)
 
     # Client requests a channel of 500_000 sats to the server
     logger.info("lsps1.create_order")
@@ -186,11 +227,14 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
             break
 
     if channel is None:
-        assert False, "Failed to find channel with matching outpoint in listpeerchannels"
+        assert (
+            False
+        ), "Failed to find channel with matching outpoint in listpeerchannels"
 
     assert channel["private"], "The channel should not be announced"
     assert channel["total_msat"] == Millisatoshi(123456000)
     assert channel["to_us_msat"] == Millisatoshi(0)
+
 
 def test_server_complains_on_unrecognized_argument(lsps_server, lsps_client):
     """Server responds with Invalid Params and list unrecognized arguments"""

@@ -19,7 +19,24 @@ use crate::db::sqlite::queries::{
 use crate::lsps1::fee_calc::FixedFeeCalculator;
 use crate::lsps1::msg::{BuildLsps1Order, BuildUsingDbPayment};
 use crate::lsps1::payment_calc::PaymentCalc;
-use crate::PluginState;
+use crate::{options, PluginState};
+
+pub(crate) async fn check_lsps1_enabled(
+    context: &mut CustomMsgContext<PluginState>,
+) -> Result<(), ErrorData> {
+    let lsps1_enabled = context
+        .plugin
+        .option(options::LSPS1_ENABLE)
+        .map(|x| x.as_bool().unwrap_or(false))
+        .unwrap_or(false);
+
+    if lsps1_enabled {
+        Ok(())
+    } else {
+        log::debug!("Ignored call because lsps1 is disabled");
+        Err(ErrorData::method_not_found(&context.request.method))
+    }
+}
 
 pub(crate) async fn do_lsps1_get_info(
     method: methods::Lsps1GetInfo,
@@ -27,6 +44,7 @@ pub(crate) async fn do_lsps1_get_info(
 ) -> Result<Lsps1GetInfoResponse, ErrorData> {
     log::debug!("lsps1_get_info");
 
+    check_lsps1_enabled(context).await?;
     method.into_typed_request(context.request.clone())?;
     let state = context.plugin.state();
     let info_response = state.lsps1_info.as_ref().clone();
@@ -42,6 +60,7 @@ pub(crate) async fn do_lsps1_create_order(
         context.peer_id
     );
 
+    check_lsps1_enabled(context).await?;
     let typed_request = method.into_typed_request(context.request.clone())?;
 
     let state = context.plugin.state();
@@ -141,6 +160,7 @@ pub(crate) async fn do_lsps1_get_order(
     method: methods::Lsps1GetOrder,
     context: &mut CustomMsgContext<PluginState>,
 ) -> Result<Lsps1CreateOrderResponse, ErrorData> {
+    check_lsps1_enabled(context).await?;
     let typed_request = method.into_typed_request(context.request.clone())?;
 
     let uuid_value =

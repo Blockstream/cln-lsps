@@ -76,8 +76,8 @@ pub fn lsps1_supports_zero_channel_reserve() -> ConfigOption {
 pub fn lsps1_max_channel_expiry_blocks() -> ConfigOption {
     ConfigOption::new(
         LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS,
-        Value::Integer(51260),
-        "The maximum number of blocks a channel can be leased for. ",
+        Value::Integer(5000),
+        "The maximum number of blocks a channel can be leased for. (Default is 5000 blocks. This is a bit over 1 month) ",
     )
 }
 
@@ -117,7 +117,7 @@ pub fn lsps1_order_lifetime_seconds() -> ConfigOption {
     ConfigOption::new(
         LSPS1_ORDER_LIFETIME,
         Value::Integer(3600 * 6),
-        "The amount of seconds an order is deemd valid",
+        "The amount of seconds an order is deemd valid (Default is 6 hours)",
     )
 }
 

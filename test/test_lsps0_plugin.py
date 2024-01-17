@@ -116,7 +116,6 @@ def test_lsps0_list_protocols(node_factory: NodeFactory):
 
     assert len(protocols) >= 0
     assert 0 in protocols
-    assert 1 in protocols
 
 
 def test_lsps1_get_info(node_factory: NodeFactory):
