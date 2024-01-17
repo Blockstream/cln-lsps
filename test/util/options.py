@@ -11,11 +11,11 @@ def developer_options() -> t.Dict[str, t.Any]:
 
 def lsps1_server_options() -> t.Dict[str, t.Any]:
     return {
-        "lsps1_enable": True,
-        "lsps1_min_channel_balance_sat": "0",
-        "lsps1_max_channel_balance_sat": "1000000",
-        "lsps1_min_initial_client_balance_sat": "0",
-        "lsps1_max_initial_client_balance_sat": "0",
-        "lsps1_min_initial_lsp_balance_sat": "0",
-        "lsps1_max_initial_lsp_balance_sat": "1000000",
+        "lsps1-enable": True,
+        "lsps1-min-channel-balance-sat": "0",
+        "lsps1-max-channel-balance-sat": "1000000",
+        "lsps1-min-initial-client-balance-sat": "0",
+        "lsps1-max-initial-client-balance-sat": "0",
+        "lsps1-min-initial-lsp-balance-sat": "0",
+        "lsps1-max-initial-lsp-balance-sat": "1000000",
     }

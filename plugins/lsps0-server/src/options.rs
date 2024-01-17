@@ -9,29 +9,29 @@ use cln_plugin::options::{ConfigOption, Value};
 // value. Currently, the server-admin should ensure
 // the options are sensible and spec-compliant.
 
-pub(crate) const LSPS1_ENABLE: &str = "lsps1_enable";
-pub(crate) const LSPS1_INFO_WEBSITE: &str = "lsps1_info_website";
-pub(crate) const LSPS1_MIN_CHANNEL_CONFIRMATIONS: &str = "lsps1_minimum_channel_confirmations";
+pub(crate) const LSPS1_ENABLE: &str = "lsps1-enable";
+pub(crate) const LSPS1_INFO_WEBSITE: &str = "lsps1-info-website";
+pub(crate) const LSPS1_MIN_CHANNEL_CONFIRMATIONS: &str = "lsps1-minimum-channel-confirmations";
 pub(crate) const LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS: &str =
-    "lsps1_minimum_onchain_payment_confirmations";
-pub(crate) const LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE: &str = "lsps1_supports_zero_channel_reserve";
-pub(crate) const LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS: &str = "lsps1_max_channel_expiry_blocks";
-pub(crate) const LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT: &str = "lsps1_min_onchain_payment_size_sat";
+    "lsps1-minimum-onchain-payment-confirmations";
+pub(crate) const LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE: &str = "lsps1-supports-zero-channel-reserve";
+pub(crate) const LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS: &str = "lsps1-max-channel-expiry-blocks";
+pub(crate) const LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT: &str = "lsps1-min-onchain-payment-size-sat";
 
 pub(crate) const LSPS1_MIN_INITIAL_CLIENT_BALANCE_SAT: &str =
-    "lsps1_min_initial_client_balance_sat";
+    "lsps1-min-initial-client-balance-sat";
 pub(crate) const LSPS1_MAX_INITIAL_CLIENT_BALANCE_SAT: &str =
-    "lsps1_max_initial_client_balance_sat";
-pub(crate) const LSPS1_MIN_INITIAL_LSP_BALANCE_SAT: &str = "lsps1_min_initial_lsp_balance_sat";
-pub(crate) const LSPS1_MAX_INITIAL_LSP_BALANCE_SAT: &str = "lsps1_max_initial_lsp_balance_sat";
-pub(crate) const LSPS1_MIN_CHANNEL_BALANCE_SAT: &str = "lsps1_min_channel_balance_sat";
-pub(crate) const LSPS1_MAX_CHANNEL_BALANCE_SAT: &str = "lsps1_max_channel_balance_sat";
+    "lsps1-max-initial-client-balance-sat";
+pub(crate) const LSPS1_MIN_INITIAL_LSP_BALANCE_SAT: &str = "lsps1-min-initial-lsp-balance-sat";
+pub(crate) const LSPS1_MAX_INITIAL_LSP_BALANCE_SAT: &str = "lsps1-max-initial-lsp-balance-sat";
+pub(crate) const LSPS1_MIN_CHANNEL_BALANCE_SAT: &str = "lsps1-min-channel-balance-sat";
+pub(crate) const LSPS1_MAX_CHANNEL_BALANCE_SAT: &str = "lsps1-max-channel-balance-sat";
 
-pub(crate) const LSPS1_ORDER_LIFETIME: &str = "lsps1_order_lifetime";
-pub(crate) const LSPS1_FEE_COMPUTATION_BASE_FEE_SAT: &str = "lsps1_fee_computation_base_fee_sat";
-pub(crate) const LSPS1_FEE_COMPUTATION_ONCHAIN_PPM: &str = "lsps1_fee_computation_onchain_ppm";
-pub(crate) const LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB: &str = "lsps1_fee_computation_liquidity_ppb";
-pub(crate) const LSP_SERVER_DATABASE_URL: &str = "lsp_server_database_url";
+pub(crate) const LSPS1_ORDER_LIFETIME: &str = "lsps1-order-lifetime";
+pub(crate) const LSPS1_FEE_COMPUTATION_BASE_FEE_SAT: &str = "lsps1-fee-computation-base-fee-sat";
+pub(crate) const LSPS1_FEE_COMPUTATION_ONCHAIN_PPM: &str = "lsps1-fee-computation-onchain-ppm";
+pub(crate) const LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB: &str = "lsps1-fee-computation-liquidity-ppb";
+pub(crate) const LSP_SERVER_DATABASE_URL: &str = "lsp-server-database-url";
 
 pub fn lsps1_enable() -> ConfigOption {
     ConfigOption::new(

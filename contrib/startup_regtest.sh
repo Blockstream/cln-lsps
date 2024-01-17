@@ -162,13 +162,13 @@ function set_env() {
 	echo "plugin=$GIT_ROOT/build/plugins/lsps0-server/lsps0-server" >> $SERVER_LIGHTNING_CONFIG
 	echo "addr=localhost:20202" >> $SERVER_LIGHTNING_CONFIG
 	echo "alias=LSP-server" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_enable=true" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_min_initial_client_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_max_initial_client_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_min_initial_lsp_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_max_initial_lsp_balance_sat=100000000" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_min_channel_balance_sat=0" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1_max_channel_balance_sat=100000000" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-enable=true" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-min-initial-client-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-max-initial-client-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-min-initial-lsp-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-max-initial-lsp-balance-sat=100000000" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-min-channel-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-max-channel-balance-sat=100000000" >> $SERVER_LIGHTNING_CONFIG
 
 	# Configuring the LSP-client
 	echo "regtest" > $CLIENT_LIGHTNING_CONFIG
