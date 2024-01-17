@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
         }
         Err(err) => {
             log::warn!("Failed to read configuration for LSPS1");
-            log::warn!("{:?}", err);
+            configured_plugin.disable(&format!("Invalid configuration: {}", err)).await?;
             return Err(err);
         }
     };
@@ -110,7 +110,18 @@ async fn main() -> Result<()> {
             log::warn!("We are currently only supporting sqlite.");
             log::warn!("If the database file doesn't exist the plugin will create it for you");
             log::warn!("If no value is specified we will create the database inside the lightning directory");
-            return Ok(());
+            configured_plugin.disable(&format!(
+                r#"
+                Invalid value `lsp_server_database_connection`
+                The value should be avalid sqlite conncection string. 
+                E.g: sqlite://home/user/data/lsp_server.db
+
+                We are currently only supporting sqlite
+                If the database file doesn't exist the plugin will create it for you.
+                If no value is specified the database will be created inside the lightnign directory
+                "#
+            )).await?;
+            return Ok(())
         }
     };
 
