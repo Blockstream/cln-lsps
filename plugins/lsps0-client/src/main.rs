@@ -48,36 +48,12 @@ async fn main() -> Result<()> {
     log::info!("Configure plugin 'lsps0-client'");
     let configured_plugin =
         match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
-            .rpcmethod(
-                "lsps0-list-servers",
-                "List all lsps-servers that have publicly announced themselves",
-                list_lsp_servers,
-            )
-            .rpcmethod(
-                "lsps0-list-protocols",
-                "List all protocols supported by an LSP-server",
-                list_protocols,
-            )
-            .rpcmethod(
-                "lsps0-send-request",
-                "Send a json RPC request",
-                lsps0_send_request,
-            )
-            .rpcmethod(
-                "lsps1-get-info",
-                "Get info and pricing to purchase a channel from an LSP",
-                lsps1_get_info,
-            )
-            .rpcmethod(
-                "lsps1-create-order",
-                "Order a channel from an LSP",
-                lsps1_create_order,
-            )
-            .rpcmethod(
-                "lsps1-get-order",
-                "Get info about an order from the server",
-                lsps1_get_order,
-            )
+            .rpcmethod_from_builder(crate::plugin_rpc::lsps0_list_servers_method())
+            .rpcmethod_from_builder(crate::plugin_rpc::lsps0_list_protocols_method())
+            .rpcmethod_from_builder(crate::plugin_rpc::lsps0_send_request())
+            .rpcmethod_from_builder(crate::plugin_rpc::lsps1_get_info())
+            .rpcmethod_from_builder(crate::plugin_rpc::lsps1_create_order())
+            .rpcmethod_from_builder(crate::plugin_rpc::lsps1_get_order())
             .hook("custommsg", handle_custom_msg)
             .dynamic()
             .configure()
@@ -251,7 +227,12 @@ async fn lsps1_create_order(
     match response {
         JsonRpcResponse::Ok(ok) => return Ok(json!(ok.result)),
         JsonRpcResponse::Error(err) => {
-            return Err(anyhow!("Code {}-{} \t {}", err.error.code, err.error.message, err.error.data.unwrap_or_default().to_string()))
+            return Err(anyhow!(
+                "Code {}-{} \t {}",
+                err.error.code,
+                err.error.message,
+                err.error.data.unwrap_or_default().to_string()
+            ))
         }
     }
 }

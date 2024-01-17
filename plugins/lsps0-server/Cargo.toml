@@ -10,7 +10,7 @@ anyhow = "1.0.75"
 async-trait = "0.1.74"
 cln-lsps0 = { version = "0.1.0", path = "../../libs/cln-lsps0" }
 cln-plugin = "0.1.6"
-cln-rpc = {git = "https://github.com/ErikDeSmedt/lightning", rev = "8eaaa8d88b9de6e5e788d93efe57c0ce695b0db7"}
+cln-rpc = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}
 hex = "0.4.3"
 log = "0.4.20"
 lsp-primitives = { version = "0.1.0", path = "../../libs/lsp-primitives" }
