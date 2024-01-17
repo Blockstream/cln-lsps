@@ -59,7 +59,7 @@ impl ExpectedFields for Lsps1CreateOrderRequest {
             "confirms_within_blocks".to_string(),
             "channel_expiry_blocks".to_string(),
             "token".to_string(),
-            "refund_ochain_address".to_string(),
+            "refund_onchain_address".to_string(),
             "announceChannel".to_string(),
         ]
     }
