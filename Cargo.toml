@@ -8,13 +8,13 @@ edition = "2021"
 [workspace]
 members = [
 	"libs/lsp-primitives", 
-	"libs/cln-lsps0",
-	"plugins/lsps0-client",
-	"plugins/lsps0-server"
+	"libs/cln-lsps",
+	"plugins/lsps-client",
+	"plugins/lsps-server"
 	]
 
 [dependencies]
-lsps0-client = { path = "plugins/lsps0-client/" }
-lsps0-server = { path = "plugins/lsps0-server/" }
+lsps-client = { path = "plugins/lsps-client/" }
+lsps-server = { path = "plugins/lsps-server/" }
 lsp-primitives = {path = "libs/lsp-primitives"}
-cln-lsps0 = {path = "libs/cln-lsps0" }
+cln-lsps = {path = "libs/cln-lsps" }

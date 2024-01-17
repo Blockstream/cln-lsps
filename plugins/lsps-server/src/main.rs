@@ -24,8 +24,8 @@ use lsp_primitives::lsps0::schema::ListprotocolsResponse;
 use lsp_primitives::methods;
 use lsp_primitives::methods::JsonRpcMethodEnum;
 
-use cln_lsps0::client::LSPS_MESSAGE_ID;
-use cln_lsps0::custom_msg_hook::RpcCustomMsgMessage;
+use cln_lsps::client::LSPS_MESSAGE_ID;
+use cln_lsps::custom_msg_hook::RpcCustomMsgMessage;
 
 use serde_json::json;
 

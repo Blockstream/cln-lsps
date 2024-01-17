@@ -1,5 +1,5 @@
 [package]
-name = "lsps0-client"
+name = "lsps-client"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 lsp-primitives = { path = "../../libs/lsp-primitives" }
-cln-lsps0 = {path = "../../libs/cln-lsps0" }
+cln-lsps = {path = "../../libs/cln-lsps" }
 anyhow = "1.0"
 cln-plugin = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}
 cln-rpc = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}

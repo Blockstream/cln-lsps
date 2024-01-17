@@ -13,10 +13,10 @@ use lsp_primitives::lsps0::common_schemas::{Network, NetworkCheckable, PublicKey
 use lsp_primitives::lsps1;
 use lsp_primitives::methods;
 
-use cln_lsps0::client::{LspClient, RequestId, LSPS_MESSAGE_ID};
-use cln_lsps0::cln_rpc_client::ClnRpcLspClient;
-use cln_lsps0::custom_msg_hook::RpcCustomMsgMessage;
-use cln_lsps0::transport::RequestResponseMatcher as RRM;
+use cln_lsps::client::{LspClient, RequestId, LSPS_MESSAGE_ID};
+use cln_lsps::cln_rpc_client::ClnRpcLspClient;
+use cln_lsps::custom_msg_hook::RpcCustomMsgMessage;
+use cln_lsps::transport::RequestResponseMatcher as RRM;
 
 type RequestResponseMatcher = RRM<RequestId, serde_json::Value>;
 

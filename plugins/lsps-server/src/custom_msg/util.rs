@@ -3,8 +3,8 @@ use anyhow::Result;
 use cln_rpc::model::requests::SendcustommsgRequest;
 use cln_rpc::ClnRpc;
 
-use cln_lsps0::client::LSPS_MESSAGE_ID;
-use cln_lsps0::custom_msg_hook::RawCustomMsgMessage;
+use cln_lsps::client::LSPS_MESSAGE_ID;
+use cln_lsps::custom_msg_hook::RawCustomMsgMessage;
 use lsp_primitives::json_rpc::JsonRpcResponse;
 use lsp_primitives::lsps0::common_schemas::PublicKey;
 

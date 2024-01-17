@@ -15,7 +15,7 @@ def get_server_plugin_path() -> str:
     cwd = os.getcwd()
     return os.environ.get(
         "LSPS_SERVER_PLUGIN_PATH",
-        os.path.join(cwd, "build/plugins/lsps0-server/lsps0-server"),
+        os.path.join(cwd, "build/plugins/lsps-server/lsps-server"),
     )
 
 
@@ -23,7 +23,7 @@ def get_client_plugin_path() -> str:
     cwd = os.getcwd()
     return os.environ.get(
         "LSPS_CLIENT_PLUGIN_PATH",
-        os.path.join(cwd, "build/plugins/lsps0-client/lsps0-client"),
+        os.path.join(cwd, "build/plugins/lsps-client/lsps-client"),
     )
 
 

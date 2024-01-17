@@ -1,5 +1,5 @@
 [package]
-name = "lsps0-server"
+name = "lsps-server"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 async-trait = "0.1.74"
-cln-lsps0 = { version = "0.1.0", path = "../../libs/cln-lsps0" }
+cln-lsps = { version = "0.1.0", path = "../../libs/cln-lsps" }
 cln-plugin = "0.1.6"
 cln-rpc = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}
 hex = "0.4.3"

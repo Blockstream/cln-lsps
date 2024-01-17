@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 def get_plugin_dir_lsps0_dummy_server() -> str:
     cwd = os.getcwd()
     return os.environ.get(
-        "LSPS0_CLIENT_PATH", os.path.join(cwd, "build/plugins/lsps0-server")
+        "LSPS0_CLIENT_PATH", os.path.join(cwd, "build/plugins/lsps-server")
     )
 
 
 def get_plugin_dir_lsps0_client() -> str:
     cwd = os.getcwd()
     return os.environ.get(
-        "LSPS0_CLIENT_PATH", os.path.join(cwd, "build/plugins/lsps0-client")
+        "LSPS0_CLIENT_PATH", os.path.join(cwd, "build/plugins/lsps-client")
     )
 
 
