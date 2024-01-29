@@ -174,9 +174,8 @@ async fn handle_custom_msg(
         return do_continue();
     }
 
-    // In a production implementation we probably want to exclude to
-    // overly long mesages here as well
-    // TODO: Check message length
+    // BOLT-8 messages are already limited in length.
+    // By consequence, we don't need to check the length of these messages
 
     // We'll expect that all incoming messages are JSON-RPC Requests.
     // Here we parse the JSON and receive a `serde_json::Value`-struct
@@ -193,9 +192,9 @@ async fn handle_custom_msg(
         }
     };
 
-    // Let's try to read id of the JSON-rpc request
+    // Let's try to read the id of the JSON-rpc request
     // If the json doesn't include an id, we'll respond to the peer and tell
-    // them they send an invalid message.
+    // them they've sent an invalid message.
     let id: Option<&serde_json::Value> = json_msg.get("id");
     let id = match id {
         Some(value) => serde_json::from_value::<JsonRpcId>(value.clone()).unwrap(),
@@ -229,6 +228,7 @@ async fn handle_custom_msg(
     let method = match method {
         Ok(m) => m,
         Err(_) => {
+            log::debug!("Invalid rpc-method '{}' from peer '{:?}'", method_str, &peer_id);
             let error = ErrorData::method_not_found(&method_str);
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
             send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
@@ -236,13 +236,8 @@ async fn handle_custom_msg(
         }
     };
 
-    // TODO: Send a nicer response
     let network = parse_network(&plugin.configuration().network).unwrap();
 
-    // Execute the handler for the specific method
-    // Each handler accepts a `CustomMsgContext` containing all relevant information
-    // Each handler returns a `Result<serde_json::Value>`. The handler should return
-    // {"result" : "continue" }
     let mut context = CustomMsgContextBuilder::new()
         .network(network)
         .request(json_rpc_request)
@@ -251,8 +246,7 @@ async fn handle_custom_msg(
         .cln_rpc(cln_rpc)
         .build()?;
 
-    // Process the incoming custom msg
-    // TODO: FInd a way to handle the errors which isn't super verbose
+
     type JRM = JsonRpcMethodEnum;
     let result = match method {
         JRM::Lsps0ListProtocols(m) => do_list_protocols(m, &mut context)
