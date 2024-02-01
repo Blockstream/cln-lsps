@@ -88,7 +88,9 @@ async fn main() -> Result<()> {
         }
         Err(err) => {
             log::warn!("Failed to read configuration for LSPS1");
-            configured_plugin.disable(&format!("Invalid configuration: {}", err)).await?;
+            configured_plugin
+                .disable(&format!("Invalid configuration: {}", err))
+                .await?;
             return Err(err);
         }
     };
@@ -110,8 +112,9 @@ async fn main() -> Result<()> {
             log::warn!("We are currently only supporting sqlite.");
             log::warn!("If the database file doesn't exist the plugin will create it for you");
             log::warn!("If no value is specified we will create the database inside the lightning directory");
-            configured_plugin.disable(&format!(
-                r#"
+            configured_plugin
+                .disable(&format!(
+                    r#"
                 Invalid value `lsp_server_database_connection`
                 The value should be avalid sqlite conncection string. 
                 E.g: sqlite://home/user/data/lsp_server.db
@@ -120,8 +123,9 @@ async fn main() -> Result<()> {
                 If the database file doesn't exist the plugin will create it for you.
                 If no value is specified the database will be created inside the lightnign directory
                 "#
-            )).await?;
-            return Ok(())
+                ))
+                .await?;
+            return Ok(());
         }
     };
 
@@ -228,7 +232,11 @@ async fn handle_custom_msg(
     let method = match method {
         Ok(m) => m,
         Err(_) => {
-            log::debug!("Invalid rpc-method '{}' from peer '{:?}'", method_str, &peer_id);
+            log::debug!(
+                "Invalid rpc-method '{}' from peer '{:?}'",
+                method_str,
+                &peer_id
+            );
             let error = ErrorData::method_not_found(&method_str);
             let rpc_response = JsonRpcResponse::<(), DefaultError>::error(id.clone(), error);
             send_response(&mut cln_rpc, peer_id.clone(), rpc_response).await?;
@@ -245,7 +253,6 @@ async fn handle_custom_msg(
         .peer_id(peer_id.clone())
         .cln_rpc(cln_rpc)
         .build()?;
-
 
     type JRM = JsonRpcMethodEnum;
     let result = match method {

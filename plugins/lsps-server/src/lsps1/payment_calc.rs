@@ -24,7 +24,7 @@ impl<T: FeeCalculator> PaymentCalc<T> {
     ) -> Result<Lsps1PaymentDetails> {
         log::debug!("Computing payment details for order {}", order.uuid);
         // Compute the fee-rate and the bolt11-invoice
-        let fee = self.fee_calc.calculate_fee(context, order.clone())?;
+        let fee = self.fee_calc.calculate_fee(context, order.clone()).await?;
         let bolt_11_invoice_label = format!("lsps1_{}", order.uuid);
         let bolt11_invoice = self
             .construct_bolt11_invoice(context, order, fee.order_total_sat, &bolt_11_invoice_label)

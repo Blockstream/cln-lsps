@@ -29,7 +29,7 @@ pub(crate) const LSPS1_MAX_CHANNEL_BALANCE_SAT: &str = "lsps1-max-channel-balanc
 
 pub(crate) const LSPS1_ORDER_LIFETIME: &str = "lsps1-order-lifetime";
 pub(crate) const LSPS1_FEE_COMPUTATION_BASE_FEE_SAT: &str = "lsps1-fee-computation-base-fee-sat";
-pub(crate) const LSPS1_FEE_COMPUTATION_ONCHAIN_PPM: &str = "lsps1-fee-computation-onchain-ppm";
+pub(crate) const LSPS1_FEE_COMPUTATION_WEIGHT_UNITS: &str = "lsps1-fee-computation-weight-units";
 pub(crate) const LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB: &str = "lsps1-fee-computation-liquidity-ppb";
 pub(crate) const LSP_SERVER_DATABASE_URL: &str = "lsp-server-database-url";
 
@@ -92,15 +92,15 @@ pub fn lsps1_min_onchain_payment_size_sat() -> ConfigOption {
 pub fn lsps1_fee_computation_base_fee_sat() -> ConfigOption {
     ConfigOption::new(
         LSPS1_FEE_COMPUTATION_BASE_FEE_SAT,
-        Value::String("2000".to_string()),
+        Value::Integer(100),
         "Base fee used for onchain cost for fee-computation LSPS1",
     )
 }
 
 pub fn lsps1_fee_computation_onchain_ppm() -> ConfigOption {
     ConfigOption::new(
-        LSPS1_FEE_COMPUTATION_ONCHAIN_PPM,
-        Value::Integer(1_000_000),
+        LSPS1_FEE_COMPUTATION_WEIGHT_UNITS,
+        Value::Integer(500),
         "Multiplier used for onchain-cost for fee-computation LSPS1",
     )
 }
@@ -108,7 +108,7 @@ pub fn lsps1_fee_computation_onchain_ppm() -> ConfigOption {
 pub fn lsps1_fee_computation_liquidity_ppb() -> ConfigOption {
     ConfigOption::new(
         LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB,
-        Value::Integer(400),
+        Value::Integer(200),
         "Multiplier used to represent liquidity cost for fee-computaiton LSPS1",
     )
 }

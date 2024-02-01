@@ -1,10 +1,10 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use uuid::Uuid;
 
 use lsp_primitives::methods;
 
 use lsp_primitives::json_rpc::ErrorData;
-use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, Outpoint, SatAmount};
+use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, Outpoint};
 use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
 use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
 use lsp_primitives::lsps1::schema::{
@@ -16,7 +16,7 @@ use crate::db::schema::Lsps1Order;
 use crate::db::sqlite::queries::{
     GetChannelQuery, GetOrderQuery, GetPaymentDetailsQuery, Lsps1CreateOrderQuery,
 };
-use crate::lsps1::fee_calc::FixedFeeCalculator;
+use crate::lsps1::fee_calc::StandardFeeCalculator;
 use crate::lsps1::msg::{BuildLsps1Order, BuildUsingDbPayment};
 use crate::lsps1::payment_calc::PaymentCalc;
 use crate::{options, PluginState};
@@ -108,12 +108,56 @@ pub(crate) async fn do_lsps1_create_order(
         generation: 0,
     };
 
-    // Compute the fee and cgeneratioionstruct all order details
-    // TODO: Implement an actual mechanism to compute the fee
-    // Ideally, we would have alinear system built-in and
-    // provide hooks to the operator to allow them to implement their
-    // own fees.
-    let fee_calc = FixedFeeCalculator::new(SatAmount::new(10_000));
+    // Compute the fee
+    // TODO: Provide a way to configure the fee calculation
+    let base_fee = context
+        .plugin
+        .option(options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT)
+        .context(format!(
+            "Missing configuration for '{}'",
+            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
+        ))
+        .map_err(ErrorData::internalize)?
+        .as_i64()
+        .context(format!(
+            "Missing configuration for '{}'",
+            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
+        ))
+        .map_err(ErrorData::internalize)?;
+    let weight_units = context
+        .plugin
+        .option(options::LSPS1_FEE_COMPUTATION_WEIGHT_UNITS)
+        .context(format!(
+            "Missing configuration for '{}'",
+            options::LSPS1_FEE_COMPUTATION_WEIGHT_UNITS
+        ))
+        .map_err(ErrorData::internalize)?
+        .as_i64()
+        .context(format!(
+            "Missing configuration for '{}'",
+            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
+        ))
+        .map_err(ErrorData::internalize)?;
+    let sat_per_billion_sat_block = context
+        .plugin
+        .option(options::LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB)
+        .context(format!(
+            "Missing configuration for '{}'",
+            options::LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB
+        ))
+        .map_err(ErrorData::internalize)?
+        .as_i64()
+        .context(format!(
+            "Missing configuration for '{}'",
+            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
+        ))
+        .map_err(ErrorData::internalize)?;
+
+    let fee_calc = StandardFeeCalculator {
+        fixed_msat: base_fee as u64,
+        weight_units: weight_units as u64,
+        sat_per_billion_sat_block: sat_per_billion_sat_block as u64,
+    };
     let mut payment_calc = PaymentCalc { fee_calc };
     let payment = payment_calc
         .compute_payment_details(context, &lsps1_order)
