@@ -44,7 +44,6 @@ pub struct Lsps1CreateOrderRequest {
     pub channel_expiry_blocks: u32,
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,
-    #[serde(rename = "announceChannel")]
     pub announce_channel: bool,
     // Prevents struct initialization. Use Lsps1OptionsBuilder instead
     #[serde(skip_serializing, default)]
@@ -60,7 +59,7 @@ impl ExpectedFields for Lsps1CreateOrderRequest {
             "channel_expiry_blocks".to_string(),
             "token".to_string(),
             "refund_onchain_address".to_string(),
-            "announceChannel".to_string(),
+            "announce_channel".to_string(),
         ]
     }
 }
