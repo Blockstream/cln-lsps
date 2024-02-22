@@ -12,7 +12,7 @@ use std::str::FromStr;
 use anyhow::{Context, Result};
 use log;
 
-use cln_plugin::{Builder, Plugin};
+use cln_plugin::{Builder, Plugin, FeatureBitsKind};
 
 use lsp_primitives::json_rpc::{
     DefaultError, ErrorData, JsonRpcId, JsonRpcRequest, JsonRpcResponse,
@@ -43,6 +43,8 @@ use crate::lsps1::hooks::{
 use crate::network::parse_network;
 use crate::state::PluginState;
 
+const FEATURE_BIT_STRING : & str = "0200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let configured_plugin =
@@ -67,6 +69,7 @@ async fn main() -> Result<()> {
             .option(options::lsps1_max_channel_balance_sat())
             .hook("custommsg", handle_custom_msg)
             .hook("invoice_payment", handle_paid_invoice)
+            .featurebits(FeatureBitsKind::Node, String::from(FEATURE_BIT_STRING))
             .dynamic()
             .configure()
             .await?
