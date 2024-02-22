@@ -5,3 +5,5 @@ pub mod transport;
 pub mod cln_rpc_client;
 // #[cfg(feature="cln-rpc")]
 pub mod custom_msg_hook;
+
+pub use cln_rpc;

@@ -9,8 +9,8 @@ edition = "2021"
 lsp-primitives = { path = "../../libs/lsp-primitives" }
 cln-lsps = {path = "../../libs/cln-lsps" }
 anyhow = "1.0"
-cln-plugin = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}
-cln-rpc = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}
+cln-plugin = {git = "https://github.com/ElementsProject/lightning", rev ="5c475067b8b4845e82d80f2466ef2e7e305215b8"}
+cln-rpc = {git = "https://github.com/ElementsProject/lightning", rev ="5c475067b8b4845e82d80f2466ef2e7e305215b8"}
 log = "0.4"
 serde = "1.0.190"
 serde_json = "1.0.108"
