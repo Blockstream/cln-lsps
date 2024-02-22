@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use uuid::Uuid;
 
 use lsp_primitives::methods;
@@ -24,11 +24,7 @@ use crate::{options, PluginState};
 pub(crate) async fn check_lsps1_enabled(
     context: &mut CustomMsgContext<PluginState>,
 ) -> Result<(), ErrorData> {
-    let lsps1_enabled = context
-        .plugin
-        .option(options::LSPS1_ENABLE)
-        .map(|x| x.as_bool().unwrap_or(false))
-        .unwrap_or(false);
+    let lsps1_enabled = context.plugin.option(&options::lsps1_enable()).unwrap();
 
     if lsps1_enabled {
         Ok(())
@@ -110,48 +106,16 @@ pub(crate) async fn do_lsps1_create_order(
 
     // Compute the fee
     // TODO: Provide a way to configure the fee calculation
-    let base_fee = context
-        .plugin
-        .option(options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT)
-        .context(format!(
-            "Missing configuration for '{}'",
-            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
-        ))
-        .map_err(ErrorData::internalize)?
-        .as_i64()
-        .context(format!(
-            "Missing configuration for '{}'",
-            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
-        ))
-        .map_err(ErrorData::internalize)?;
+    let opt = options::lsps1_fee_computation_base_fee_sat();
+    let base_fee = context.plugin.option(&opt).unwrap();
     let weight_units = context
         .plugin
-        .option(options::LSPS1_FEE_COMPUTATION_WEIGHT_UNITS)
-        .context(format!(
-            "Missing configuration for '{}'",
-            options::LSPS1_FEE_COMPUTATION_WEIGHT_UNITS
-        ))
-        .map_err(ErrorData::internalize)?
-        .as_i64()
-        .context(format!(
-            "Missing configuration for '{}'",
-            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
-        ))
-        .map_err(ErrorData::internalize)?;
+        .option(&options::lsps1_fee_computation_onchain_ppm())
+        .unwrap();
     let sat_per_billion_sat_block = context
         .plugin
-        .option(options::LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB)
-        .context(format!(
-            "Missing configuration for '{}'",
-            options::LSPS1_FEE_COMPUTATION_LIQUIDITY_PPB
-        ))
-        .map_err(ErrorData::internalize)?
-        .as_i64()
-        .context(format!(
-            "Missing configuration for '{}'",
-            options::LSPS1_FEE_COMPUTATION_BASE_FEE_SAT
-        ))
-        .map_err(ErrorData::internalize)?;
+        .option(&options::lsps1_fee_computation_liquidity_ppb())
+        .unwrap();
 
     let fee_calc = StandardFeeCalculator {
         fixed_msat: base_fee as u64,

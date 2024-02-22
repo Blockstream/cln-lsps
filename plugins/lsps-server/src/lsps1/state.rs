@@ -1,97 +1,21 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use lsp_primitives::lsps1::schema::Lsps1Options;
 use lsp_primitives::methods::Lsps1GetInfoResponse;
-use std::convert::TryFrom;
 
-use cln_plugin::options::Value;
 use cln_plugin::ConfiguredPlugin;
 
 use lsp_primitives::lsps0::common_schemas::SatAmount;
 use lsp_primitives::lsps1::builders::{Lsps1InfoResponseBuilder, Lsps1OptionsBuilder};
 use tokio::io::{AsyncRead, AsyncWrite};
 
-use crate::options::{
-    LSPS1_ENABLE, LSPS1_INFO_WEBSITE, LSPS1_MAX_CHANNEL_BALANCE_SAT,
-    LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS, LSPS1_MAX_INITIAL_CLIENT_BALANCE_SAT,
-    LSPS1_MAX_INITIAL_LSP_BALANCE_SAT, LSPS1_MIN_CHANNEL_BALANCE_SAT,
-    LSPS1_MIN_CHANNEL_CONFIRMATIONS, LSPS1_MIN_INITIAL_CLIENT_BALANCE_SAT,
-    LSPS1_MIN_INITIAL_LSP_BALANCE_SAT, LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS,
-    LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT, LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE,
-};
+use crate::options;
 use crate::state::PluginState;
 
-fn parse_opt_str(value: cln_plugin::options::Value, name: &str) -> Result<Option<String>> {
-    match value {
-        Value::String(s) => Ok(Some(s)),
-        Value::OptString => Ok(None),
-        _ => Err(anyhow!("Configured value for '{}' is not a string", name)),
-    }
-}
-
-fn parse_i64(value: cln_plugin::options::Value, name: &str) -> Result<i64> {
-    let v = value.as_i64();
-
-    match v {
-        Some(v) => Ok(v),
-        None => Err(anyhow!(
-            "Invalid configuration {}: Expected number but was {:?}",
-            name,
-            value
-        )),
-    }
-}
-
-fn parse_bool(value: cln_plugin::options::Value, name: &str) -> Result<bool> {
-    let v = value.as_bool();
-
-    match v {
-        Some(v) => Ok(v),
-        None => Err(anyhow!(
-            "Invalid configuration {}: Expected number but was {:?}",
-            name,
-            value
-        )),
-    }
-}
-
-fn parse_num<T>(value: cln_plugin::options::Value, name: &str) -> Result<T>
-where
-    T: TryFrom<i64>,
-{
-    parse_i64(value, name).and_then(|n| {
-        T::try_from(n).map_err(|_| {
-            anyhow::anyhow!(
-                "Invalid configuration {}: Failed to convert {:?} to u8",
-                name,
-                n
-            )
-        })
-    })
-}
-
-fn parse_sat_amount(value: cln_plugin::options::Value, name: &str) -> Result<SatAmount> {
-    let value = parse_opt_sat_amount(value, name)?;
-    match value {
-        Some(value) => Ok(value),
-        None => Err(anyhow!("Missing configuration for '{}'", name)),
-    }
-}
-
-fn parse_opt_sat_amount(
-    value: cln_plugin::options::Value,
-    name: &str,
-) -> Result<Option<SatAmount>> {
-    let value = parse_opt_str(value, name)?;
-    match value {
-        Some(value) => {
-            let sat_value: u64 = value.parse::<u64>().context(format!(
-                "Invalid config '{}': Could not convert {:?} to SatAmount",
-                name, value
-            ))?;
-            return Ok(Some(SatAmount::new(sat_value)));
-        }
-        None => Ok(None),
-    }
+fn create_sat_amount(amount: i64, name: &str) -> Result<SatAmount> {
+    let amount: u64 = amount
+        .try_into()
+        .context(format!("{} should be a positive number", name))?;
+    Ok(SatAmount::new(amount))
 }
 
 // TODO: We don't need the trait-bounds here.
@@ -103,123 +27,82 @@ where
     O: Send,
     O: Unpin + 'static,
 {
-    let minimum_channel_confirmations: Value = plugin
-        .option(LSPS1_MIN_CHANNEL_CONFIRMATIONS)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MIN_CHANNEL_CONFIRMATIONS
-        ))?;
-    let minimum_channel_confirmations: u8 = parse_num::<u8>(
-        minimum_channel_confirmations,
-        LSPS1_MIN_CHANNEL_CONFIRMATIONS,
-    )?;
+    let opt = options::lsps1_minimum_channel_confirmations();
+    let minimum_channel_confirmations: u8 = plugin
+        .option(&opt)
+        .unwrap()
+        .try_into()
+        .context(format!("Option '{}' should be an u8", opt.name))?;
 
-    let minimum_onchain_payment_confirmations: Value = plugin
-        .option(LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS
-        ))?;
-    let minimum_onchain_payment_confirmations: u8 = parse_num::<u8>(
-        minimum_onchain_payment_confirmations,
-        LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS,
-    )?;
+    let opt = options::lsps1_minimum_onchain_payment_confirmations();
+    let minimum_onchain_payment_confirmations: u8 = plugin
+        .option(&opt)
+        .unwrap()
+        .try_into()
+        .context(format!("{} should fit into u8", opt.name))?;
 
-    let supports_zero_channel_reserve: Value = plugin
-        .option(LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE)
-        .context(format!(
-        "Option {} is not defined",
-        LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE
-    ))?;
-    let supports_zero_channel_reserve: bool = parse_bool(
-        supports_zero_channel_reserve,
-        LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE,
-    )?;
+    let opt = options::lsps1_supports_zero_channel_reserve();
+    let supports_zero_channel_reserve: bool = plugin.option(&opt).unwrap();
 
-    let min_onchain_payment_size_sat: Value = plugin
-        .option(LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT
-        ))?;
-    let min_onchain_payment_size_sat: Option<SatAmount> = parse_opt_sat_amount(
-        min_onchain_payment_size_sat,
-        LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT,
-    )?;
+    let opt = options::lsps1_min_onchain_payment_size_sat();
+    let min_onchain_payment_size_sat: Option<SatAmount> = plugin
+        .option(&opt)
+        .unwrap()
+        .map(|x| create_sat_amount(x, opt.name))
+        .transpose()?;
 
-    let max_channel_expiry_blocks: Value =
-        plugin
-            .option(LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS)
-            .context(format!(
-                "Option {} is not defined",
-                LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS
-            ))?;
-    let max_channel_expiry_blocks: u32 =
-        parse_num::<u32>(max_channel_expiry_blocks, LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS)?;
+    let opt = options::lsps1_max_channel_expiry_blocks();
+    let max_channel_expiry_blocks: u32 = plugin
+        .option(&opt)
+        .unwrap()
+        .try_into()
+        .context(format!("Option '{}' should fit into u32", opt.name))?;
 
-    let min_initial_client_balance_sat: Value = plugin
-        .option(LSPS1_MIN_INITIAL_CLIENT_BALANCE_SAT)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MIN_INITIAL_CLIENT_BALANCE_SAT
-        ))?;
-    let min_initial_client_balance_sat: SatAmount = parse_sat_amount(
-        min_initial_client_balance_sat,
-        LSPS1_MIN_INITIAL_CLIENT_BALANCE_SAT,
-    )?;
+    let opt = options::lsps1_min_initial_client_balance_sat();
+    let min_initial_client_balance_sat: i64 = plugin
+        .option(&opt)
+        .unwrap()
+        .context(format!("No value set for option {}", opt.name()))?;
+    let min_initial_client_balance_sat: SatAmount =
+        create_sat_amount(min_initial_client_balance_sat, opt.name)?;
 
-    let max_initial_client_balance_sat: Value = plugin
-        .option(LSPS1_MAX_INITIAL_CLIENT_BALANCE_SAT)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MAX_INITIAL_CLIENT_BALANCE_SAT
-        ))?;
-    let max_initial_client_balance_sat: SatAmount = parse_sat_amount(
-        max_initial_client_balance_sat,
-        LSPS1_MAX_INITIAL_CLIENT_BALANCE_SAT,
-    )?;
+    let opt = options::lsps1_max_initial_client_balance_sat();
+    let max_initial_client_balance_sat: i64 = plugin
+        .option(&opt)
+        .unwrap()
+        .context(format!("No value set for option {}", opt.name))?;
+    let max_initial_client_balance_sat =
+        create_sat_amount(max_initial_client_balance_sat, opt.name)?;
 
-    let min_initial_lsp_balance_sat: Value = plugin
-        .option(LSPS1_MIN_INITIAL_LSP_BALANCE_SAT)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MIN_INITIAL_LSP_BALANCE_SAT
-        ))?;
-    let min_initial_lsp_balance_sat: SatAmount = parse_sat_amount(
-        min_initial_lsp_balance_sat,
-        LSPS1_MIN_INITIAL_LSP_BALANCE_SAT,
-    )?;
+    let opt = options::lsps1_min_initial_lsp_balance_sat();
+    let min_initial_lsp_balance_sat: i64 = plugin
+        .option(&opt)
+        .unwrap()
+        .context(format!("No value set for option {}", opt.name))?;
+    let min_initial_lsp_balance_sat: SatAmount =
+        create_sat_amount(min_initial_lsp_balance_sat, opt.name)?;
 
-    let max_initial_lsp_balance_sat: Value = plugin
-        .option(LSPS1_MAX_INITIAL_LSP_BALANCE_SAT)
-        .context(format!(
-            "Option {} is not defined",
-            LSPS1_MAX_INITIAL_LSP_BALANCE_SAT
-        ))?;
-    let max_initial_lsp_balance_sat: SatAmount = parse_sat_amount(
-        max_initial_lsp_balance_sat,
-        LSPS1_MAX_INITIAL_LSP_BALANCE_SAT,
-    )?;
+    let opt = options::lsps1_max_initial_lsp_balance_sat();
+    let max_initial_lsp_balance_sat: i64 = plugin
+        .option(&opt)
+        .unwrap()
+        .context(format!("No value set for option {}", opt.name))?;
+    let max_initial_lsp_balance_sat: SatAmount =
+        create_sat_amount(max_initial_lsp_balance_sat, opt.name)?;
 
-    let min_channel_balance_sat: Value =
-        plugin
-            .option(LSPS1_MIN_CHANNEL_BALANCE_SAT)
-            .context(format!(
-                "Option {} is not defined",
-                LSPS1_MIN_CHANNEL_BALANCE_SAT
-            ))?;
-    let min_channel_balance_sat: SatAmount =
-        parse_sat_amount(min_channel_balance_sat, LSPS1_MIN_CHANNEL_BALANCE_SAT)?;
+    let opt = options::lsps1_min_channel_balance_sat();
+    let min_channel_balance_sat: i64 = plugin
+        .option(&opt)
+        .unwrap()
+        .context(format!("No value set for option {}", opt.name))?;
+    let min_channel_balance_sat: SatAmount = create_sat_amount(min_channel_balance_sat, opt.name)?;
 
-    let max_channel_balance_sat: Value =
-        plugin
-            .option(LSPS1_MAX_CHANNEL_BALANCE_SAT)
-            .context(format!(
-                "Option {} is not defined",
-                LSPS1_MAX_CHANNEL_BALANCE_SAT
-            ))?;
-    let max_channel_balance_sat: SatAmount =
-        parse_sat_amount(max_channel_balance_sat, LSPS1_MAX_CHANNEL_BALANCE_SAT)?;
+    let opt = options::lsps1_max_channel_balance_sat();
+    let max_channel_balance_sat: i64 = plugin
+        .option(&opt)
+        .unwrap()
+        .context(format!("No value set for option {}", opt.name))?;
+    let max_channel_balance_sat: SatAmount = create_sat_amount(max_channel_balance_sat, opt.name)?;
 
     Lsps1OptionsBuilder {
         min_channel_balance_sat: Some(min_channel_balance_sat),
@@ -244,12 +127,9 @@ where
     O: Send,
     O: Unpin + 'static,
 {
-    let options = get_options(plugin)?;
-
-    let website: Value = plugin
-        .option(LSPS1_INFO_WEBSITE)
-        .context(format!("Option {} is not defined", LSPS1_INFO_WEBSITE))?;
-    let website: Option<String> = parse_opt_str(website, LSPS1_INFO_WEBSITE)?;
+    let options = get_options(&plugin)?;
+    let website_opt = options::lsps1_info_website();
+    let website = plugin.option(&website_opt).unwrap();
 
     Lsps1InfoResponseBuilder::default()
         .options(options)
@@ -266,11 +146,8 @@ where
     O: Send,
     O: Unpin + 'static,
 {
-    let lsps1_enabled = plugin
-        .option(LSPS1_ENABLE)
-        .unwrap()
-        .as_bool()
-        .unwrap_or(false);
+    let lsps1_enabled = plugin.option(&options::lsps1_enable()).unwrap();
+
     if lsps1_enabled {
         let info = get_info(&plugin)?;
         Ok(Some(info))

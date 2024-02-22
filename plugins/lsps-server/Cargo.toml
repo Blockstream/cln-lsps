@@ -9,7 +9,7 @@ edition = "2021"
 anyhow = "1.0.75"
 async-trait = "0.1.77"
 cln-lsps = { version = "0.1.0", path = "../../libs/cln-lsps" }
-cln-plugin = "0.1.6"
+cln-plugin = {git = "https://github.com/ElementsProject/lightning", rev="5c475067b8b4845e82d80f2466ef2e7e305215b8"}
 cln-rpc = {git = "https://github.com/ElementsProject/lightning", rev ="78deb485fbdf0255365bac56c5a9781a3324bd56"}
 hex = "0.4.3"
 log = "0.4.20"
