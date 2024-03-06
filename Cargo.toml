@@ -14,7 +14,5 @@ members = [
 	]
 
 [dependencies]
-lsps-client = { path = "plugins/lsps-client/" }
-lsps-server = { path = "plugins/lsps-server/" }
 lsp-primitives = {path = "libs/lsp-primitives"}
 cln-lsps = {path = "libs/cln-lsps" }

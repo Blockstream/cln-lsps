@@ -1,0 +1,24 @@
+name: rust-unit-tests
+run-name: $${ github.actor }} - Unit Tests
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Create Sqlite database
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: sqlx-cli
+      - run: make db
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --all-features
+          
