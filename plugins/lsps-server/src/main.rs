@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
             .hook("custommsg", handle_custom_msg)
             .hook("invoice_payment", handle_paid_invoice)
             .featurebits(FeatureBitsKind::Node, String::from(FEATURE_BIT_STRING))
-            .dynamic()
+            .featurebits(FeatureBitsKind::Init, String::from(FEATURE_BIT_STRING))
             .configure()
             .await?
         {

@@ -159,10 +159,10 @@ function set_env() {
 	echo "daemon" >> $SERVER_LIGHTNING_CONFIG
 	echo "log-level=DEBUG" >> $SERVER_LIGHTNING_CONFIG
 	echo "log-file=$SERVER_LIGHTNING_DIR/log" >> $SERVER_LIGHTNING_CONFIG
-	echo "plugin=$GIT_ROOT/build/plugins/lsps0-server/lsps0-server" >> $SERVER_LIGHTNING_CONFIG
+	echo "plugin=$GIT_ROOT/build/plugins/lsps-server/lsps-server" >> $SERVER_LIGHTNING_CONFIG
 	echo "addr=localhost:20202" >> $SERVER_LIGHTNING_CONFIG
 	echo "alias=LSP-server" >> $SERVER_LIGHTNING_CONFIG
-	echo "lsps1-enable=true" >> $SERVER_LIGHTNING_CONFIG
+	echo "lsps1-enable" >> $SERVER_LIGHTNING_CONFIG
 	echo "lsps1-min-initial-client-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
 	echo "lsps1-max-initial-client-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
 	echo "lsps1-min-initial-lsp-balance-sat=0" >> $SERVER_LIGHTNING_CONFIG
@@ -175,7 +175,7 @@ function set_env() {
 	echo "disable-plugin=clnrest" >> $CLIENT_LIGHTNING_CONFIG
 	echo "daemon" >> $CLIENT_LIGHTNING_CONFIG
 	echo "log-file=$CLIENT_LIGHTNING_DIR/log" >> $CLIENT_LIGHTNING_CONFIG
-	echo "plugin=$GIT_ROOT/build/plugins/lsps0-client/lsps0-client" >> $CLIENT_LIGHTNING_CONFIG
+	echo "plugin=$GIT_ROOT/build/plugins/lsps-client/lsps-client" >> $CLIENT_LIGHTNING_CONFIG
 	echo "plugin=$GIT_ROOT/test/plugins/accept_channel_slowly.py" >> $CLIENT_LIGHTNING_CONFIG
 	echo "addr=localhost:20401" >> $CLIENT_LIGHTNING_CONFIG
 	echo "alias=LSP-client" >> $CLIENT_LIGHTNING_CONFIG
