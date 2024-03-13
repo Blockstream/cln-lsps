@@ -315,8 +315,6 @@ version = "0.1.0"
 dependencies = [
  "cln-lsps",
  "lsp-primitives",
- "lsps-client",
- "lsps-server",
 ]
 
 [[package]]
