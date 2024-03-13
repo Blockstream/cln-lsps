@@ -1,5 +1,6 @@
 use anyhow::Result;
 use uuid::Uuid;
+use std::time::Duration;
 
 use lsp_primitives::methods;
 
@@ -64,7 +65,7 @@ pub(crate) async fn do_lsps1_create_order(
     // Define the relevant timestamps
     let now = IsoDatetime::now();
     let created_at = now.clone();
-    let expires_at = now.clone();
+    let expires_at = IsoDatetime::from_offset_date_time(created_at.datetime() + Duration::from_secs(3600));
 
     let order = typed_request.params;
     order
