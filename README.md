@@ -1,11 +1,10 @@
 # A core Lightning LSPS implementation
 
 > [!WARNING]
-> This is code experimental. 
+> This is code experimental and using it might result in loss of funds
 >
-> The LSP-spec isn't final yet and breaking changes might occur.
-> The code in this repository hasn't undergone any peer review (yet).
-> The code might contain bugs or vulnerabilites that might put your funds at risk.
+> - The LSP-spec isn't final yet and breaking changes might occur.
+> - No code in this repository has been formally peer review (yet).
 
 This is a Core Lightning implementation for the Lightning Serverice Provider Specification or [LSPS](https://github.com/BitcoinAndLightningLayerSpecs/lsp) for short.
 
