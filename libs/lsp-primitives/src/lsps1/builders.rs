@@ -53,7 +53,6 @@ impl Lsps1InfoResponseBuilder {
         let result = Lsps1GetInfoResponse {
             website,
             options,
-            _private: (),
         };
 
         Ok(result)
@@ -203,7 +202,6 @@ impl Lsps1OptionsBuilder {
             max_initial_lsp_balance_sat,
             min_channel_balance_sat,
             max_channel_balance_sat,
-            _private: (),
         })
     }
 }
@@ -288,7 +286,6 @@ impl Lsps1CreateOrderRequestBuilder {
             token,
             refund_onchain_address,
             announce_channel,
-            _private: (),
         };
 
         Ok(request)
@@ -424,7 +421,6 @@ impl Lsps1CreateOrderResponseBuilder {
             order_state,
             payment,
             channel,
-            _private: (),
         };
 
         Ok(request)
@@ -463,7 +459,6 @@ impl OnchainPaymentBuilder {
             outpoint,
             sat,
             confirmed,
-            _private: (),
         };
 
         Ok(payment)
@@ -504,7 +499,6 @@ impl Lsps1GetOrderRequestBuilder {
             order_id: self
                 .order_id
                 .context("Missing field 'order_id' in Lsps1GetOrderRequestBuilder")?,
-            _private: (),
         })
     }
 }
@@ -597,7 +591,6 @@ impl PaymentBuilder {
             min_onchain_payment_confirmations: required_onchain_block_confirmations,
             min_fee_for_0conf: minimum_fee_for_0conf,
             onchain_payment,
-            _private: (),
         };
 
         Ok(payment)
