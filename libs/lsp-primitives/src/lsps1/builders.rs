@@ -23,18 +23,12 @@ impl LspsInfoRequestBuilder {
 
 #[derive(Default, Debug)]
 pub struct Lsps1InfoResponseBuilder {
-    website: Option<String>,
     options: Option<Lsps1Options>,
 }
 
 impl Lsps1InfoResponseBuilder {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    pub fn website(mut self, website: Option<String>) -> Self {
-        self.website = website;
-        self
     }
 
     pub fn options(mut self, options: Lsps1Options) -> Self {
@@ -47,11 +41,7 @@ impl Lsps1InfoResponseBuilder {
             .options
             .context("Missing field 'options' in Lsps1InfoResponseBuilder")?;
 
-        // Optional fields
-        let website = self.website;
-
-        let result = Lsps1GetInfoResponse { website, options };
-
+        let result = Lsps1GetInfoResponse { options };
         Ok(result)
     }
 }
