@@ -22,7 +22,6 @@ impl ListprotocolsResponseBuilder {
 
         let result = ListprotocolsResponse {
             protocols,
-            _private: (),
         };
 
         Ok(result)

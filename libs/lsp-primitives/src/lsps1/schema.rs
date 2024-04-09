@@ -13,8 +13,6 @@ pub struct Lsps1GetInfoResponse {
     pub website: Option<String>,
     pub options: Lsps1Options,
     // Prevents struct initialization. Use Lsps1InfoResponseBuilder instead
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 /// Options returned when calling lsps1.info
@@ -31,9 +29,6 @@ pub struct Lsps1Options {
     pub max_initial_lsp_balance_sat: SatAmount,
     pub min_channel_balance_sat: SatAmount,
     pub max_channel_balance_sat: SatAmount,
-    // Prevents struct initialization. Use Lsps1OptionsBuilder instead
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -45,9 +40,6 @@ pub struct Lsps1CreateOrderRequest {
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,
     pub announce_channel: bool,
-    // Prevents struct initialization. Use Lsps1OptionsBuilder instead
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 impl ExpectedFields for Lsps1CreateOrderRequest {
@@ -80,9 +72,6 @@ pub struct Lsps1CreateOrderResponse {
 
     pub payment: Payment,
     pub channel: Option<Channel>,
-    // Prevents struct initialization. Use Lsps1OptionsBuilder instead
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -112,9 +101,6 @@ pub struct OnchainPayment {
     pub outpoint: String,
     pub sat: SatAmount,
     pub confirmed: bool,
-    // Prevents struct initialization. Use OnchainPaymentBuilder instead
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -129,10 +115,6 @@ pub struct Payment {
 
     pub min_fee_for_0conf: Option<FeeRate>,
     pub onchain_payment: Option<OnchainPayment>,
-
-    // Prevents struct initialization. Use PaymentBuilder instead
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -146,8 +128,6 @@ pub struct Channel {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lsps1GetOrderRequest {
     pub order_id: String,
-    #[serde(skip_serializing, default)]
-    pub(crate) _private: (),
 }
 
 impl ExpectedFields for Lsps1GetOrderRequest {
@@ -224,7 +204,6 @@ mod test {
             token: None,
             refund_onchain_address: Some(onchain),
             announce_channel: false,
-            _private: (),
         };
 
         let _ = serde_json::to_value(request).unwrap();
