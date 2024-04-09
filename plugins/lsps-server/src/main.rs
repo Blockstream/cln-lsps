@@ -51,7 +51,6 @@ async fn main() -> Result<()> {
         match Builder::<PluginState, _, _>::new(tokio::io::stdin(), tokio::io::stdout())
             .option(options::lsp_server_database_url())
             .option(options::lsps1_enable())
-            .option(options::lsps1_info_website())
             .option(options::lsps1_min_required_channel_confirmations())
             .option(options::lsps1_min_onchain_payment_confirmations())
             .option(options::lsps1_supports_zero_channel_reserve())

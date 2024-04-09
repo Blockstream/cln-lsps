@@ -137,13 +137,8 @@ where
     O: Unpin + 'static,
 {
     let options = get_options(&plugin)?;
-    let website_opt = options::lsps1_info_website();
-    let website = plugin.option(&website_opt).unwrap();
 
-    Lsps1InfoResponseBuilder::default()
-        .options(options)
-        .website(website)
-        .build()
+    Lsps1InfoResponseBuilder::default().options(options).build()
 }
 
 pub fn get_state<I, O>(

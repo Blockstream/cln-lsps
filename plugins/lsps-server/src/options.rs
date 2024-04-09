@@ -10,7 +10,6 @@ use cln_plugin::options;
 // the options are sensible and spec-compliant.
 
 pub(crate) const LSPS1_ENABLE: &str = "lsps1-enable";
-pub(crate) const LSPS1_INFO_WEBSITE: &str = "lsps1-info-website";
 pub(crate) const LSPS1_MIN_CHANNEL_CONFIRMATIONS: &str = "lsps1-min-required-channel-confirmations";
 pub(crate) const LSPS1_MIN_FUNDING_CONFIRMS_WITHIN_BLOCKS: &str =
     "lsps1-min-funding-confirms-within-blocks";
@@ -37,13 +36,6 @@ pub(crate) const LSP_SERVER_DATABASE_URL: &str = "lsp-server-database-url";
 
 pub fn lsps1_enable() -> options::FlagConfigOption<'static> {
     options::FlagConfigOption::new_flag(LSPS1_ENABLE, "If set LSPS1 is enabled")
-}
-
-pub fn lsps1_info_website() -> options::StringConfigOption<'static> {
-    options::StringConfigOption::new_str_no_default(
-        LSPS1_INFO_WEBSITE,
-        "The website advertised in LSPS1",
-    )
 }
 
 pub fn lsps1_min_required_channel_confirmations() -> options::DefaultIntegerConfigOption<'static> {
