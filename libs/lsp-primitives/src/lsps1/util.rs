@@ -115,8 +115,9 @@ mod tests {
 
     fn get_options_builder() -> Lsps1OptionsBuilder {
         Lsps1OptionsBuilder::new()
-            .minimum_channel_confirmations(0)
-            .minimum_onchain_payment_confirmations(None)
+            .min_required_channel_confirmations(0)
+            .min_onchain_payment_confirmations(None)
+            .min_funding_confirms_within_blocks(10)
             .supports_zero_channel_reserve(true)
             .min_onchain_payment_size_sat(None)
             .max_channel_expiry_blocks(1_000)

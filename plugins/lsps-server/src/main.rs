@@ -12,7 +12,7 @@ use std::str::FromStr;
 use anyhow::{Context, Result};
 use log;
 
-use cln_plugin::{Builder, Plugin, FeatureBitsKind};
+use cln_plugin::{Builder, FeatureBitsKind, Plugin};
 
 use lsp_primitives::json_rpc::{
     DefaultError, ErrorData, JsonRpcId, JsonRpcRequest, JsonRpcResponse,
@@ -52,8 +52,8 @@ async fn main() -> Result<()> {
             .option(options::lsp_server_database_url())
             .option(options::lsps1_enable())
             .option(options::lsps1_info_website())
-            .option(options::lsps1_minimum_channel_confirmations())
-            .option(options::lsps1_minimum_onchain_payment_confirmations())
+            .option(options::lsps1_min_required_channel_confirmations())
+            .option(options::lsps1_min_onchain_payment_confirmations())
             .option(options::lsps1_supports_zero_channel_reserve())
             .option(options::lsps1_max_channel_expiry_blocks())
             .option(options::lsps1_min_onchain_payment_size_sat())

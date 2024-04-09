@@ -1,7 +1,5 @@
 use crate::json_rpc::NoParams;
-use crate::lsps0::common_schemas::{
-    FeeRate, IsoDatetime, OnchainAddress, Outpoint, SatAmount
-};
+use crate::lsps0::common_schemas::{FeeRate, IsoDatetime, OnchainAddress, Outpoint, SatAmount};
 use crate::lsps0::parameter_validation::ExpectedFields;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -18,7 +16,8 @@ pub struct Lsps1GetInfoResponse {
 /// Options returned when calling lsps1.info
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1Options {
-    pub min_channel_confirmations: u8,
+    pub min_required_channel_confirmations: u8,
+    pub min_funding_confirms_within_blocks: u8,
     pub min_onchain_payment_confirmations: Option<u8>,
     pub supports_zero_channel_reserve: bool,
     pub min_onchain_payment_size_sat: Option<SatAmount>,
@@ -124,7 +123,6 @@ pub struct Channel {
     pub expires_at: IsoDatetime,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lsps1GetOrderRequest {
     pub order_id: String,
@@ -148,8 +146,9 @@ mod test {
         // Example is copie pasted from the spec
         let json_data = serde_json::json!(
         {
-            "min_channel_confirmations": 0,
+            "min_required_channel_confirmations": 0,
             "min_onchain_payment_confirmations": 1,
+            "min_funding_confirms_within_blocks": 10,
             "supports_zero_channel_reserve": true,
             "min_onchain_payment_size_sat": null,
             "max_channel_expiry_blocks": 20160,
@@ -173,7 +172,8 @@ mod test {
          "supported_versions": [1],
          "website": "http://example.com/contact",
          "options": {
-             "min_channel_confirmations": 0,
+             "min_required_channel_confirmations": 0,
+             "min_funding_confirms_within_blocks": 12,
              "min_onchain_payment_confirmations": 1,
              "supports_zero_channel_reserve": true,
              "min_onchain_payment_size_sat": null,

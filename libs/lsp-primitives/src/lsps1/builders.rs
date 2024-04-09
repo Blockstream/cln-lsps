@@ -50,10 +50,7 @@ impl Lsps1InfoResponseBuilder {
         // Optional fields
         let website = self.website;
 
-        let result = Lsps1GetInfoResponse {
-            website,
-            options,
-        };
+        let result = Lsps1GetInfoResponse { website, options };
 
         Ok(result)
     }
@@ -61,8 +58,9 @@ impl Lsps1InfoResponseBuilder {
 
 #[derive(Default, Debug)]
 pub struct Lsps1OptionsBuilder {
-    pub minimum_channel_confirmations: Option<u8>,
-    pub minimum_onchain_payment_confirmations: Option<u8>,
+    pub min_required_channel_confirmations: Option<u8>,
+    pub min_funding_confirms_within_blocks: Option<u8>,
+    pub min_onchain_payment_confirmations: Option<u8>,
     pub supports_zero_channel_reserve: Option<bool>,
     pub min_onchain_payment_size_sat: Option<SatAmount>,
     pub max_channel_expiry_blocks: Option<u32>,
@@ -79,16 +77,27 @@ impl Lsps1OptionsBuilder {
         Self::default()
     }
 
-    pub fn minimum_channel_confirmations(mut self, minimum_channel_confirmations: u8) -> Self {
-        self.minimum_channel_confirmations = Some(minimum_channel_confirmations);
+    pub fn min_required_channel_confirmations(
+        mut self,
+        min_required_channel_confirmations: u8,
+    ) -> Self {
+        self.min_required_channel_confirmations = Some(min_required_channel_confirmations);
         self
     }
 
-    pub fn minimum_onchain_payment_confirmations(
+    pub fn min_funding_confirms_within_blocks(
         mut self,
-        minimum_onchain_payment_confirmations: Option<u8>,
+        min_funding_confirms_within_blocks: u8,
     ) -> Self {
-        self.minimum_onchain_payment_confirmations = minimum_onchain_payment_confirmations;
+        self.min_funding_confirms_within_blocks = Some(min_funding_confirms_within_blocks);
+        self
+    }
+
+    pub fn min_onchain_payment_confirmations(
+        mut self,
+        min_onchain_payment_confirmations: Option<u8>,
+    ) -> Self {
+        self.min_onchain_payment_confirmations = min_onchain_payment_confirmations;
         self
     }
 
@@ -147,8 +156,11 @@ impl Lsps1OptionsBuilder {
     }
 
     pub fn build(self) -> Result<Lsps1Options> {
-        let minimum_channel_confirmations = self.minimum_channel_confirmations.context(
-            "No value specified for 'minimum_channel_confirmations' in Lsps1OptionBuilder",
+        let min_required_channel_confirmations = self.min_required_channel_confirmations.context(
+            "No value specified for 'min_required_channel_confirmations' in Lsps1OptionBuilder",
+        )?;
+        let min_funding_confirms_within_blocks = self.min_funding_confirms_within_blocks.context(
+            "No value specified for 'min_funding_confirms_within_blocks' in Lsps1OptionBuilder",
         )?;
         let supports_zero_channel_reserve = self.supports_zero_channel_reserve.context(
             "No value specified for 'supports_zero_channel_reserve' in Lsps1OptionsBuilder",
@@ -178,7 +190,7 @@ impl Lsps1OptionsBuilder {
 
         // Maybe NULL if the LSP doesn't support on chain payments
         let min_onchain_payment_size_sat = self.min_onchain_payment_size_sat;
-        let minimum_onchain_payment_confirmations = self.minimum_onchain_payment_confirmations;
+        let min_onchain_payment_confirmations = self.min_onchain_payment_confirmations;
 
         if min_channel_balance_sat > max_channel_balance_sat {
             return Err(anyhow!("min_channel_balance_sat ({}) should be less than or equal to max_channel_balance_sat ({})", min_channel_balance_sat, max_channel_balance_sat));
@@ -191,8 +203,9 @@ impl Lsps1OptionsBuilder {
         }
 
         Ok(Lsps1Options {
-            min_channel_confirmations: minimum_channel_confirmations,
-            min_onchain_payment_confirmations: minimum_onchain_payment_confirmations,
+            min_required_channel_confirmations,
+            min_funding_confirms_within_blocks,
+            min_onchain_payment_confirmations,
             supports_zero_channel_reserve,
             min_onchain_payment_size_sat,
             max_channel_expiry_blocks,
@@ -614,8 +627,9 @@ mod tests {
         // I picked unique values on each field to test that I am not switching
         // values by accident
         let lsps1_options = Lsps1OptionsBuilder::new()
-            .minimum_channel_confirmations(6)
-            .minimum_onchain_payment_confirmations(Some(6))
+            .min_required_channel_confirmations(6)
+            .min_onchain_payment_confirmations(None)
+            .min_funding_confirms_within_blocks(6)
             .supports_zero_channel_reserve(false)
             .max_channel_expiry_blocks(5)
             .min_onchain_payment_size_sat(Some(SatAmount::new(10_000)))
@@ -628,8 +642,9 @@ mod tests {
             .build()
             .unwrap();
 
-        assert_eq!(lsps1_options.min_channel_confirmations, 6);
-        assert_eq!(lsps1_options.min_onchain_payment_confirmations, Some(6));
+        assert_eq!(lsps1_options.min_required_channel_confirmations, 6);
+        assert_eq!(lsps1_options.min_onchain_payment_confirmations, None);
+        assert_eq!(lsps1_options.min_funding_confirms_within_blocks, 6);
         assert!(!lsps1_options.supports_zero_channel_reserve);
         assert_eq!(lsps1_options.max_channel_expiry_blocks, 5);
         assert_eq!(
@@ -662,8 +677,9 @@ mod tests {
     #[test]
     fn options_can_be_constructed_without_optional_params() {
         let lsps1_options = Lsps1OptionsBuilder::new()
-            .minimum_channel_confirmations(6)
+            .min_required_channel_confirmations(6)
             .supports_zero_channel_reserve(false)
+            .min_funding_confirms_within_blocks(6)
             .max_channel_expiry_blocks(5)
             .min_channel_balance_sat(SatAmount::new(50_001))
             .max_channel_balance_sat(SatAmount::new(100_001))
@@ -681,7 +697,8 @@ mod tests {
     #[test]
     fn options_min_channel_balance_should_be_less_than_max() {
         let error = Lsps1OptionsBuilder::new()
-            .minimum_channel_confirmations(6)
+            .min_required_channel_confirmations(6)
+            .min_funding_confirms_within_blocks(6)
             .supports_zero_channel_reserve(false)
             .max_channel_expiry_blocks(5)
             .min_channel_balance_sat(SatAmount::new(100_001)) // Max > min
@@ -699,7 +716,8 @@ mod tests {
     #[test]
     fn options_min_initial_client_balance_sat_should_be_less_than_max() {
         let error = Lsps1OptionsBuilder::new()
-            .minimum_channel_confirmations(6)
+            .min_required_channel_confirmations(6)
+            .min_funding_confirms_within_blocks(0)
             .supports_zero_channel_reserve(false)
             .max_channel_expiry_blocks(5)
             .min_channel_balance_sat(SatAmount::new(10_000))
@@ -717,7 +735,8 @@ mod tests {
     #[test]
     fn options_min_initial_lsp_balance_sat_should_be_less_than_max() {
         let error = Lsps1OptionsBuilder::new()
-            .minimum_channel_confirmations(6)
+            .min_required_channel_confirmations(6)
+            .min_funding_confirms_within_blocks(0)
             .supports_zero_channel_reserve(false)
             .max_channel_expiry_blocks(5)
             .min_channel_balance_sat(SatAmount::new(10_000))

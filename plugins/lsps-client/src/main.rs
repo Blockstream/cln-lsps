@@ -1,8 +1,8 @@
 mod plugin_rpc;
 
 use anyhow::{anyhow, Context, Result};
-use cln_plugin::{Builder, Error, Plugin};
 use cln_lsps::cln_rpc::ClnRpc;
+use cln_plugin::{Builder, Error, Plugin};
 use tokio;
 
 use serde::{Deserialize, Serialize};
