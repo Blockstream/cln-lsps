@@ -84,7 +84,7 @@ pub(crate) async fn invoice_payment(
         .lsps1_info
         .as_ref()
         .as_ref()
-        .map(|x| x.options.min_channel_confirmations);
+        .map(|x| x.options.min_required_channel_confirmations);
 
     let channel_details = ChannelDetails {
         peer_id: order_details.client_node_id,

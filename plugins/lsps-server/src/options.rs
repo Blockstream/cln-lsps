@@ -11,9 +11,11 @@ use cln_plugin::options;
 
 pub(crate) const LSPS1_ENABLE: &str = "lsps1-enable";
 pub(crate) const LSPS1_INFO_WEBSITE: &str = "lsps1-info-website";
-pub(crate) const LSPS1_MIN_CHANNEL_CONFIRMATIONS: &str = "lsps1-minimum-channel-confirmations";
+pub(crate) const LSPS1_MIN_CHANNEL_CONFIRMATIONS: &str = "lsps1-min-required-channel-confirmations";
+pub(crate) const LSPS1_MIN_FUNDING_CONFIRMS_WITHIN_BLOCKS: &str =
+    "lsps1-min-funding-confirms-within-blocks";
 pub(crate) const LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS: &str =
-    "lsps1-minimum-onchain-payment-confirmations";
+    "lsps1-min-onchain-payment-confirmations";
 pub(crate) const LSPS1_SUPPORTS_ZERO_CHANNEL_RESERVE: &str = "lsps1-supports-zero-channel-reserve";
 pub(crate) const LSPS1_MAX_CHANNEL_EXPIRY_BLOCKS: &str = "lsps1-max-channel-expiry-blocks";
 pub(crate) const LSPS1_MIN_ONCHAIN_PAYMENT_SIZE_SAT: &str = "lsps1-min-onchain-payment-size-sat";
@@ -44,7 +46,7 @@ pub fn lsps1_info_website() -> options::StringConfigOption<'static> {
     )
 }
 
-pub fn lsps1_minimum_channel_confirmations() -> options::DefaultIntegerConfigOption<'static> {
+pub fn lsps1_min_required_channel_confirmations() -> options::DefaultIntegerConfigOption<'static> {
     options::DefaultIntegerConfigOption::new_i64_with_default(
         LSPS1_MIN_CHANNEL_CONFIRMATIONS,
         6,
@@ -52,11 +54,9 @@ pub fn lsps1_minimum_channel_confirmations() -> options::DefaultIntegerConfigOpt
         )
 }
 
-pub fn lsps1_minimum_onchain_payment_confirmations() -> options::DefaultIntegerConfigOption<'static>
-{
-    options::DefaultIntegerConfigOption::new_i64_with_default(
+pub fn lsps1_min_onchain_payment_confirmations() -> options::IntegerConfigOption<'static> {
+    options::IntegerConfigOption::new_i64_no_default(
         LSPS1_MIN_ONCHAIN_PAYMENT_CONFIRMATIONS,
-        6,
         "Minimum number of block confirmations before the LSP accepts an on-chain payment as confirmed. This is a lower bound."
     )
 }
@@ -161,5 +161,13 @@ pub fn lsps1_max_channel_balance_sat() -> options::IntegerConfigOption<'static> 
     options::IntegerConfigOption::new_i64_no_default(
         LSPS1_MAX_CHANNEL_BALANCE_SAT,
         "Minimum numbers of satoshis the server will provide",
+    )
+}
+
+pub fn lsps1_min_funding_confirms_within_blocks() -> options::DefaultIntegerConfigOption<'static> {
+    options::DefaultIntegerConfigOption::new_i64_with_default(
+        LSPS1_MIN_FUNDING_CONFIRMS_WITHIN_BLOCKS,
+        0,
+        "The fastest speed at which the LSP can confirm a block",
     )
 }

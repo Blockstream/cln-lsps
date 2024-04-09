@@ -27,19 +27,20 @@ where
     O: Send,
     O: Unpin + 'static,
 {
-    let opt = options::lsps1_minimum_channel_confirmations();
-    let minimum_channel_confirmations: u8 = plugin
+    let opt = options::lsps1_min_required_channel_confirmations();
+    let min_required_channel_confirmations: u8 = plugin
         .option(&opt)
         .unwrap()
         .try_into()
         .context(format!("Option '{}' should be an u8", opt.name))?;
 
-    let opt = options::lsps1_minimum_onchain_payment_confirmations();
-    let minimum_onchain_payment_confirmations: u8 = plugin
+    let opt = options::lsps1_min_onchain_payment_confirmations();
+    let min_onchain_payment_confirmations: Option<u8> = plugin
         .option(&opt)
         .unwrap()
-        .try_into()
-        .context(format!("{} should fit into u8", opt.name))?;
+        .map(|x| x.try_into())
+        .transpose()
+        .context("min_onchain_payment_confirmations does not fit into u8")?;
 
     let opt = options::lsps1_supports_zero_channel_reserve();
     let supports_zero_channel_reserve: bool = plugin.option(&opt).unwrap();
@@ -104,18 +105,26 @@ where
         .context(format!("No value set for option {}", opt.name))?;
     let max_channel_balance_sat: SatAmount = create_sat_amount(max_channel_balance_sat, opt.name)?;
 
+    let opt = options::lsps1_min_funding_confirms_within_blocks();
+    let min_funding_confirms_within_blocks: u8 = plugin
+        .option(&opt)
+        .unwrap()
+        .try_into()
+        .context(format!("{} should fit into u8", opt.name))?;
+
     Lsps1OptionsBuilder {
+        min_funding_confirms_within_blocks: Some(min_funding_confirms_within_blocks),
         min_channel_balance_sat: Some(min_channel_balance_sat),
         max_channel_balance_sat: Some(max_channel_balance_sat),
         min_initial_client_balance_sat: Some(min_initial_client_balance_sat),
         max_initial_client_balance_sat: Some(max_initial_client_balance_sat),
         min_initial_lsp_balance_sat: Some(min_initial_lsp_balance_sat),
         max_initial_lsp_balance_sat: Some(max_initial_lsp_balance_sat),
-        minimum_channel_confirmations: Some(minimum_channel_confirmations),
-        minimum_onchain_payment_confirmations: Some(minimum_onchain_payment_confirmations),
+        min_required_channel_confirmations: Some(min_required_channel_confirmations),
         supports_zero_channel_reserve: Some(supports_zero_channel_reserve),
-        min_onchain_payment_size_sat: min_onchain_payment_size_sat,
         max_channel_expiry_blocks: Some(max_channel_expiry_blocks),
+        min_onchain_payment_confirmations,
+        min_onchain_payment_size_sat,
     }
     .build()
 }

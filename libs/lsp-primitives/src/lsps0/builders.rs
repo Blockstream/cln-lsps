@@ -20,9 +20,7 @@ impl ListprotocolsResponseBuilder {
     pub fn build(self) -> Result<ListprotocolsResponse> {
         let protocols = self.protocols.context("Missing field 'protocols'")?;
 
-        let result = ListprotocolsResponse {
-            protocols,
-        };
+        let result = ListprotocolsResponse { protocols };
 
         Ok(result)
     }
