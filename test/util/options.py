@@ -12,7 +12,7 @@ def developer_options() -> t.Dict[str, t.Any]:
 
 def lsps1_server_options() -> t.Dict[str, t.Any]:
     return {
-        "lsps1-enable": True,
+        "lsps1-enable": None,
         "lsps1-min-channel-balance-sat": "0",
         "lsps1-max-channel-balance-sat": "1000000",
         "lsps1-min-initial-client-balance-sat": "0",

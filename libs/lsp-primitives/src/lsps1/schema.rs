@@ -63,7 +63,6 @@ pub struct Lsps1CreateOrderResponse {
     pub confirms_within_blocks: u8,
     pub channel_expiry_blocks: u32,
     pub token: String,
-    #[serde(rename = "announceChannel")]
     pub announce_channel: bool,
     pub created_at: IsoDatetime,
     pub expires_at: IsoDatetime,
