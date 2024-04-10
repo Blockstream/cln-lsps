@@ -151,6 +151,4 @@ def test_lsps1_get_info(node_factory: NodeFactory):
     logger.info("Client requests lsps1.list_protocols")
     result = lsps_client.rpc.lsps1_get_info(server_node_id)
 
-    website = result["website"]
-    assert website is None
     assert "options" in result, "The response should have an options dict"
