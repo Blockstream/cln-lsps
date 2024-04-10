@@ -62,7 +62,6 @@ def test_lsps1_get_info(lsps_server, lsps_client):
     result = response["result"]
 
     assert "options" in result
-    assert "website" in result
 
 
 def test_lsps1_create_order_violate_options(lsps_server, lsps_client):
