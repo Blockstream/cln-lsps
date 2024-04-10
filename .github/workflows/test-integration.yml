@@ -1,0 +1,13 @@
+name: integration-tests
+run-name: python - Integration Tests
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: docker-build
+        run: docker build -f docker/Dockerfile -t lsp-testing .
+      - name: docker-test
+        run: docker run lsp-testing python -m pytest
