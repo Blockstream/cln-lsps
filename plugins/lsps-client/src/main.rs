@@ -13,7 +13,7 @@ use lsp_primitives::lsps0::common_schemas::{Network, NetworkCheckable, PublicKey
 use lsp_primitives::lsps1;
 use lsp_primitives::methods;
 
-use cln_lsps::client::{LspClient, RequestId, LSPS_MESSAGE_ID};
+use cln_lsps::client::{LspClient, RequestId, LSPS_MESSAGE_ID, LSPS_MESSAGE_ID_U16};
 use cln_lsps::cln_rpc_client::ClnRpcLspClient;
 use cln_lsps::custom_msg_hook::RpcCustomMsgMessage;
 use cln_lsps::transport::RequestResponseMatcher as RRM;
@@ -55,6 +55,7 @@ async fn main() -> Result<()> {
             .rpcmethod_from_builder(crate::plugin_rpc::lsps1_create_order())
             .rpcmethod_from_builder(crate::plugin_rpc::lsps1_get_order())
             .hook("custommsg", handle_custom_msg)
+            .custommessages(vec![LSPS_MESSAGE_ID_U16])
             .dynamic()
             .configure()
             .await?

@@ -26,6 +26,7 @@ impl RequestId {
 
 // BOLT8 message ID 37913
 pub const LSPS_MESSAGE_ID: [u8; 2] = [0x94, 0x19];
+pub const LSPS_MESSAGE_ID_U16: u16 = 30971;
 pub const TIMEOUT_MILLIS: u128 = 30_000;
 
 /// The LspClient
