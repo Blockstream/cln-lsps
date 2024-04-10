@@ -23,7 +23,7 @@ use lsp_primitives::lsps0::schema::ListprotocolsResponse;
 use lsp_primitives::methods;
 use lsp_primitives::methods::JsonRpcMethodEnum;
 
-use cln_lsps::client::LSPS_MESSAGE_ID;
+use cln_lsps::client::{LSPS_MESSAGE_ID, LSPS_MESSAGE_ID_U16};
 use cln_lsps::custom_msg_hook::RpcCustomMsgMessage;
 
 use serde_json::json;
@@ -53,6 +53,7 @@ async fn main() -> Result<()> {
             .option(options::lsps1_enable())
             .option(options::lsps1_min_required_channel_confirmations())
             .option(options::lsps1_min_onchain_payment_confirmations())
+            .option(options::lsps1_min_funding_confirms_within_blocks())
             .option(options::lsps1_supports_zero_channel_reserve())
             .option(options::lsps1_max_channel_expiry_blocks())
             .option(options::lsps1_min_onchain_payment_size_sat())
@@ -66,6 +67,7 @@ async fn main() -> Result<()> {
             .option(options::lsps1_max_initial_lsp_balance_sat())
             .option(options::lsps1_min_channel_balance_sat())
             .option(options::lsps1_max_channel_balance_sat())
+            .custommessages(vec![LSPS_MESSAGE_ID_U16])
             .hook("custommsg", handle_custom_msg)
             .hook("invoice_payment", handle_paid_invoice)
             .featurebits(FeatureBitsKind::Node, String::from(FEATURE_BIT_STRING))

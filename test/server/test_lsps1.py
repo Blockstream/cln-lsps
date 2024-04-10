@@ -76,7 +76,7 @@ def test_lsps1_create_order_violate_options(lsps_server, lsps_client):
         client_balance_sat="1000001",  # Too large
         confirms_within_blocks=1,
         channel_expiry_blocks=144,
-        announceChannel=False,
+        announce_channel=False,
     )
 
     response = lsps_client.rpc.lsps0_send_request(
@@ -101,7 +101,7 @@ def test_lsps1_create_order(lsps_server, lsps_client):
         client_balance_sat="0",
         confirms_within_blocks=1,
         channel_expiry_blocks=144,
-        announceChannel=False,
+        announce_channel=False,
     )
 
     response = lsps_client.rpc.lsps0_send_request(
@@ -117,7 +117,7 @@ def test_lsps1_create_order(lsps_server, lsps_client):
     assert result["client_balance_sat"] == "0"
     assert result["confirms_within_blocks"] == 1
     assert result["channel_expiry_blocks"] == 144
-    assert result["announceChannel"] == False
+    assert result["announce_channel"] == False
 
     assert result["order_state"] == "CREATED"
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
@@ -131,7 +131,7 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
         client_balance_sat="0",
         confirms_within_blocks=1,
         channel_expiry_blocks=144,
-        announceChannel=False,
+        announce_channel=False,
     )
 
     response = lsps_client.rpc.lsps0_send_request(
@@ -154,7 +154,7 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     assert result["client_balance_sat"] == "0"
     assert result["confirms_within_blocks"] == 1
     assert result["channel_expiry_blocks"] == 144
-    assert result["announceChannel"] == False
+    assert not result["announce_channel"]
 
     assert result["order_state"] == "CREATED"
     assert result["payment"]["state"] == "EXPECT_PAYMENT"
@@ -176,7 +176,7 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
         client_balance_sat="0",
         confirms_within_blocks=1,
         channel_expiry_blocks=144,
-        announceChannel=False,
+        announce_channel=False,
     )
 
     response = lsps_client.rpc.lsps0_send_request(
