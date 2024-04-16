@@ -133,7 +133,7 @@ mod tests {
         Lsps1CreateOrderRequestBuilder::new()
             .client_balance_sat(Some(SatAmount::new(0)))
             .lsp_balance_sat(SatAmount::new(500_000))
-            .confirms_within_blocks(Some(6))
+            .funding_confirms_within_blocks(Some(6))
             .channel_expiry_blocks(1_000)
             .token(None)
             .refund_onchain_address(None)

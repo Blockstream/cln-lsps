@@ -10,7 +10,7 @@ impl BuildLsps1Order for Lsps1CreateOrderResponseBuilder {
         self.uuid(order.uuid)
             .lsp_balance_sat(order.lsp_balance_sat)
             .client_balance_sat(order.client_balance_sat)
-            .confirms_within_blocks(order.confirms_within_blocks)
+            .funding_confirms_within_blocks(order.funding_confirms_within_blocks)
             .channel_expiry_blocks(order.channel_expiry_blocks)
             .token(order.token.unwrap_or("".to_string()))
             .announce_channel(order.announce_channel)
