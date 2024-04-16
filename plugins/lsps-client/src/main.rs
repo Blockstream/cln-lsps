@@ -213,7 +213,7 @@ async fn lsps1_create_order(
     let create_order_request = lsps1::builders::Lsps1CreateOrderRequestBuilder::new()
         .lsp_balance_sat(request.lsp_balance_sat)
         .client_balance_sat(request.client_balance_sat)
-        .confirms_within_blocks(request.confirms_within_blocks)
+        .funding_confirms_within_blocks(request.funding_confirms_within_blocks)
         .channel_expiry_blocks(request.channel_expiry_blocks)
         .token(request.token)
         .refund_onchain_address(request.refund_onchain_address)

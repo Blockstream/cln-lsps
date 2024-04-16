@@ -38,7 +38,7 @@ impl Lsps1CreateOrderQuery {
             INSERT INTO lsps1_order (
               uuid, client_node_id,
               lsp_balance_sat, client_balance_sat,
-              confirms_within_blocks, channel_expiry_blocks,
+              funding_confirms_within_blocks, channel_expiry_blocks,
               token, refund_onchain_address,
               announce_channel, created_at,
               expires_at
@@ -50,7 +50,7 @@ impl Lsps1CreateOrderQuery {
             order.client_node_id,
             order.lsp_balance_sat,
             order.client_balance_sat,
-            order.confirms_within_blocks,
+            order.funding_confirms_within_blocks,
             order.channel_expiry_blocks,
             order.token,
             order.refund_onchain_address,

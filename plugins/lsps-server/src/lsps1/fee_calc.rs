@@ -52,7 +52,7 @@ impl FeeCalculator for StandardFeeCalculator {
             .estimates
             .context("Failed to retrieve feerates")?;
 
-        let onchain_feerate_kwu = calculate_onchain_feerate(order.confirms_within_blocks, &feerates)
+        let onchain_feerate_kwu = calculate_onchain_feerate(order.funding_confirms_within_blocks, &feerates)
             .context("Failed to compute approriate feerate")?
             as u64;
 

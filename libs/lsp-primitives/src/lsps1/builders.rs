@@ -213,7 +213,7 @@ impl Lsps1OptionsBuilder {
 pub struct Lsps1CreateOrderRequestBuilder {
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
-    confirms_within_blocks: Option<u8>,
+    funding_confirms_within_blocks: Option<u8>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     refund_onchain_address: Option<OnchainAddress>,
@@ -240,8 +240,8 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn confirms_within_blocks(mut self, confirms_within_blocks: Option<u8>) -> Self {
-        self.confirms_within_blocks = confirms_within_blocks;
+    pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: Option<u8>) -> Self {
+        self.funding_confirms_within_blocks = funding_confirms_within_blocks;
         self
     }
 
@@ -275,7 +275,7 @@ impl Lsps1CreateOrderRequestBuilder {
         // Fields that allow for reasonable defaults
         let client_balance_sat = self.client_balance_sat.unwrap_or(SatAmount::new(0));
         let announce_channel = self.announce_channel.unwrap_or(false);
-        let confirms_within_blocks = self.confirms_within_blocks.unwrap_or(6);
+        let funding_confirms_within_blocks = self.funding_confirms_within_blocks.unwrap_or(6);
 
         // Non-required fields
         let token = self.token;
@@ -284,7 +284,7 @@ impl Lsps1CreateOrderRequestBuilder {
         let request = Lsps1CreateOrderRequest {
             lsp_balance_sat,
             client_balance_sat,
-            confirms_within_blocks,
+            funding_confirms_within_blocks,
             channel_expiry_blocks,
             token,
             refund_onchain_address,
@@ -300,7 +300,7 @@ pub struct Lsps1CreateOrderResponseBuilder {
     uuid: Option<Uuid>,
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
-    confirms_within_blocks: Option<u8>,
+    funding_confirms_within_blocks: Option<u8>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     announce_channel: Option<bool>,
@@ -320,7 +320,7 @@ impl Lsps1CreateOrderResponseBuilder {
         Self::new()
             .lsp_balance_sat(request.lsp_balance_sat)
             .client_balance_sat(request.client_balance_sat)
-            .confirms_within_blocks(request.confirms_within_blocks)
+            .funding_confirms_within_blocks(request.funding_confirms_within_blocks)
             .channel_expiry_blocks(request.channel_expiry_blocks)
             .token(request.token.unwrap_or("".to_string()))
             // .refund_onchain_address(request.refund_onchain_address)
@@ -339,8 +339,8 @@ impl Lsps1CreateOrderResponseBuilder {
         self.client_balance_sat = Some(client_balance_sat);
         self
     }
-    pub fn confirms_within_blocks(mut self, confirms_within_blocks: u8) -> Self {
-        self.confirms_within_blocks = Some(confirms_within_blocks);
+    pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: u8) -> Self {
+        self.funding_confirms_within_blocks = Some(funding_confirms_within_blocks);
         self
     }
     pub fn channel_expiry_blocks(mut self, channel_expiry_blocks: u32) -> Self {
@@ -387,9 +387,9 @@ impl Lsps1CreateOrderResponseBuilder {
         let client_balance_sat = self
             .client_balance_sat
             .context("Missing field 'client_balance_sat' in Lsps1CreateOrderRequestBuilder")?;
-        let confirms_within_blocks = self
-            .confirms_within_blocks
-            .context("Missing field 'confirms_within_blocks' in Lsps1CreateOrderRequestBuilder")?;
+        let funding_confirms_within_blocks = self
+            .funding_confirms_within_blocks
+            .context("Missing field 'funding_confirms_within_blocks' in Lsps1CreateOrderRequestBuilder")?;
         let channel_expiry_blocks = self
             .channel_expiry_blocks
             .context("Missing field 'channel_expiry_blocks' in Lsps1CreateOrderRequestBuilder")?;
@@ -415,7 +415,7 @@ impl Lsps1CreateOrderResponseBuilder {
             order_id,
             lsp_balance_sat,
             client_balance_sat,
-            confirms_within_blocks,
+            funding_confirms_within_blocks,
             channel_expiry_blocks,
             token,
             announce_channel,

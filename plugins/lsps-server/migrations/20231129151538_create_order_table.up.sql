@@ -5,7 +5,7 @@ CREATE TABLE lsps1_order (
   client_node_id TEXT NOT NULL,				      -- The node-id of the client
   lsp_balance_sat INTEGER NOT NULL,			    -- as requested by the client
   client_balance_sat INTEGER NOT NULL,			-- as requested by the client
-  confirms_within_blocks INTEGER NOT NULL,	-- as requested by the client
+  funding_confirms_within_blocks INTEGER NOT NULL,	-- as requested by the client
   channel_expiry_blocks INTEGER NOT NULL,		-- as requested by the client
   token TEXT,	 					                    -- as requested by the client
   refund_onchain_address TEXT,				      -- as requested by the client

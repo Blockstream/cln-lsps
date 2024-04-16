@@ -33,7 +33,7 @@ pub struct Lsps1Options {
 pub struct Lsps1CreateOrderRequest {
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
-    pub confirms_within_blocks: u8,
+    pub funding_confirms_within_blocks: u8,
     pub channel_expiry_blocks: u32,
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,
@@ -45,7 +45,7 @@ impl ExpectedFields for Lsps1CreateOrderRequest {
         vec![
             "lsp_balance_sat".to_string(),
             "client_balance_sat".to_string(),
-            "confirms_within_blocks".to_string(),
+            "funding_confirms_within_blocks".to_string(),
             "channel_expiry_blocks".to_string(),
             "token".to_string(),
             "refund_onchain_address".to_string(),
@@ -59,7 +59,7 @@ pub struct Lsps1CreateOrderResponse {
     pub order_id: Uuid,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
-    pub confirms_within_blocks: u8,
+    pub funding_confirms_within_blocks: u8,
     pub channel_expiry_blocks: u32,
     pub token: String,
     pub announce_channel: bool,
@@ -197,7 +197,7 @@ mod test {
         let request = Lsps1CreateOrderRequest {
             lsp_balance_sat: SatAmount::new(100_000),
             client_balance_sat: SatAmount::new(1_000),
-            confirms_within_blocks: 10,
+            funding_confirms_within_blocks: 10,
             channel_expiry_blocks: 1000,
             token: None,
             refund_onchain_address: Some(onchain),
