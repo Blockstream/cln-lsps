@@ -1,5 +1,6 @@
 use crate::db::schema::{Lsps1Order, Lsps1PaymentDetails};
-use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
+use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder};
+use lsp_primitives::lsps1::schema::Payment;
 
 pub trait BuildLsps1Order {
     fn db_order(self, lsps1_order: Lsps1Order) -> Self;
@@ -21,17 +22,23 @@ impl BuildLsps1Order for Lsps1CreateOrderResponseBuilder {
     }
 }
 
+
+
 pub trait BuildUsingDbPayment {
-    fn db_payment_details(self, lsps1_payment: Lsps1PaymentDetails) -> Self;
+    fn from_db_payment(lsps1_payment: Lsps1PaymentDetails) -> Self;
 }
 
-impl BuildUsingDbPayment for PaymentBuilder {
-    fn db_payment_details(self, payment: Lsps1PaymentDetails) -> Self {
-        self.fee_total_sat(payment.fee_total_sat)
-            .order_total_sat(payment.order_total_sat)
-            .bolt11_invoice(payment.bolt11_invoice)
-            .onchain_address(None)
-            .minimum_fee_for_0conf(payment.minimum_fee_for_0conf)
-            .state(payment.state)
+impl BuildUsingDbPayment for Payment {
+    fn from_db_payment(payment: Lsps1PaymentDetails) -> Self {
+        Self {
+            fee_total_sat: payment.fee_total_sat,
+            order_total_sat: payment.order_total_sat,
+            bolt11_invoice: payment.bolt11_invoice,
+            min_fee_for_0conf: None,
+            min_onchain_payment_confirmations: None,
+            onchain_address: None,
+            onchain_payment: None,
+            state: payment.state,
+        }
     }
 }
