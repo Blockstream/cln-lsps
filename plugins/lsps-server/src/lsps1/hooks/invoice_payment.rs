@@ -76,7 +76,8 @@ pub(crate) async fn invoice_payment(
         .checked_add(&order_details.lsp_balance_sat)
         .context("Overflow when computing channel capacity")?;
 
-    // Adjust the fee-rate based on confirms withing blocks
+    // Adjust the fee-rate based on funding_confirms_within_blocks
+    // TODO
 
     // Get the mindepth from the config
     let mindepth = plugin
@@ -88,10 +89,10 @@ pub(crate) async fn invoice_payment(
 
     let channel_details = ChannelDetails {
         peer_id: order_details.client_node_id,
-        amount: amount,
+        amount,
         feerate: None,
         announce: Some(order_details.announce_channel),
-        mindepth: mindepth,
+        mindepth,
         push_msat: Some(order_details.client_balance_sat),
         reserve: Some(SatAmount::new(0)),
         close_to: None,
