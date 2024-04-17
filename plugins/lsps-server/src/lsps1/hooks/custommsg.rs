@@ -6,7 +6,7 @@ use lsp_primitives::methods;
 use lsp_primitives::json_rpc::ErrorData;
 use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, Outpoint};
 use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
-use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
+use lsp_primitives::lsps1::builders::Lsps1CreateOrderResponseBuilder;
 use lsp_primitives::lsps1::schema::{
     Channel, Lsps1CreateOrderResponse, Lsps1GetInfoResponse, OrderState, Payment
 };
@@ -200,10 +200,7 @@ pub(crate) async fn do_lsps1_get_order(
         .map_err(ErrorData::internalize)?
         .ok_or_else(|| ErrorData::internalize("Failed to find payment corresponding to order"))?;
 
-    let payment = PaymentBuilder::new()
-        .db_payment_details(payment_details)
-        .build()
-        .map_err(ErrorData::internalize)?;
+    let payment = Payment::from_db_payment(payment_details);
 
     log::debug!("Retrieve channel info from database");
     let channel_details = GetChannelQuery::by_order_id(uuid_value)
