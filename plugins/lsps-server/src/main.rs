@@ -18,7 +18,6 @@ use lsp_primitives::json_rpc::{
     DefaultError, ErrorData, JsonRpcId, JsonRpcRequest, JsonRpcResponse,
 };
 
-use lsp_primitives::lsps0::builders::ListprotocolsResponseBuilder;
 use lsp_primitives::lsps0::schema::ListprotocolsResponse;
 use lsp_primitives::methods;
 use lsp_primitives::methods::JsonRpcMethodEnum;
@@ -314,8 +313,7 @@ async fn do_list_protocols(
 
     let protocols = if lsps1_enabled { vec![0, 1] } else { vec![0] };
 
-    ListprotocolsResponseBuilder::new()
-        .protocols(protocols)
-        .build()
-        .map_err(ErrorData::internalize)
+    Ok(ListprotocolsResponse {
+        protocols
+    })
 }
