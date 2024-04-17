@@ -156,15 +156,21 @@ pub(crate) async fn do_lsps1_create_order(
         state: query.payment.state
     };
 
-    let response = Lsps1CreateOrderResponseBuilder::from_request(order)
-        .uuid(query.order.uuid)
-        .created_at(created_at)
-        .expires_at(expires_at)
-        .order_state(OrderState::Created)
-        .payment(payment)
-        .build()
-        .map_err(ErrorData::internalize)?;
-
+    let response = Lsps1CreateOrderResponse {
+        order_id: query.order.uuid,
+        lsp_balance_sat: order.lsp_balance_sat,
+        client_balance_sat: order.client_balance_sat,
+        funding_confirms_within_blocks: order.funding_confirms_within_blocks,
+        required_channel_confirmations: order.required_channel_confirmations,
+        channel_expiry_blocks: order.channel_expiry_blocks,
+        token: order.token.unwrap_or(String::from("")),
+        order_state: query.order.order_state,
+        announce_channel: order.announce_channel,
+        created_at,
+        expires_at,
+        payment,
+        channel: None
+    };
     Ok(response)
 }
 
