@@ -8,7 +8,7 @@ use lsp_primitives::lsps0::common_schemas::{IsoDatetime, NetworkCheckable, Outpo
 use lsp_primitives::lsps0::parameter_validation::ParamValidationError;
 use lsp_primitives::lsps1::builders::{Lsps1CreateOrderResponseBuilder, PaymentBuilder};
 use lsp_primitives::lsps1::schema::{
-    Channel, Lsps1CreateOrderResponse, Lsps1GetInfoResponse, OrderState,
+    Channel, Lsps1CreateOrderResponse, Lsps1GetInfoResponse, OrderState, Payment
 };
 
 use crate::custom_msg::context::CustomMsgContext;
@@ -145,13 +145,16 @@ pub(crate) async fn do_lsps1_create_order(
     tx.commit().await.map_err(ErrorData::internalize)?;
 
     // Construct the response that we will send to the user
-    let payment = PaymentBuilder::new()
-        .fee_total_sat(query.payment.fee_total_sat)
-        .order_total_sat(query.payment.order_total_sat)
-        .bolt11_invoice(query.payment.bolt11_invoice)
-        .state(query.payment.state)
-        .build()
-        .map_err(ErrorData::internalize)?;
+    let payment = Payment {
+        min_fee_for_0conf: None,
+        min_onchain_payment_confirmations: None,
+        onchain_address: None,
+        onchain_payment: None,
+        fee_total_sat: query.payment.fee_total_sat,
+        order_total_sat: query.payment.order_total_sat,
+        bolt11_invoice: query.payment.bolt11_invoice,
+        state: query.payment.state
+    };
 
     let response = Lsps1CreateOrderResponseBuilder::from_request(order)
         .uuid(query.order.uuid)
