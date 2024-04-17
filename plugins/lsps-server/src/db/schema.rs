@@ -11,6 +11,7 @@ pub struct Lsps1Order {
     pub(crate) lsp_balance_sat: SatAmount,
     pub(crate) client_balance_sat: SatAmount,
     pub(crate) funding_confirms_within_blocks: u8,
+    pub(crate) required_channel_confirmations: u8,
     pub(crate) channel_expiry_blocks: u32,
     pub(crate) token: Option<String>,
     pub(crate) refund_onchain_address: Option<String>,

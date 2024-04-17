@@ -11,6 +11,7 @@ impl BuildLsps1Order for Lsps1CreateOrderResponseBuilder {
             .lsp_balance_sat(order.lsp_balance_sat)
             .client_balance_sat(order.client_balance_sat)
             .funding_confirms_within_blocks(order.funding_confirms_within_blocks)
+            .required_channel_confirmations(order.required_channel_confirmations)
             .channel_expiry_blocks(order.channel_expiry_blocks)
             .token(order.token.unwrap_or("".to_string()))
             .announce_channel(order.announce_channel)

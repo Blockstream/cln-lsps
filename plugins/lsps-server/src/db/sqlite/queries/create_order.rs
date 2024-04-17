@@ -36,14 +36,20 @@ impl Lsps1CreateOrderQuery {
             IdType,
             r#"
             INSERT INTO lsps1_order (
-              uuid, client_node_id,
-              lsp_balance_sat, client_balance_sat,
-              funding_confirms_within_blocks, channel_expiry_blocks,
-              token, refund_onchain_address,
-              announce_channel, created_at,
+              uuid,
+              client_node_id,
+              lsp_balance_sat,
+              client_balance_sat,
+              funding_confirms_within_blocks,
+              required_channel_confirmations,
+              channel_expiry_blocks,
+              token,
+              refund_onchain_address,
+              announce_channel,
+              created_at,
               expires_at
             ) VALUES (
-                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12
             )
             RETURNING id;"#,
             order.uuid,
@@ -51,6 +57,7 @@ impl Lsps1CreateOrderQuery {
             order.lsp_balance_sat,
             order.client_balance_sat,
             order.funding_confirms_within_blocks,
+            order.required_channel_confirmations,
             order.channel_expiry_blocks,
             order.token,
             order.refund_onchain_address,

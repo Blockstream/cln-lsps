@@ -214,6 +214,7 @@ pub struct Lsps1CreateOrderRequestBuilder {
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
     funding_confirms_within_blocks: Option<u8>,
+    required_channel_confirmations: Option<u8>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     refund_onchain_address: Option<OnchainAddress>,
@@ -242,6 +243,11 @@ impl Lsps1CreateOrderRequestBuilder {
 
     pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: Option<u8>) -> Self {
         self.funding_confirms_within_blocks = funding_confirms_within_blocks;
+        self
+    }
+
+    pub fn required_channel_confirmations(mut self, required_channel_confirmations: Option<u8>) -> Self {
+        self.required_channel_confirmations = required_channel_confirmations;
         self
     }
 
@@ -276,6 +282,7 @@ impl Lsps1CreateOrderRequestBuilder {
         let client_balance_sat = self.client_balance_sat.unwrap_or(SatAmount::new(0));
         let announce_channel = self.announce_channel.unwrap_or(false);
         let funding_confirms_within_blocks = self.funding_confirms_within_blocks.unwrap_or(6);
+        let required_channel_confirmations = self.required_channel_confirmations.unwrap_or(6);
 
         // Non-required fields
         let token = self.token;
@@ -285,6 +292,7 @@ impl Lsps1CreateOrderRequestBuilder {
             lsp_balance_sat,
             client_balance_sat,
             funding_confirms_within_blocks,
+            required_channel_confirmations,
             channel_expiry_blocks,
             token,
             refund_onchain_address,
@@ -301,6 +309,7 @@ pub struct Lsps1CreateOrderResponseBuilder {
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
     funding_confirms_within_blocks: Option<u8>,
+    required_channel_confirmations: Option<u8>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     announce_channel: Option<bool>,
@@ -321,6 +330,7 @@ impl Lsps1CreateOrderResponseBuilder {
             .lsp_balance_sat(request.lsp_balance_sat)
             .client_balance_sat(request.client_balance_sat)
             .funding_confirms_within_blocks(request.funding_confirms_within_blocks)
+            .required_channel_confirmations(request.required_channel_confirmations)
             .channel_expiry_blocks(request.channel_expiry_blocks)
             .token(request.token.unwrap_or("".to_string()))
             // .refund_onchain_address(request.refund_onchain_address)
@@ -343,6 +353,12 @@ impl Lsps1CreateOrderResponseBuilder {
         self.funding_confirms_within_blocks = Some(funding_confirms_within_blocks);
         self
     }
+
+    pub fn required_channel_confirmations(mut self, required_channel_confirmations: u8) -> Self{
+        self.required_channel_confirmations = Some(required_channel_confirmations);
+        self
+    }
+
     pub fn channel_expiry_blocks(mut self, channel_expiry_blocks: u32) -> Self {
         self.channel_expiry_blocks = Some(channel_expiry_blocks);
         self
@@ -390,6 +406,9 @@ impl Lsps1CreateOrderResponseBuilder {
         let funding_confirms_within_blocks = self
             .funding_confirms_within_blocks
             .context("Missing field 'funding_confirms_within_blocks' in Lsps1CreateOrderRequestBuilder")?;
+        let required_channel_confirmations = 
+            self.required_channel_confirmations
+            .context("Missing field 'required_channel_confirmations' in Lsps1CreateOrderRequestBuilder")?;
         let channel_expiry_blocks = self
             .channel_expiry_blocks
             .context("Missing field 'channel_expiry_blocks' in Lsps1CreateOrderRequestBuilder")?;
@@ -416,6 +435,7 @@ impl Lsps1CreateOrderResponseBuilder {
             lsp_balance_sat,
             client_balance_sat,
             funding_confirms_within_blocks,
+            required_channel_confirmations,
             channel_expiry_blocks,
             token,
             announce_channel,

@@ -26,7 +26,8 @@ impl GetOrderQuery {
             Lsps1OrderSqlite,
             r#"SELECT
                 uuid, client_node_id, lsp_balance_sat,
-                client_balance_sat, funding_confirms_within_blocks, channel_expiry_blocks,
+                client_balance_sat, funding_confirms_within_blocks, 
+                required_channel_confirmations, channel_expiry_blocks,
                 token, refund_onchain_address, announce_channel,
                 ord.created_at, expires_at, os.order_state_enum_id as order_state,
                 generation
