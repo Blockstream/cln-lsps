@@ -74,6 +74,7 @@ def test_lsps1_create_order_violate_options(lsps_server, lsps_client):
         lsp_balance_sat="0",
         client_balance_sat="1000001",  # Too large
         funding_confirms_within_blocks=1,
+        required_channel_confirmations=6,
         channel_expiry_blocks=144,
         announce_channel=False,
     )
@@ -87,7 +88,7 @@ def test_lsps1_create_order_violate_options(lsps_server, lsps_client):
     assert "error" in response, "Should be option mismatch but returned result"
     error = response["error"]
 
-    assert error["code"] == 1000
+    assert error["code"] == 1000, str(error)
     assert error["message"] == "Option mismatch"
     assert error["data"]["property"] == "max_initial_client_balance_sat"
 
@@ -99,6 +100,7 @@ def test_lsps1_create_order(lsps_server, lsps_client):
         lsp_balance_sat="500000",
         client_balance_sat="0",
         funding_confirms_within_blocks=1,
+        required_channel_confirmations=0,
         channel_expiry_blocks=144,
         announce_channel=False,
     )
@@ -115,6 +117,7 @@ def test_lsps1_create_order(lsps_server, lsps_client):
     assert result["lsp_balance_sat"] == "500000"
     assert result["client_balance_sat"] == "0"
     assert result["funding_confirms_within_blocks"] == 1
+    assert result["required_channel_confirmations"] == 0
     assert result["channel_expiry_blocks"] == 144
     assert result["announce_channel"] == False
 
@@ -129,8 +132,10 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
         lsp_balance_sat="500000",
         client_balance_sat="0",
         funding_confirms_within_blocks=1,
+        required_channel_confirmations=0,
         channel_expiry_blocks=144,
         announce_channel=False,
+    
     )
 
     response = lsps_client.rpc.lsps0_send_request(
@@ -152,6 +157,7 @@ def test_lsps1_get_order_by_uuid(lsps_client, lsps_server):
     assert result["lsp_balance_sat"] == "500000"
     assert result["client_balance_sat"] == "0"
     assert result["funding_confirms_within_blocks"] == 1
+    assert result["required_channel_confirmations"] == 0
     assert result["channel_expiry_blocks"] == 144
     assert not result["announce_channel"]
 
@@ -174,6 +180,7 @@ def test_pay_lsps1_order(lsps_client, lsps_server):
         lsp_balance_sat="123456",
         client_balance_sat="0",
         funding_confirms_within_blocks=1,
+        required_channel_confirmations=0,
         channel_expiry_blocks=144,
         announce_channel=False,
     )

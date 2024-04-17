@@ -65,7 +65,8 @@ mod test {
             .unwrap(),
             lsp_balance_sat: SatAmount::new(100_000),
             client_balance_sat: SatAmount::new(0),
-            funding_confirms_within_blocks: 0,
+            funding_confirms_within_blocks: 10,
+            required_channel_confirmations: 0,
             created_at,
             expires_at,
             refund_onchain_address: None,
@@ -131,7 +132,7 @@ mod test {
         assert_eq!(order.uuid, uuid);
         assert_eq!(order.lsp_balance_sat, SatAmount::new(100_000));
         assert_eq!(order.client_balance_sat, SatAmount::new(0));
-        assert_eq!(order.funding_confirms_within_blocks, 0);
+        assert_eq!(order.funding_confirms_within_blocks, 10);
         assert_eq!(
             order.created_at.unix_timestamp(),
             initial_order.created_at.unix_timestamp()
