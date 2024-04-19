@@ -25,6 +25,18 @@ impl FromSqliteInteger for u8 {
     }
 }
 
+impl IntoSqliteInteger for u16 {
+    fn into_sqlite_integer(&self) -> Result<i64> {
+        i64::try_from(*self).context(format!("Failed to fit {} in i64", self))
+    }
+}
+
+impl FromSqliteInteger for u16 {
+    fn from_sqlite_integer(value: i64) -> Result<Self> {
+        u16::try_from(value).context(format!("Failed to fit {} in i64", value))
+    }
+}
+
 impl IntoSqliteInteger for u32 {
     fn into_sqlite_integer(&self) -> Result<i64> {
         i64::try_from(*self).context(format!("Failed to fit {} in u32", self))

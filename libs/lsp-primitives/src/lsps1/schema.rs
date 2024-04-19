@@ -15,9 +15,9 @@ pub struct Lsps1GetInfoResponse {
 /// Options returned when calling lsps1.info
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lsps1Options {
-    pub min_required_channel_confirmations: u8,
-    pub min_funding_confirms_within_blocks: u8,
-    pub min_onchain_payment_confirmations: Option<u8>,
+    pub min_required_channel_confirmations: u16,
+    pub min_funding_confirms_within_blocks: u16,
+    pub min_onchain_payment_confirmations: Option<u16>,
     pub supports_zero_channel_reserve: bool,
     pub min_onchain_payment_size_sat: Option<SatAmount>,
     pub max_channel_expiry_blocks: u32,
@@ -33,8 +33,8 @@ pub struct Lsps1Options {
 pub struct Lsps1CreateOrderRequest {
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
-    pub funding_confirms_within_blocks: u8,
-    pub required_channel_confirmations: u8,
+    pub funding_confirms_within_blocks: u16,
+    pub required_channel_confirmations: u16,
     pub channel_expiry_blocks: u32,
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,
@@ -61,8 +61,8 @@ pub struct Lsps1CreateOrderResponse {
     pub order_id: Uuid,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: SatAmount,
-    pub funding_confirms_within_blocks: u8,
-    pub required_channel_confirmations: u8,
+    pub funding_confirms_within_blocks: u16,
+    pub required_channel_confirmations: u16,
     pub channel_expiry_blocks: u32,
     pub token: String,
     pub announce_channel: bool,
@@ -111,7 +111,7 @@ pub struct Payment {
 
     pub bolt11_invoice: String,
     pub onchain_address: Option<OnchainAddress>,
-    pub min_onchain_payment_confirmations: Option<u8>,
+    pub min_onchain_payment_confirmations: Option<u16>,
 
     pub min_fee_for_0conf: Option<FeeRate>,
     pub onchain_payment: Option<OnchainPayment>,

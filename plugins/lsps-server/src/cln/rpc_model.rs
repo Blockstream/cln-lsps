@@ -21,7 +21,7 @@ pub struct FundChannelStartRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub push_msat: Option<rpc_primitives::Amount>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mindepth: Option<u8>,
+    pub mindepth: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reserve: Option<rpc_primitives::Amount>,
 }

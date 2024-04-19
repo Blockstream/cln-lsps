@@ -30,7 +30,7 @@ pub struct Lsps1CreateOrderRequest {
     pub peer_id: String,
     pub lsp_balance_sat: SatAmount,
     pub client_balance_sat: Option<SatAmount>,
-    pub funding_confirms_within_blocks: Option<u8>,
+    pub funding_confirms_within_blocks: Option<u16>,
     pub channel_expiry_blocks: u32,
     pub token: Option<String>,
     pub refund_onchain_address: Option<OnchainAddress>,

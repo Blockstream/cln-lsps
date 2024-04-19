@@ -87,7 +87,7 @@ impl TryFrom<&Lsps1PaymentDetails> for Lsps1PaymentDetailsBase {
     fn try_from(payment: &Lsps1PaymentDetails) -> Result<Self, Self::Error> {
         let onchain_block_confirmations_required = payment
             .onchain_block_confirmations_required
-            .map(|p| u8::from_sqlite_integer(p))
+            .map(|p| u16::from_sqlite_integer(p))
             .transpose()?;
 
         let minimum_fee_for_0conf = payment
@@ -120,8 +120,8 @@ impl TryFrom<&Lsps1Order> for Lsps1OrderBase {
             client_node_id: PublicKey::from_hex(&order.client_node_id)?,
             lsp_balance_sat: SatAmount::new(u64::try_from(order.lsp_balance_sat)?),
             client_balance_sat: SatAmount::new(u64::try_from(order.client_balance_sat)?),
-            funding_confirms_within_blocks: u8::try_from(order.funding_confirms_within_blocks)?,
-            required_channel_confirmations: u8::try_from(order.required_channel_confirmations)?,
+            funding_confirms_within_blocks: u16::try_from(order.funding_confirms_within_blocks)?,
+            required_channel_confirmations: u16::try_from(order.required_channel_confirmations)?,
             channel_expiry_blocks: u32::try_from(order.channel_expiry_blocks)?,
             token: order.token.clone(),
             refund_onchain_address: order.refund_onchain_address.clone(),

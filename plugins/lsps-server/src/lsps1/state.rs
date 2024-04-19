@@ -28,19 +28,19 @@ where
     O: Unpin + 'static,
 {
     let opt = options::lsps1_min_required_channel_confirmations();
-    let min_required_channel_confirmations: u8 = plugin
+    let min_required_channel_confirmations: u16 = plugin
         .option(&opt)
         .unwrap()
         .try_into()
-        .context(format!("Option '{}' should be an u8", opt.name))?;
+        .context(format!("Option '{}' should be an u16", opt.name))?;
 
     let opt = options::lsps1_min_onchain_payment_confirmations();
-    let min_onchain_payment_confirmations: Option<u8> = plugin
+    let min_onchain_payment_confirmations: Option<u16> = plugin
         .option(&opt)
         .unwrap()
         .map(|x| x.try_into())
         .transpose()
-        .context("min_onchain_payment_confirmations does not fit into u8")?;
+        .context("min_onchain_payment_confirmations does not fit into u16")?;
 
     let opt = options::lsps1_supports_zero_channel_reserve();
     let supports_zero_channel_reserve: bool = plugin.option(&opt).unwrap();
@@ -106,11 +106,11 @@ where
     let max_channel_balance_sat: SatAmount = create_sat_amount(max_channel_balance_sat, opt.name)?;
 
     let opt = options::lsps1_min_funding_confirms_within_blocks();
-    let min_funding_confirms_within_blocks: u8 = plugin
+    let min_funding_confirms_within_blocks: u16 = plugin
         .option(&opt)
         .unwrap()
         .try_into()
-        .context(format!("{} should fit into u8", opt.name))?;
+        .context(format!("{} should fit into u16", opt.name))?;
 
     Lsps1OptionsBuilder {
         min_funding_confirms_within_blocks: Some(min_funding_confirms_within_blocks),

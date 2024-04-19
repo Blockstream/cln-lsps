@@ -85,7 +85,7 @@ impl StandardFeeCalculator {
 }
 
 fn calculate_onchain_feerate(
-    confirms_within_blocks: u8,
+    confirms_within_blocks: u16,
     feerates: &[FeeratesPerkwEstimates],
 ) -> Option<u32> {
     let max = feerates.iter().filter_map(|x| x.feerate).max();
