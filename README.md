@@ -2,6 +2,8 @@
 
 > [!WARNING]
 > This is code experimental and using it might result in loss of funds
+> The code is intended to test and validate the LSP-spec.
+> If you use this in any procution setting, you are on your own.
 >
 > - The LSP-spec isn't final yet and breaking changes might occur.
 > - No code in this repository has been formally peer review (yet).
