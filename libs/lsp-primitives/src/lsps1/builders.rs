@@ -48,9 +48,9 @@ impl Lsps1InfoResponseBuilder {
 
 #[derive(Default, Debug)]
 pub struct Lsps1OptionsBuilder {
-    pub min_required_channel_confirmations: Option<u8>,
-    pub min_funding_confirms_within_blocks: Option<u8>,
-    pub min_onchain_payment_confirmations: Option<u8>,
+    pub min_required_channel_confirmations: Option<u16>,
+    pub min_funding_confirms_within_blocks: Option<u16>,
+    pub min_onchain_payment_confirmations: Option<u16>,
     pub supports_zero_channel_reserve: Option<bool>,
     pub min_onchain_payment_size_sat: Option<SatAmount>,
     pub max_channel_expiry_blocks: Option<u32>,
@@ -69,7 +69,7 @@ impl Lsps1OptionsBuilder {
 
     pub fn min_required_channel_confirmations(
         mut self,
-        min_required_channel_confirmations: u8,
+        min_required_channel_confirmations: u16,
     ) -> Self {
         self.min_required_channel_confirmations = Some(min_required_channel_confirmations);
         self
@@ -77,7 +77,7 @@ impl Lsps1OptionsBuilder {
 
     pub fn min_funding_confirms_within_blocks(
         mut self,
-        min_funding_confirms_within_blocks: u8,
+        min_funding_confirms_within_blocks: u16,
     ) -> Self {
         self.min_funding_confirms_within_blocks = Some(min_funding_confirms_within_blocks);
         self
@@ -85,7 +85,7 @@ impl Lsps1OptionsBuilder {
 
     pub fn min_onchain_payment_confirmations(
         mut self,
-        min_onchain_payment_confirmations: Option<u8>,
+        min_onchain_payment_confirmations: Option<u16>,
     ) -> Self {
         self.min_onchain_payment_confirmations = min_onchain_payment_confirmations;
         self
@@ -213,8 +213,8 @@ impl Lsps1OptionsBuilder {
 pub struct Lsps1CreateOrderRequestBuilder {
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
-    funding_confirms_within_blocks: Option<u8>,
-    required_channel_confirmations: Option<u8>,
+    funding_confirms_within_blocks: Option<u16>,
+    required_channel_confirmations: Option<u16>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     refund_onchain_address: Option<OnchainAddress>,
@@ -241,12 +241,12 @@ impl Lsps1CreateOrderRequestBuilder {
         self
     }
 
-    pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: Option<u8>) -> Self {
+    pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: Option<u16>) -> Self {
         self.funding_confirms_within_blocks = funding_confirms_within_blocks;
         self
     }
 
-    pub fn required_channel_confirmations(mut self, required_channel_confirmations: Option<u8>) -> Self {
+    pub fn required_channel_confirmations(mut self, required_channel_confirmations: Option<u16>) -> Self {
         self.required_channel_confirmations = required_channel_confirmations;
         self
     }
@@ -308,8 +308,8 @@ pub struct Lsps1CreateOrderResponseBuilder {
     uuid: Option<Uuid>,
     lsp_balance_sat: Option<SatAmount>,
     client_balance_sat: Option<SatAmount>,
-    funding_confirms_within_blocks: Option<u8>,
-    required_channel_confirmations: Option<u8>,
+    funding_confirms_within_blocks: Option<u16>,
+    required_channel_confirmations: Option<u16>,
     channel_expiry_blocks: Option<u32>,
     token: Option<String>,
     announce_channel: Option<bool>,
@@ -349,12 +349,12 @@ impl Lsps1CreateOrderResponseBuilder {
         self.client_balance_sat = Some(client_balance_sat);
         self
     }
-    pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: u8) -> Self {
+    pub fn funding_confirms_within_blocks(mut self, funding_confirms_within_blocks: u16) -> Self {
         self.funding_confirms_within_blocks = Some(funding_confirms_within_blocks);
         self
     }
 
-    pub fn required_channel_confirmations(mut self, required_channel_confirmations: u8) -> Self{
+    pub fn required_channel_confirmations(mut self, required_channel_confirmations: u16) -> Self{
         self.required_channel_confirmations = Some(required_channel_confirmations);
         self
     }
@@ -496,7 +496,7 @@ pub struct PaymentBuilder {
 
     bolt11_invoice: Option<String>,
     onchain_address: Option<OnchainAddress>,
-    required_onchain_block_confirmations: Option<u8>,
+    required_onchain_block_confirmations: Option<u16>,
 
     minimum_fee_for_0conf: Option<FeeRate>,
     onchain_payment: Option<OnchainPayment>,
@@ -558,7 +558,7 @@ impl PaymentBuilder {
 
     pub fn required_onchain_block_confirmations(
         mut self,
-        required_onchain_block_confirmations: u8,
+        required_onchain_block_confirmations: u16,
     ) -> Self {
         self.required_onchain_block_confirmations = Some(required_onchain_block_confirmations);
         self

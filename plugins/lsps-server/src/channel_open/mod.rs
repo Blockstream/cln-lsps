@@ -21,7 +21,7 @@ pub struct ChannelDetails {
     pub(crate) announce: Option<bool>,
     pub(crate) close_to: Option<String>,
     pub(crate) push_msat: Option<SatAmount>,
-    pub(crate) mindepth: Option<u8>,
+    pub(crate) mindepth: Option<u16>,
     pub(crate) reserve: Option<SatAmount>,
 }
 
